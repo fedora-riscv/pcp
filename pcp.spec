@@ -1,6 +1,6 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.3.3
+Version: 3.5.0
 %define buildversion 1
 
 Release: %{buildversion}%{?dist}
@@ -88,6 +88,77 @@ This mechanism allows arbitrary values to be exported from an
 instrumented script into the PCP infrastructure for monitoring
 and analysis with pmchart, pmie, pmlogger and other PCP tools.
 
+#
+# perl-PCP-LogImport
+#
+%package -n perl-PCP-LogImport
+License: GPLv2
+Group: Applications/System
+Summary: Performance Co-Pilot (PCP) Perl bindings for importing external data into PCP archives
+URL: http://oss.sgi.com/projects/pcp/
+Requires: pcp >= %{version}
+
+%description -n perl-PCP-LogImport
+The PCP::LogImport module contains the Perl language bindings for
+importing data in various 3rd party formats into PCP archives so
+they can be replayed with standard PCP monitoring tools.
+
+#
+# pcp-import-sar2pcp
+#
+%package import-sar2pcp
+License: LGPLv2+
+Group: Applications/System
+Summary: Performance Co-Pilot tools for importing sar data into PCP archive logs
+URL: http://oss.sgi.com/projects/pcp/
+Requires: pcp-libs >= %{version} perl-PCP-LogImport >= %{version} sysstat
+
+%description import-sar2pcp
+Performance Co-Pilot (PCP) front-end tools for importing sar data
+into standard PCP archive logs for replay with any PCP monitoring tool.
+
+#
+# pcp-import-iostat2pcp
+#
+%package import-iostat2pcp
+License: LGPLv2+
+Group: Applications/System
+Summary: Performance Co-Pilot tools for importing iostat data into PCP archive logs
+URL: http://oss.sgi.com/projects/pcp/
+Requires: pcp-libs >= %{version} perl-PCP-LogImport >= %{version} sysstat
+
+%description import-iostat2pcp
+Performance Co-Pilot (PCP) front-end tools for importing iostat data
+into standard PCP archive logs for replay with any PCP monitoring tool.
+
+#
+# pcp-import-sheet2pcp
+#
+%package import-sheet2pcp
+License: LGPLv2+
+Group: Applications/System
+Summary: Performance Co-Pilot tools for importing spreadsheet data into PCP archive logs
+URL: http://oss.sgi.com/projects/pcp/
+Requires: pcp-libs >= %{version} perl-PCP-LogImport >= %{version} sysstat
+
+%description import-sheet2pcp
+Performance Co-Pilot (PCP) front-end tools for importing spreadsheet data
+into standard PCP archive logs for replay with any PCP monitoring tool.
+
+#
+# pcp-import-mrtg2pcp
+#
+%package import-mrtg2pcp
+License: LGPLv2+
+Group: Applications/System
+Summary: Performance Co-Pilot tools for importing MTRG data into PCP archive logs
+URL: http://oss.sgi.com/projects/pcp/
+Requires: pcp-libs >= %{version} perl-PCP-LogImport >= %{version}
+
+%description import-mrtg2pcp
+Performance Co-Pilot (PCP) front-end tools for importing MTRG data
+into standard PCP archive logs for replay with any PCP monitoring tool.
+
 %prep
 %setup -q
 autoconf
@@ -120,6 +191,14 @@ done
 ls -1 $RPM_BUILD_ROOT/%{_pmdasdir} | egrep -v 'simple|sample|trivial|txmon' |\
 sed -e 's#^#'%{_pmdasdir}'\/#' >base_pmdas.list
 
+# bin and man1 files except those split out into sub packages
+ls -1 $RPM_BUILD_ROOT/%{_bindir} | grep -v '2pcp' |\
+sed -e 's#^#'%{_bindir}'\/#' >base_binfiles.list
+ls -1 $RPM_BUILD_ROOT/%{_mandir}/man1 | grep -v '2pcp' |\
+sed -e 's#^#'%{_mandir}'\/man1\/#' >base_man1files.list
+
+cat base_pmdas.list base_binfiles.list base_man1files.list > base_specialfiles.list
+
 %preun
 if [ "$1" -eq 0 ]
 then
@@ -143,7 +222,7 @@ fi
 %post libs -p /sbin/ldconfig
 %postun libs -p /sbin/ldconfig
 
-%files -f base_pmdas.list
+%files -f base_specialfiles.list
 #
 # Note: there are some headers (e.g. domain.h) and in a few cases some
 # C source files that rpmlint complains about. These are not devel files,
@@ -158,7 +237,6 @@ fi
 %dir %{_localstatedir}/lib/pcp
 %dir %{_localstatedir}/lib/pcp/config
 
-%{_bindir}/*
 %{_libexecdir}/pcp
 %{_datadir}/pcp/lib
 %{_localstatedir}/log/pcp
@@ -166,7 +244,6 @@ fi
 %{_initrddir}/pcp
 %{_initrddir}/pmie
 %{_initrddir}/pmproxy
-%{_mandir}/man1/*
 %{_mandir}/man4/*
 %config %{_sysconfdir}/bash_completion.d/pcp
 %config %{_sysconfdir}/pcp.env
@@ -194,6 +271,7 @@ fi
 %{_libdir}/libpcp_mmv.so.1
 %{_libdir}/libpcp_pmda.so.3
 %{_libdir}/libpcp_trace.so.2
+%{_libdir}/libpcp_import.so.1
 
 %files libs-devel
 %defattr(-,root,root)
@@ -206,6 +284,7 @@ fi
 %{_libdir}/libpcp_pmda.so
 %{_libdir}/libpcp_pmda.so.2
 %{_libdir}/libpcp_trace.so
+%{_libdir}/libpcp_import.so
 %{_includedir}/pcp/*.h
 %{_mandir}/man3/*.3.gz
 %{_datadir}/pcp/demos
@@ -218,13 +297,42 @@ fi
 %{_localstatedir}/lib/pcp/pmdas/trivial
 %{_localstatedir}/lib/pcp/pmdas/txmon
 
+%files import-sar2pcp
+%defattr(-,root,root)
+%{_bindir}/sar2pcp
+%{_mandir}/man1/sar2pcp.1.gz
+
+%files import-iostat2pcp
+%defattr(-,root,root)
+%{_bindir}/iostat2pcp
+%{_mandir}/man1/iostat2pcp.1.gz
+
+%files import-sheet2pcp
+%defattr(-,root,root)
+%{_bindir}/sheet2pcp
+%{_mandir}/man1/sheet2pcp.1.gz
+
+%files import-mrtg2pcp
+%defattr(-,root,root)
+%{_bindir}/mrtg2pcp
+%{_mandir}/man1/mrtg2pcp.1.gz
+
 %files -n perl-PCP-PMDA -f perl-pcp-pmda.list
 %defattr(-,root,root)
 
 %files -n perl-PCP-MMV -f perl-pcp-mmv.list
 %defattr(-,root,root)
 
+%files -n perl-PCP-LogImport -f perl-pcp-logimport.list
+%defattr(-,root,root)
+
 %changelog
+* Wed Feb 2 2011 Mark Goodwin - 3.5.0-1
+- Update to latest PCP sources.
+
+* Thu Sep 30 2010 Mark Goodwin - 3.4.0-1
+- Update to latest PCP sources.
+
 * Fri Jul 16 2010 Mark Goodwin - 3.3.3-1
 - Update to latest PCP sources.
 
