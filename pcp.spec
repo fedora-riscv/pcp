@@ -3,7 +3,7 @@ Name: pcp
 Version: 3.5.0
 %define buildversion 1
 
-Release: %{buildversion}%{?dist}
+Release: %{buildversion}%{?dist}.1
 License: GPLv2
 URL: http://oss.sgi.com/projects/pcp
 Group: Applications/System
@@ -327,6 +327,9 @@ fi
 %defattr(-,root,root)
 
 %changelog
+* Tue Feb 08 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.5.0-1.1
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
+
 * Wed Feb 2 2011 Mark Goodwin - 3.5.0-1
 - Update to latest PCP sources.
 
