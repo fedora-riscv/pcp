@@ -1,15 +1,13 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
 Version: 3.5.0
-%define buildversion 1
+Release: 2%{?dist}
 
-Release: %{buildversion}%{?dist}.1
 License: GPLv2
 URL: http://oss.sgi.com/projects/pcp
 Group: Applications/System
 Source0: ftp://oss.sgi.com/projects/pcp/download/pcp-%{version}-%{buildversion}.src.tar.gz
 
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: procps autoconf bison flex ncurses-devel readline-devel
 BuildRequires: perl(ExtUtils::MakeMaker)
 BuildRequires: initscripts
@@ -167,14 +165,10 @@ autoconf
 # needs some tweaks before that will work correctly (TODO).
 ./configure --libdir=%{_libdir} --libexecdir=%{_libexecdir}
 
-%clean
-rm -Rf $RPM_BUILD_ROOT
-
 %build
 make default_pcp
 
 %install
-rm -Rf $RPM_BUILD_ROOT
 export DIST_ROOT=$RPM_BUILD_ROOT
 make install_pcp
 
@@ -327,6 +321,9 @@ fi
 %defattr(-,root,root)
 
 %changelog
+* Tue Oct 11 2011 Peter Robinson <pbrobinson@fedoraproject.org> - 3.5.0-2
+- Rebuild for perl deps
+
 * Tue Feb 08 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.5.0-1.1
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
 
