@@ -1,19 +1,20 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.5.0
+Version: 3.5.11
 %define buildversion 1
 
-Release: %{buildversion}.2%{?dist}
+Release: %{buildversion}%{?dist}
 License: GPLv2
 URL: http://oss.sgi.com/projects/pcp
 Group: Applications/System
 Source0: ftp://oss.sgi.com/projects/pcp/download/pcp-%{version}-%{buildversion}.src.tar.gz
 
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: procps autoconf bison flex ncurses-devel readline-devel
 BuildRequires: perl(ExtUtils::MakeMaker)
 BuildRequires: initscripts
  
-Requires: bash gawk sed grep fileutils findutils cpp initscripts
+Requires: bash gawk sed grep fileutils findutils initscripts
 Requires: pcp-libs = %{version}
 
 %define _pmdasdir %{_localstatedir}/lib/pcp/pmdas
@@ -102,6 +103,24 @@ The PCP::LogImport module contains the Perl language bindings for
 importing data in various 3rd party formats into PCP archives so
 they can be replayed with standard PCP monitoring tools.
 
+ #
+# perl-PCP-LogSummary
+#
+%package -n perl-PCP-LogSummary
+License: GPLv2
+Group: Applications/System
+Summary: Performance Co-Pilot (PCP) Perl bindings for post-processing output of pmlogsummary
+URL: http://oss.sgi.com/projects/pcp/
+Requires: pcp >= %{version}
+
+%description -n perl-PCP-LogSummary
+The PCP::LogSummary module provides a Perl module for using the
+statistical summary data produced by the Performance Co-Pilot
+pmlogsummary utility.  This utility produces various averages,
+minima, maxima, and other calculations based on the performance
+data stored in a PCP archive.  The Perl interface is ideal for
+exporting this data into third-party tools (e.g. spreadsheets).
+
 #
 # pcp-import-sar2pcp
 #
@@ -166,10 +185,14 @@ autoconf
 # needs some tweaks before that will work correctly (TODO).
 ./configure --libdir=%{_libdir} --libexecdir=%{_libexecdir}
 
+%clean
+rm -Rf $RPM_BUILD_ROOT
+
 %build
 make default_pcp
 
 %install
+rm -Rf $RPM_BUILD_ROOT
 export DIST_ROOT=$RPM_BUILD_ROOT
 make install_pcp
 
@@ -211,8 +234,11 @@ fi
 
 %post
 /sbin/chkconfig --add pcp >/dev/null 2>&1
+/sbin/service pcp condrestart
 /sbin/chkconfig --add pmie >/dev/null 2>&1
+/sbin/service pmie condrestart
 /sbin/chkconfig --add pmproxy >/dev/null 2>&1
+/sbin/service pmproxy condrestart
 
 %post libs -p /sbin/ldconfig
 %postun libs -p /sbin/ldconfig
@@ -321,14 +347,32 @@ fi
 %files -n perl-PCP-LogImport -f perl-pcp-logimport.list
 %defattr(-,root,root)
 
+%files -n perl-PCP-LogSummary -f perl-pcp-logsummary.list
+%defattr(-,root,root)
+
 %changelog
-* Tue Oct 11 2011 Peter Robinson <pbrobinson@fedoraproject.org> - 3.5.0-1.2
-- Rebuild for changed perl deps
+* Thu Dec 01 2011 Mark Goodwin - 3.5.11-1
+- Update to latest PCP sources.
 
-* Tue Feb 08 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.5.0-1.1
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
+* Fri Nov 04 2011 Mark Goodwin - 3.5.10-1
+- Update to latest PCP sources.
 
-* Wed Feb 2 2011 Mark Goodwin - 3.5.0-1
+* Mon Oct 24 2011 Mark Goodwin - 3.5.9-1
+- Update to latest PCP sources.
+
+* Mon Aug 8 2011 Mark Goodwin - 3.5.8-1
+- Update to latest PCP sources.
+
+* Fri Aug 5 2011 Mark Goodwin - 3.5.7-1
+- Update to latest PCP sources.
+
+* Fri Jul 22 2011 Mark Goodwin - 3.5.6-1
+- Update to latest PCP sources.
+
+* Tue Jul 19 2011 Mark Goodwin - 3.5.5-1
+- Update to latest PCP sources.
+
+* Wed Feb 3 2011 Mark Goodwin - 3.5.0-1
 - Update to latest PCP sources.
 
 * Thu Sep 30 2010 Mark Goodwin - 3.4.0-1
