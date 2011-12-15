@@ -1,1 +1,3 @@
-984e2e26fe8c79f0bd0bf4ce70caf919  pcp-3.5.11-1.src.tar.gz
+85b8c4161befe31f2ebc966c3f2b91a2  pcp.spec
+61d6cfe28eb9061ba66f5df924a692c4  pcp_configure_ppc64.patch
+984e2e26fe8c79f0bd0bf4ce70caf919  pcp-3.5.11-2.src.tar.gz
