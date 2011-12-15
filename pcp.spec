@@ -1,7 +1,7 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
 Version: 3.5.11
-%define buildversion 1
+%define buildversion 2
 
 Release: %{buildversion}%{?dist}
 License: GPLv2
@@ -16,6 +16,8 @@ BuildRequires: initscripts
  
 Requires: bash gawk sed grep fileutils findutils initscripts
 Requires: pcp-libs = %{version}
+
+Patch0: pcp_configure_ppc64.patch
 
 %define _pmdasdir %{_localstatedir}/lib/pcp/pmdas
 
@@ -179,6 +181,7 @@ into standard PCP archive logs for replay with any PCP monitoring tool.
 
 %prep
 %setup -q
+%patch0 -p1
 autoconf
 
 # The standard 'configure' macro should be used here, but configure.in
@@ -351,6 +354,9 @@ fi
 %defattr(-,root,root)
 
 %changelog
+* Thu Dec 15 2011 Mark Goodwin - 3.5.11-2
+- patched configure.in for libdir=/usr/lib64 on ppc64
+
 * Thu Dec 01 2011 Mark Goodwin - 3.5.11-1
 - Update to latest PCP sources.
 
