@@ -3,7 +3,7 @@ Name: pcp
 Version: 3.5.11
 %define buildversion 2
 
-Release: %{buildversion}%{?dist}
+Release: %{buildversion}%{?dist}.1
 License: GPLv2
 URL: http://oss.sgi.com/projects/pcp
 Group: Applications/System
@@ -354,6 +354,9 @@ fi
 %defattr(-,root,root)
 
 %changelog
+* Fri Jan 13 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.5.11-2.1
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_17_Mass_Rebuild
+
 * Thu Dec 15 2011 Mark Goodwin - 3.5.11-2
 - patched configure.in for libdir=/usr/lib64 on ppc64
 
