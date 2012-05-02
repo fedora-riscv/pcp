@@ -1,7 +1,7 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.5.11
-%define buildversion 2
+Version: 3.6.3
+%define buildversion 1
 
 Release: %{buildversion}%{?dist}
 License: GPLv2
@@ -16,8 +16,6 @@ BuildRequires: initscripts
  
 Requires: bash gawk sed grep fileutils findutils initscripts
 Requires: pcp-libs = %{version}
-
-Patch0: pcp_configure_ppc64.patch
 
 %define _pmdasdir %{_localstatedir}/lib/pcp/pmdas
 
@@ -181,12 +179,8 @@ into standard PCP archive logs for replay with any PCP monitoring tool.
 
 %prep
 %setup -q
-%patch0 -p1
 autoconf
-
-# The standard 'configure' macro should be used here, but configure.in
-# needs some tweaks before that will work correctly (TODO).
-./configure --libdir=%{_libdir} --libexecdir=%{_libexecdir}
+%configure
 
 %clean
 rm -Rf $RPM_BUILD_ROOT
@@ -226,18 +220,24 @@ then
     #
     # Stop daemons before erasing the package
     #
-    /sbin/service pcp stop >/dev/null 2>&1
+    /sbin/service pmlogger stop >/dev/null 2>&1
     /sbin/service pmie stop >/dev/null 2>&1
     /sbin/service pmproxy stop >/dev/null 2>&1
+    /sbin/service pcp stop >/dev/null 2>&1
+    /sbin/service pmcd stop >/dev/null 2>&1
 
     /sbin/chkconfig --del pcp >/dev/null 2>&1
+    /sbin/chkconfig --del pmcd >/dev/null 2>&1
+    /sbin/chkconfig --del pmlogger >/dev/null 2>&1
     /sbin/chkconfig --del pmie >/dev/null 2>&1
     /sbin/chkconfig --del pmproxy >/dev/null 2>&1
 fi
 
 %post
-/sbin/chkconfig --add pcp >/dev/null 2>&1
-/sbin/service pcp condrestart
+/sbin/chkconfig --add pmcd >/dev/null 2>&1
+/sbin/service pmcd condrestart
+/sbin/chkconfig --add pmlogger >/dev/null 2>&1
+/sbin/service pmlogger condrestart
 /sbin/chkconfig --add pmie >/dev/null 2>&1
 /sbin/service pmie condrestart
 /sbin/chkconfig --add pmproxy >/dev/null 2>&1
@@ -266,6 +266,8 @@ fi
 %{_localstatedir}/log/pcp
 %{_localstatedir}/lib/pcp/pmns
 %{_initrddir}/pcp
+%{_initrddir}/pmcd
+%{_initrddir}/pmlogger
 %{_initrddir}/pmie
 %{_initrddir}/pmproxy
 %{_mandir}/man4/*
@@ -354,6 +356,19 @@ fi
 %defattr(-,root,root)
 
 %changelog
+* Mon Apr 30 2012 Mark Goodwin - 3.6.3-1
+- Update to latest PCP sources
+
+* Thu Apr 26 2012 Mark Goodwin - 3.6.2-1
+- Update to latest PCP sources
+
+* Thu Apr 12 2012 Mark Goodwin - 3.6.1-1
+- Update to latest PCP sources
+
+* Thu Mar 22 2012 Mark Goodwin - 3.6.0-1
+- use %configure macro for correct libdir logic
+- update to latest PCP sources
+
 * Thu Dec 15 2011 Mark Goodwin - 3.5.11-2
 - patched configure.in for libdir=/usr/lib64 on ppc64
 
