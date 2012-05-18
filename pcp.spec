@@ -3,11 +3,13 @@ Name: pcp
 Version: 3.6.3
 %define buildversion 1
 
-Release: %{buildversion}%{?dist}
+Release: %{buildversion}%{?dist}.1
 License: GPLv2
 URL: http://oss.sgi.com/projects/pcp
 Group: Applications/System
 Source0: ftp://oss.sgi.com/projects/pcp/download/pcp-%{version}-%{buildversion}.src.tar.gz
+# recognize s390x as 64-bit arch
+Patch0: pcp_configure_s390x.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: procps autoconf bison flex ncurses-devel readline-devel
@@ -179,6 +181,7 @@ into standard PCP archive logs for replay with any PCP monitoring tool.
 
 %prep
 %setup -q
+%patch0 -p1 -b .s390x
 autoconf
 %configure
 
@@ -356,6 +359,9 @@ fi
 %defattr(-,root,root)
 
 %changelog
+* Fri May 18 2012 Dan Horák <dan[at]danny.cz> - 3.6.3-1.1
+- fix build on s390x
+
 * Mon Apr 30 2012 Mark Goodwin - 3.6.3-1
 - Update to latest PCP sources
 
