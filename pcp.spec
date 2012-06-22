@@ -3,11 +3,13 @@ Name: pcp
 Version: 3.6.3
 %define buildversion 1
 
-Release: %{buildversion}%{?dist}
+Release: %{buildversion}%{?dist}.2
 License: GPLv2
 URL: http://oss.sgi.com/projects/pcp
 Group: Applications/System
 Source0: ftp://oss.sgi.com/projects/pcp/download/pcp-%{version}-%{buildversion}.src.tar.gz
+# recognize s390x as 64-bit arch
+Patch0: pcp_configure_s390x.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: procps autoconf bison flex ncurses-devel readline-devel
@@ -150,20 +152,6 @@ Performance Co-Pilot (PCP) front-end tools for importing iostat data
 into standard PCP archive logs for replay with any PCP monitoring tool.
 
 #
-# pcp-import-sheet2pcp
-#
-%package import-sheet2pcp
-License: LGPLv2+
-Group: Applications/System
-Summary: Performance Co-Pilot tools for importing spreadsheet data into PCP archive logs
-URL: http://oss.sgi.com/projects/pcp/
-Requires: pcp-libs >= %{version} perl-PCP-LogImport >= %{version} sysstat
-
-%description import-sheet2pcp
-Performance Co-Pilot (PCP) front-end tools for importing spreadsheet data
-into standard PCP archive logs for replay with any PCP monitoring tool.
-
-#
 # pcp-import-mrtg2pcp
 #
 %package import-mrtg2pcp
@@ -179,6 +167,7 @@ into standard PCP archive logs for replay with any PCP monitoring tool.
 
 %prep
 %setup -q
+%patch0 -p1 -b .s390x
 autoconf
 %configure
 
@@ -196,6 +185,9 @@ make install_pcp
 # Fix stuff we do/don't want to ship
 rm -f $RPM_BUILD_ROOT/%{_libdir}/*.a
 mkdir -p $RPM_BUILD_ROOT/%{_localstatedir}/run/pcp
+
+# remove sheet2pcp until BZ 830923 and BZ 754678 are resolved.
+rm -f $RPM_BUILD_ROOT/%{_bindir}/sheet2pcp $RPM_BUILD_ROOT/%{_mandir}/man1/sheet2pcp.1.gz
 
 # default chkconfig off for Fedora and RHEL
 for f in $RPM_BUILD_ROOT/%{_sysconfdir}/rc.d/init.d/{pcp,pmie,pmproxy}; do
@@ -333,11 +325,6 @@ fi
 %{_bindir}/iostat2pcp
 %{_mandir}/man1/iostat2pcp.1.gz
 
-%files import-sheet2pcp
-%defattr(-,root,root)
-%{_bindir}/sheet2pcp
-%{_mandir}/man1/sheet2pcp.1.gz
-
 %files import-mrtg2pcp
 %defattr(-,root,root)
 %{_bindir}/mrtg2pcp
@@ -356,6 +343,12 @@ fi
 %defattr(-,root,root)
 
 %changelog
+* Thu Jun 21 2012 Mark Goodwin <mgoodwin@redhat.com>
+- remove pcp-import-sheet2pcp subpackage due to missing deps (BZ 830923) - 3.6.3-1.2
+
+* Fri May 18 2012 Dan Horák <dan[at]danny.cz> - 3.6.3-1.1
+- fix build on s390x
+
 * Mon Apr 30 2012 Mark Goodwin - 3.6.3-1
 - Update to latest PCP sources
 
