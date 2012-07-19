@@ -3,7 +3,7 @@ Name: pcp
 Version: 3.6.3
 %define buildversion 1
 
-Release: %{buildversion}%{?dist}.2
+Release: %{buildversion}%{?dist}.3
 License: GPLv2
 URL: http://oss.sgi.com/projects/pcp
 Group: Applications/System
@@ -190,7 +190,7 @@ mkdir -p $RPM_BUILD_ROOT/%{_localstatedir}/run/pcp
 rm -f $RPM_BUILD_ROOT/%{_bindir}/sheet2pcp $RPM_BUILD_ROOT/%{_mandir}/man1/sheet2pcp.1.gz
 
 # default chkconfig off for Fedora and RHEL
-for f in $RPM_BUILD_ROOT/%{_sysconfdir}/rc.d/init.d/{pcp,pmie,pmproxy}; do
+for f in $RPM_BUILD_ROOT/%{_sysconfdir}/rc.d/init.d/{pcp,pmcd,pmlogger,pmie,pmproxy}; do
 	sed -i -e '/^# chkconfig/s/:.*$/: - 95 05/' -e '/^# Default-Start:/s/:.*$/:/' $f
 done
 
@@ -343,6 +343,9 @@ fi
 %defattr(-,root,root)
 
 %changelog
+* Thu Jul 19 2012 Mark Goodwin <mgoodwin@redhat.com>
+- pmcd and pmlogger services are not supposed to be enabled by default (BZ 840763) - 3.6.3-1.3
+
 * Thu Jun 21 2012 Mark Goodwin <mgoodwin@redhat.com>
 - remove pcp-import-sheet2pcp subpackage due to missing deps (BZ 830923) - 3.6.3-1.2
 
