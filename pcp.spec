@@ -1,15 +1,13 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.6.3
+Version: 3.6.5
 %define buildversion 1
 
-Release: %{buildversion}%{?dist}.3
+Release: %{buildversion}%{?dist}
 License: GPLv2
 URL: http://oss.sgi.com/projects/pcp
 Group: Applications/System
 Source0: ftp://oss.sgi.com/projects/pcp/download/pcp-%{version}-%{buildversion}.src.tar.gz
-# recognize s390x as 64-bit arch
-Patch0: pcp_configure_s390x.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: procps autoconf bison flex ncurses-devel readline-devel
@@ -167,7 +165,6 @@ into standard PCP archive logs for replay with any PCP monitoring tool.
 
 %prep
 %setup -q
-%patch0 -p1 -b .s390x
 autoconf
 %configure
 
@@ -265,6 +262,7 @@ fi
 %{_mandir}/man4/*
 %config %{_sysconfdir}/bash_completion.d/pcp
 %config %{_sysconfdir}/pcp.env
+%{_sysconfdir}/pcp.sh
 %config(noreplace) %{_localstatedir}/lib/pcp/config/pmcd/pmcd.conf
 %config(noreplace) %{_localstatedir}/lib/pcp/config/pmcd/pmcd.options
 %config(noreplace) %{_localstatedir}/lib/pcp/config/pmcd/rc.local
@@ -343,6 +341,10 @@ fi
 %defattr(-,root,root)
 
 %changelog
+* Thu Aug 16 2012 Mark Goodwin <mgoodwin@redhat.com> - 3.6.5-1
+- Update to latest PCP sources, see installed CHANGELOG for details.
+- Fix security flaws: CVE-2012-3418 CVE-2012-3419 CVE-2012-3420 and CVE-2012-3421 (BZ 848629)
+
 * Thu Jul 19 2012 Mark Goodwin <mgoodwin@redhat.com>
 - pmcd and pmlogger services are not supposed to be enabled by default (BZ 840763) - 3.6.3-1.3
 
