@@ -385,7 +385,7 @@ fi
 %defattr(-,root,root)
 
 %changelog
-* Tue Sep 04 2012 Nathan Scott <nathans@redhat.com> - 3.6.6-2
+* Wed Sep 05 2012 Nathan Scott <nathans@redhat.com> - 3.6.6-1.1
 - Move configure step from prep to build section of spec (BZ 854128)
 
 * Tue Aug 28 2012 Mark Goodwin <mgoodwin@redhat.com> - 3.6.6-1
