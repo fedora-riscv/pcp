@@ -1,14 +1,13 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.6.10
-%define buildversion 2
+Version: 3.7.0
+%define buildversion 1
 
 Release: %{buildversion}%{?dist}
 License: GPLv2
 URL: http://oss.sgi.com/projects/pcp
 Group: Applications/System
 Source0: pcp-%{version}.src.tar.gz
-Patch0: init_script_race.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: procps autoconf bison flex
@@ -17,6 +16,9 @@ BuildRequires: ncurses-devel
 BuildRequires: readline-devel
 BuildRequires: perl(ExtUtils::MakeMaker)
 BuildRequires: initscripts man /bin/hostname
+%if 0%{?fedora} >= 18 || 0%{?rhel} >= 7
+BuildRequires: systemd-devel
+%endif
  
 Requires: bash gawk sed grep fileutils findutils initscripts perl
 Requires: python python-ctypes
@@ -209,7 +211,6 @@ building Performance Metric API (PMAPI) tools using Python.
 
 %prep
 %setup -q
-%patch0 -p1 -b .pcp
 
 %clean
 rm -Rf $RPM_BUILD_ROOT
@@ -261,6 +262,41 @@ exit 0
 getent group pcp >/dev/null || groupadd -r pcp
 getent passwd pcp >/dev/null || \
   useradd -c "Performance Co-Pilot" -g pcp -d %{_localstatedir}/lib/pcp -M -r -s /sbin/nologin pcp
+PCP_SYSCONF_DIR=/etc/pcp
+PCP_LOG_DIR=/var/log/pcp
+# produce a script to run post-install to move configs to their new homes
+save_configs_script()
+{
+    _new="$1"
+    shift
+    for _dir
+    do
+        [ "$_dir" = "$_new" ] && continue
+        if [ -d "$_dir" ]
+        then
+            ( cd "$_dir" ; find . -type f -print ) | sed -e 's/^\.\///' \
+            | while read _file
+            do
+                _want=true
+                if [ -f "$_new/$_file" ]
+                then
+                    # file exists in both directories, pick the more
+                    # recently modified one
+                    _try=`find "$_dir/$_file" -newer "$_new/$_file" -print`
+                    [ -n "$_try" ] || _want=false
+                fi
+                $_want && echo cp -p "$_dir/$_file" "$_new/$_file"
+            done
+        fi
+    done
+}
+# migrate and clean configs
+rm -f "$PCP_LOG_DIR/configs.sh"
+for daemon in pmcd pmie pmlogger pmproxy
+do
+    save_configs_script >> "$PCP_LOG_DIR/configs.sh" $PCP_SYSCONF_DIR/$daemon \
+        /var/lib/pcp/config/$daemon /etc/$daemon /etc/pcp/$daemon /etc/sysconfig/$daemon
+done
 exit 0
 
 %preun
@@ -282,7 +318,14 @@ then
 fi
 
 %post
-chown -R pcp:pcp %{_localstatedir}/log/pcp/{pmcd,pmlogger,pmie,pmproxy} 2>/dev/null
+# restore saved configs, if any
+PCP_LOG_DIR=/var/log/pcp
+test -s "$PCP_LOG_DIR/configs.sh" && source "$PCP_LOG_DIR/configs.sh"
+rm -f $PCP_LOG_DIR/configs.sh
+chown -R pcp:pcp %{_localstatedir}/log/pcp/pmcd 2>/dev/null
+chown -R pcp:pcp %{_localstatedir}/log/pcp/pmlogger 2>/dev/null
+chown -R pcp:pcp %{_localstatedir}/log/pcp/pmie 2>/dev/null
+chown -R pcp:pcp %{_localstatedir}/log/pcp/pmproxy 2>/dev/null
 /sbin/chkconfig --add pmcd >/dev/null 2>&1
 /sbin/service pmcd condrestart
 /sbin/chkconfig --add pmlogger >/dev/null 2>&1
@@ -325,16 +368,18 @@ chown -R pcp:pcp %{_localstatedir}/log/pcp/{pmcd,pmlogger,pmie,pmproxy} 2>/dev/n
 %config %{_sysconfdir}/bash_completion.d/pcp
 %config %{_sysconfdir}/pcp.env
 %{_sysconfdir}/pcp.sh
-%config(noreplace) %{_localstatedir}/lib/pcp/config/pmcd/pmcd.conf
-%config(noreplace) %{_localstatedir}/lib/pcp/config/pmcd/pmcd.options
-%config(noreplace) %{_localstatedir}/lib/pcp/config/pmcd/rc.local
-%config(noreplace) %{_localstatedir}/lib/pcp/config/pmie/config.default
-%config(noreplace) %{_localstatedir}/lib/pcp/config/pmie/control
-%config(noreplace) %{_localstatedir}/lib/pcp/config/pmie/crontab
-%config(noreplace) %{_localstatedir}/lib/pcp/config/pmlogger/config.default
-%config(noreplace) %{_localstatedir}/lib/pcp/config/pmlogger/control
-%config(noreplace) %{_localstatedir}/lib/pcp/config/pmlogger/crontab
-%config(noreplace) %{_localstatedir}/lib/pcp/config/pmproxy/pmproxy.options
+%{_sysconfdir}/pcp
+%config(noreplace) %{_sysconfdir}/pcp/pmcd/pmcd.conf
+%config(noreplace) %{_sysconfdir}/pcp/pmcd/pmcd.options
+%config(noreplace) %{_sysconfdir}/pcp/pmcd/rc.local
+%config(noreplace) %{_sysconfdir}/pcp/pmie/config.default
+%config(noreplace) %{_sysconfdir}/pcp/pmie/control
+%config(noreplace) %{_sysconfdir}/pcp/pmie/crontab
+%config(noreplace) %{_sysconfdir}/pcp/pmie/stomp
+%config(noreplace) %{_sysconfdir}/pcp/pmlogger/config.default
+%config(noreplace) %{_sysconfdir}/pcp/pmlogger/control
+%config(noreplace) %{_sysconfdir}/pcp/pmlogger/crontab
+%config(noreplace) %{_sysconfdir}/pcp/pmproxy/pmproxy.options
 %{_localstatedir}/lib/pcp/config/*
 
 %files libs
@@ -410,6 +455,13 @@ chown -R pcp:pcp %{_localstatedir}/log/pcp/{pmcd,pmlogger,pmie,pmproxy} 2>/dev/n
 %defattr(-,root,root)
 
 %changelog
+* Sun Mar 10 2013 Nathan Scott <nathans@redhat.com> - 3.7.0-1
+- Update to latest PCP sources.
+- Migrate all configuration files below the /etc/pcp hierarchy.
+
+* Thu Feb 14 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.6.10-2.1
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_19_Mass_Rebuild
+
 * Wed Nov 28 2012 Nathan Scott <nathans@redhat.com> - 3.6.10-2
 - Ensure tmpfile directories created in %files section.
 - Resolve tmpfile create/teardown race conditions.
