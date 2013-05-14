@@ -1,6 +1,6 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.7.2
+Version: 3.8.0
 %define buildversion 1
 
 Release: %{buildversion}%{?dist}
@@ -11,9 +11,12 @@ Source0: pcp-%{version}.src.tar.gz
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: procps autoconf bison flex
+BuildRequires: nss-devel
 BuildRequires: python-devel
 BuildRequires: ncurses-devel
 BuildRequires: readline-devel
+BuildRequires: cyrus-sasl-devel
+BuildRequires: libmicrohttpd-devel
 BuildRequires: perl(ExtUtils::MakeMaker)
 BuildRequires: initscripts man /bin/hostname
 %if 0%{?fedora} >= 18 || 0%{?rhel} >= 7
@@ -236,7 +239,7 @@ mkdir -p $RPM_BUILD_ROOT/%{_localstatedir}/run/pcp
 rm -f $RPM_BUILD_ROOT/%{_bindir}/sheet2pcp $RPM_BUILD_ROOT/%{_mandir}/man1/sheet2pcp.1.gz
 
 # default chkconfig off for Fedora and RHEL
-for f in $RPM_BUILD_ROOT/%{_initddir}/{pcp,pmcd,pmlogger,pmie,pmproxy}; do
+for f in $RPM_BUILD_ROOT/%{_initddir}/{pcp,pmcd,pmlogger,pmie,pmwebd,pmproxy}; do
 	sed -i -e '/^# chkconfig/s/:.*$/: - 95 05/' -e '/^# Default-Start:/s/:.*$/:/' $f
 done
 
@@ -297,7 +300,7 @@ save_configs_script()
 # migrate and clean configs if we have had a previous in-use installation
 [ -d "$PCP_LOG_DIR" ] || exit 0	# no configuration file upgrades required
 rm -f "$PCP_LOG_DIR/configs.sh"
-for daemon in pmcd pmie pmlogger pmproxy
+for daemon in pmcd pmie pmlogger pmwebd pmproxy
 do
     save_configs_script >> "$PCP_LOG_DIR/configs.sh" "$PCP_SYSCONF_DIR/$daemon" \
         /var/lib/pcp/config/$daemon /etc/$daemon /etc/pcp/$daemon /etc/sysconfig/$daemon
@@ -313,12 +316,14 @@ then
     /sbin/service pmlogger stop >/dev/null 2>&1
     /sbin/service pmie stop >/dev/null 2>&1
     /sbin/service pmproxy stop >/dev/null 2>&1
+    /sbin/service pmwebd stop >/dev/null 2>&1
     /sbin/service pmcd stop >/dev/null 2>&1
 
     /sbin/chkconfig --del pcp >/dev/null 2>&1
     /sbin/chkconfig --del pmcd >/dev/null 2>&1
     /sbin/chkconfig --del pmlogger >/dev/null 2>&1
     /sbin/chkconfig --del pmie >/dev/null 2>&1
+    /sbin/chkconfig --del pmwebd >/dev/null 2>&1
     /sbin/chkconfig --del pmproxy >/dev/null 2>&1
 fi
 
@@ -356,6 +361,7 @@ done
 chown -R pcp:pcp %{_logsdir}/pmcd 2>/dev/null
 chown -R pcp:pcp %{_logsdir}/pmlogger 2>/dev/null
 chown -R pcp:pcp %{_logsdir}/pmie 2>/dev/null
+chown -R pcp:pcp %{_logsdir}/pmwebd 2>/dev/null
 chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 # we only need this manual Rebuild as long as pmcd is condstart below
 [ -f "$PCP_PMNS_DIR/root" ] || ( cd "$PCP_PMNS_DIR" && ./Rebuild -sud )
@@ -365,6 +371,8 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 /sbin/service pmlogger condrestart
 /sbin/chkconfig --add pmie >/dev/null 2>&1
 /sbin/service pmie condrestart
+/sbin/chkconfig --add pmwebd >/dev/null 2>&1
+/sbin/service pmwebd condrestart
 /sbin/chkconfig --add pmproxy >/dev/null 2>&1
 /sbin/service pmproxy condrestart
 
@@ -391,13 +399,19 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %{_libexecdir}/pcp
 %{_datadir}/pcp/lib
 %{_logsdir}
+%attr(0755,pcp,pcp) %{_logsdir}/pmcd
+%attr(0755,pcp,pcp) %{_logsdir}/pmlogger
+%attr(0755,pcp,pcp) %{_logsdir}/pmie
+%attr(0755,pcp,pcp) %{_logsdir}/pmwebd
+%attr(0755,pcp,pcp) %{_logsdir}/pmproxy
 %{_localstatedir}/lib/pcp/pmns
 %{_initddir}/pcp
 %{_initddir}/pmcd
 %{_initddir}/pmlogger
 %{_initddir}/pmie
+%{_initddir}/pmwebd
 %{_initddir}/pmproxy
-%{_mandir}/man4/*
+%{_mandir}/man5/*
 %config %{_sysconfdir}/bash_completion.d/pcp
 %config %{_sysconfdir}/pcp.env
 %{_sysconfdir}/pcp.sh
@@ -412,6 +426,7 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %config(noreplace) %{_confdir}/pmlogger/config.default
 %config(noreplace) %{_confdir}/pmlogger/control
 %config(noreplace) %{_confdir}/pmlogger/crontab
+%config(noreplace) %{_confdir}/pmwebd/pmwebd.options
 %config(noreplace) %{_confdir}/pmproxy/pmproxy.options
 %{_localstatedir}/lib/pcp/config/*
 
@@ -488,6 +503,11 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %defattr(-,root,root)
 
 %changelog
+* Tue May 14 2013 Nathan Scott <nathans@redhat.com> - 3.8.0-1
+- Update to latest PCP sources.
+- Validate metric names passed into pmiAddMetric (BZ 958019)
+- Install log directories with correct ownership (BZ 960858)
+
 * Fri Apr 19 2013 Nathan Scott <nathans@redhat.com> - 3.7.2-1
 - Update to latest PCP sources.
 - Ensure root namespace exists at the end of install (BZ 952977)
