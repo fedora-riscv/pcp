@@ -3,7 +3,7 @@ Name: pcp
 Version: 3.8.1
 %define buildversion 1
 
-Release: %{buildversion}%{?dist}
+Release: %{buildversion}%{?dist}.1
 License: GPLv2
 URL: http://oss.sgi.com/projects/pcp
 Group: Applications/System
@@ -522,6 +522,9 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %defattr(-,root,root)
 
 %changelog
+* Wed Jul 17 2013 Petr Pisar <ppisar@redhat.com> - 3.8.1-1.1
+- Perl 5.18 rebuild
+
 * Wed Jun 19 2013 Nathan Scott <nathans@redhat.com> - 3.8.1-1
 - Update to latest PCP sources.
 - Fix log import silently dropping >1024 metrics (BZ 968210)
