@@ -1,9 +1,9 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.8.1
+Version: 3.8.2
 %define buildversion 1
 
-Release: %{buildversion}%{?dist}.1
+Release: %{buildversion}%{?dist}
 License: GPLv2
 URL: http://oss.sgi.com/projects/pcp
 Group: Applications/System
@@ -25,6 +25,9 @@ BuildRequires: systemd-devel
  
 Requires: bash gawk sed grep fileutils findutils initscripts perl
 Requires: python
+%if 0%{?rhel} <= 5
+Requires: python-ctypes
+%endif
 
 Requires: pcp-libs = %{version}-%{release}
 Requires: python-pcp = %{version}-%{release}
@@ -37,6 +40,9 @@ Requires: perl-PCP-PMDA = %{version}-%{release}
 %define _tempsdir %{_localstatedir}/lib/pcp/tmp
 %define _pmdasdir %{_localstatedir}/lib/pcp/pmdas
 %define _testsdir %{_localstatedir}/lib/pcp/testsuite
+%if 0%{?fedora} >= 20
+%define _with_doc --with-docdir=%{_docdir}/%{name}
+%endif
 
 %description
 Performance Co-Pilot (PCP) provides a framework and services to support
@@ -237,7 +243,7 @@ building Performance Metric API (PMAPI) tools using Python.
 rm -Rf $RPM_BUILD_ROOT
 
 %build
-%configure --with-rcdir=%{_initddir} --with-tmpdir=%{_tempsdir}
+%configure --with-rcdir=%{_initddir} --with-tmpdir=%{_tempsdir} %{_with_doc}
 make default_pcp
 
 %install
@@ -404,20 +410,20 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 
 %dir %{_pmdasdir}
 %dir %{_datadir}/pcp
-%dir %{_localstatedir}/run/pcp
+%dir %attr(0775,pcp,pcp) %{_localstatedir}/run/pcp
 %dir %{_localstatedir}/lib/pcp
 %dir %{_localstatedir}/lib/pcp/config
-%dir %{_tempsdir}
-%attr(1777,root,root) %{_tempsdir}
+%dir %attr(0775,pcp,pcp) %{_localstatedir}/lib/pcp/config/pmda
+%dir %attr(1777,root,root) %{_tempsdir}
 
 %{_libexecdir}/pcp
 %{_datadir}/pcp/lib
 %{_logsdir}
-%attr(0755,pcp,pcp) %{_logsdir}/pmcd
-%attr(0755,pcp,pcp) %{_logsdir}/pmlogger
-%attr(0755,pcp,pcp) %{_logsdir}/pmie
-%attr(0755,pcp,pcp) %{_logsdir}/pmwebd
-%attr(0755,pcp,pcp) %{_logsdir}/pmproxy
+%attr(0775,pcp,pcp) %{_logsdir}/pmcd
+%attr(0775,pcp,pcp) %{_logsdir}/pmlogger
+%attr(0775,pcp,pcp) %{_logsdir}/pmie
+%attr(0775,pcp,pcp) %{_logsdir}/pmwebd
+%attr(0775,pcp,pcp) %{_logsdir}/pmproxy
 %{_localstatedir}/lib/pcp/pmns
 %{_initddir}/pcp
 %{_initddir}/pmcd
@@ -426,6 +432,9 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %{_initddir}/pmwebd
 %{_initddir}/pmproxy
 %{_mandir}/man5/*
+%config(noreplace) %{_sysconfdir}/sasl2/pmcd.conf
+%config(noreplace) %{_sysconfdir}/cron.d/pmlogger
+%config(noreplace) %{_sysconfdir}/cron.d/pmie
 %config %{_sysconfdir}/bash_completion.d/pcp
 %config %{_sysconfdir}/pcp.env
 %{_sysconfdir}/pcp.sh
@@ -433,15 +442,12 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %config(noreplace) %{_confdir}/pmcd/pmcd.conf
 %config(noreplace) %{_confdir}/pmcd/pmcd.options
 %config(noreplace) %{_confdir}/pmcd/rc.local
-%config(noreplace) %{_confdir}/pmie/config.default
-%config(noreplace) %{_confdir}/pmie/control
-%config(noreplace) %{_confdir}/pmie/crontab
-%config(noreplace) %{_confdir}/pmie/stomp
-%config(noreplace) %{_confdir}/pmlogger/config.default
-%config(noreplace) %{_confdir}/pmlogger/control
-%config(noreplace) %{_confdir}/pmlogger/crontab
 %config(noreplace) %{_confdir}/pmwebd/pmwebd.options
 %config(noreplace) %{_confdir}/pmproxy/pmproxy.options
+%dir %attr(0775,pcp,pcp) %{_confdir}/pmie
+%attr(0664,pcp,pcp) %config(noreplace) %{_confdir}/pmie/control
+%dir %attr(0775,pcp,pcp) %{_confdir}/pmlogger
+%attr(0664,pcp,pcp) %config(noreplace) %{_confdir}/pmlogger/control
 %{_localstatedir}/lib/pcp/config/*
 
 %files libs
@@ -522,8 +528,12 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %defattr(-,root,root)
 
 %changelog
-* Wed Jul 17 2013 Petr Pisar <ppisar@redhat.com> - 3.8.1-1.1
-- Perl 5.18 rebuild
+* Wed Jul 31 2013 Nathan Scott <nathans@redhat.com> - 3.8.2-1
+- Update to latest PCP sources.
+- Integrate gluster related stats with PCP (BZ 969348)
+- Fix for iostat2pcp not parsing iostat output (BZ 981545)
+- Start pmlogger with usable config by default (BZ 953759)
+- Fix pmatop failing to start, gives stacktrace (BZ 963085)
 
 * Wed Jun 19 2013 Nathan Scott <nathans@redhat.com> - 3.8.1-1
 - Update to latest PCP sources.
@@ -615,10 +625,10 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 * Mon Oct 24 2011 Mark Goodwin - 3.5.9-1
 - Update to latest PCP sources.
 
-* Mon Aug 8 2011 Mark Goodwin - 3.5.8-1
+* Mon Aug 08 2011 Mark Goodwin - 3.5.8-1
 - Update to latest PCP sources.
 
-* Fri Aug 5 2011 Mark Goodwin - 3.5.7-1
+* Fri Aug 05 2011 Mark Goodwin - 3.5.7-1
 - Update to latest PCP sources.
 
 * Fri Jul 22 2011 Mark Goodwin - 3.5.6-1
@@ -627,7 +637,7 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 * Tue Jul 19 2011 Mark Goodwin - 3.5.5-1
 - Update to latest PCP sources.
 
-* Wed Feb 3 2011 Mark Goodwin - 3.5.0-1
+* Thu Feb 03 2011 Mark Goodwin - 3.5.0-1
 - Update to latest PCP sources.
 
 * Thu Sep 30 2010 Mark Goodwin - 3.4.0-1
@@ -662,6 +672,6 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
   a stand-alone package.
 - Move cluster PMDA to a stand-alone package.
 
-* Fri Oct 9 2009 Mark Goodwin <mgoodwin@redhat.com> - 3.0.0-9
+* Fri Oct 09 2009 Mark Goodwin <mgoodwin@redhat.com> - 3.0.0-9
 - This is the initial import for Fedora
 - See 3.0.0 details in CHANGELOG
