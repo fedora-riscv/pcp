@@ -17,7 +17,9 @@ BuildRequires: ncurses-devel
 BuildRequires: readline-devel
 BuildRequires: cyrus-sasl-devel
 BuildRequires: libmicrohttpd-devel
+%ifnarch ppc ppc64
 BuildRequires: systemtap-sdt-devel
+%endif
 BuildRequires: perl(ExtUtils::MakeMaker)
 BuildRequires: initscripts man /bin/hostname
 %if 0%{?fedora} >= 18 || 0%{?rhel} >= 7
@@ -560,6 +562,7 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 * Mon Sep 09 2013 Nathan Scott <nathans@redhat.com> - 3.8.3-1
 - Default to Unix domain socket (authenticated) local connections.
 - Introduces new pcp-pmda-infiniband sub-package.
+- Disable systemtap-sdt-devel usage on ppc.
 
 * Sat Aug 03 2013 Petr Pisar <ppisar@redhat.com> - 3.8.2-1.1
 - Perl 5.18 rebuild
