@@ -1,10 +1,10 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.8.2
+Version: 3.8.3
 %define buildversion 1
 
 Release: %{buildversion}%{?dist}
-License: GPLv2
+License: GPLv2+ and LGPLv2.1+
 URL: http://oss.sgi.com/projects/pcp
 Group: Applications/System
 Source0: pcp-%{version}.src.tar.gz
@@ -17,6 +17,7 @@ BuildRequires: ncurses-devel
 BuildRequires: readline-devel
 BuildRequires: cyrus-sasl-devel
 BuildRequires: libmicrohttpd-devel
+BuildRequires: systemtap-sdt-devel
 BuildRequires: perl(ExtUtils::MakeMaker)
 BuildRequires: initscripts man /bin/hostname
 %if 0%{?fedora} >= 18 || 0%{?rhel} >= 7
@@ -32,6 +33,8 @@ Requires: python-ctypes
 Requires: pcp-libs = %{version}-%{release}
 Requires: python-pcp = %{version}-%{release}
 Requires: perl-PCP-PMDA = %{version}-%{release}
+
+%global tapsetdir      %{_datadir}/systemtap/tapset
 
 %define _confdir  %{_sysconfdir}/pcp
 %define _initddir %{_sysconfdir}/rc.d/init.d
@@ -225,6 +228,23 @@ Performance Co-Pilot (PCP) front-end tools for importing collectl data
 into standard PCP archive logs for replay with any PCP monitoring tool.
 
 #
+# pcp-pmda-infiniband
+#
+%package pmda-infiniband
+License: GPLv2
+Group: Applications/System
+Summary: Performance Co-Pilot (PCP) metrics for Infiniband HCAs and switches
+URL: http://oss.sgi.com/projects/pcp/
+Requires: pcp-libs >= %{version}-%{release}
+Requires: libibmad >= 1.1.7 libibumad >= 1.1.7
+BuildRequires: libibmad-devel >= 1.1.7 libibumad-devel >= 1.1.7
+
+%description pmda-infiniband
+This package contains the PCP Performance Metrics Domain Agent (PMDA) for
+collecting Infiniband statistics.  By default, it monitors the local HCAs
+but can also be configured to monitor remote GUIDs such as IB switches.
+
+#
 # python-pcp. This is the PCP library bindings for python.
 #
 %package -n python-pcp
@@ -250,7 +270,7 @@ make default_pcp
 
 %install
 rm -Rf $RPM_BUILD_ROOT
-export DIST_ROOT=$RPM_BUILD_ROOT
+export NO_CHOWN=true DIST_ROOT=$RPM_BUILD_ROOT
 make install_pcp
 
 # Fix stuff we do/don't want to ship
@@ -451,6 +471,7 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %dir %attr(0775,pcp,pcp) %{_confdir}/pmlogger
 %attr(0664,pcp,pcp) %config(noreplace) %{_confdir}/pmlogger/control
 %{_localstatedir}/lib/pcp/config/*
+%{tapsetdir}/pmcd.stp
 
 %files libs
 %defattr(-,root,root)
@@ -485,10 +506,10 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 
 # PMDAs that ship src and are not for production use
 # straight out-of-the-box, for devel or QA use only.
-%{_localstatedir}/lib/pcp/pmdas/simple
-%{_localstatedir}/lib/pcp/pmdas/sample
-%{_localstatedir}/lib/pcp/pmdas/trivial
-%{_localstatedir}/lib/pcp/pmdas/txmon
+%{_pmdasdir}/simple
+%{_pmdasdir}/sample
+%{_pmdasdir}/trivial
+%{_pmdasdir}/txmon
 
 %files testsuite
 %defattr(-,pcpqa,pcpqa)
@@ -514,6 +535,12 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %{_bindir}/collectl2pcp
 %{_mandir}/man1/collectl2pcp.1.gz
 
+%files pmda-infiniband
+%defattr(-,root,root)
+%{_pmdasdir}/ib
+%{_pmdasdir}/infiniband
+%{_mandir}/man1/pmdaib.1.gz
+
 %files -n perl-PCP-PMDA -f perl-pcp-pmda.list
 %defattr(-,root,root)
 
@@ -530,6 +557,13 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %defattr(-,root,root)
 
 %changelog
+* Mon Sep 09 2013 Nathan Scott <nathans@redhat.com> - 3.8.3-1
+- Default to Unix domain socket (authenticated) local connections.
+- Introduces new pcp-pmda-infiniband sub-package.
+
+* Sat Aug 03 2013 Petr Pisar <ppisar@redhat.com> - 3.8.2-1.1
+- Perl 5.18 rebuild
+
 * Wed Jul 31 2013 Nathan Scott <nathans@redhat.com> - 3.8.2-1
 - Update to latest PCP sources.
 - Integrate gluster related stats with PCP (BZ 969348)
@@ -565,7 +599,7 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_19_Mass_Rebuild
 
 * Wed Nov 28 2012 Nathan Scott <nathans@redhat.com> - 3.6.10-2
-- Ensure tmpfile directories created in %files section.
+- Ensure tmpfile directories created in %%files section.
 - Resolve tmpfile create/teardown race conditions.
 
 * Mon Nov 19 2012 Nathan Scott <nathans@redhat.com> - 3.6.10-1
@@ -612,7 +646,7 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 - Update to latest PCP sources
 
 * Thu Mar 22 2012 Mark Goodwin - 3.6.0-1
-- use %configure macro for correct libdir logic
+- use %%configure macro for correct libdir logic
 - update to latest PCP sources
 
 * Thu Dec 15 2011 Mark Goodwin - 3.5.11-2
@@ -661,7 +695,7 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 - Update to latest PCP sources.
 
 * Wed Jan 27 2010 Mark Goodwin - 3.1.0-1
-- BuildRequires: initscripts for %{_vendor} == redhat.
+- BuildRequires: initscripts for %%{_vendor} == redhat.
 
 * Thu Dec 10 2009 Mark Goodwin - 3.0.3-1
 - BuildRequires: initscripts for FC12.
