@@ -561,6 +561,9 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 - Default to Unix domain socket (authenticated) local connections.
 - Introduces new pcp-pmda-infiniband sub-package.
 
+* Sat Aug 03 2013 Petr Pisar <ppisar@redhat.com> - 3.8.2-1.1
+- Perl 5.18 rebuild
+
 * Wed Jul 31 2013 Nathan Scott <nathans@redhat.com> - 3.8.2-1
 - Update to latest PCP sources.
 - Integrate gluster related stats with PCP (BZ 969348)
