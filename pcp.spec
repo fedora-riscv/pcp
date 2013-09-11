@@ -1,7 +1,7 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
 Version: 3.8.3
-%define buildversion 1
+%define buildversion 2
 
 Release: %{buildversion}%{?dist}
 License: GPLv2+ and LGPLv2.1+
@@ -473,7 +473,16 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %dir %attr(0775,pcp,pcp) %{_confdir}/pmlogger
 %attr(0664,pcp,pcp) %config(noreplace) %{_confdir}/pmlogger/control
 %{_localstatedir}/lib/pcp/config/*
+
+%if 0%{?rhel} == 0 || 0%{?rhel} > 5 
 %{tapsetdir}/pmcd.stp
+%else				# rhel5
+%ifarch ppc ppc64
+# no systemtap-sdt-devel
+%else				# ! ppc
+%{tapsetdir}/pmcd.stp
+%endif				# ppc
+%endif
 
 %files libs
 %defattr(-,root,root)
@@ -559,6 +568,9 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %defattr(-,root,root)
 
 %changelog
+* Wed Sep 11 2013 Stan Cox <scox@redhat.com> - 3.8.3-2
+- Disable pmcd.stp on el5 ppc.
+
 * Mon Sep 09 2013 Nathan Scott <nathans@redhat.com> - 3.8.3-1
 - Default to Unix domain socket (authenticated) local connections.
 - Introduces new pcp-pmda-infiniband sub-package.
