@@ -1,7 +1,7 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.8.3
-%define buildversion 2
+Version: 3.8.4
+%define buildversion 1
 
 Release: %{buildversion}%{?dist}
 License: GPLv2+ and LGPLv2.1+
@@ -63,7 +63,7 @@ applications to easily retrieve and process any subset of that data.
 # pcp-libs
 #
 %package libs
-License: LGPLv2
+License: LGPLv2+
 Group: Development/Libraries
 Summary: Performance Co-Pilot run-time libraries
 URL: http://oss.sgi.com/projects/pcp/
@@ -75,7 +75,7 @@ Performance Co-Pilot (PCP) run-time libraries
 # pcp-libs-devel
 #
 %package libs-devel
-License: GPLv2
+License: GPLv2+ and LGPLv2.1+
 Group: Development/Libraries
 Summary: Performance Co-Pilot (PCP) development headers and documentation
 URL: http://oss.sgi.com/projects/pcp/
@@ -89,7 +89,7 @@ Performance Co-Pilot (PCP) headers, documentation and tools for development.
 # pcp-testsuite
 #
 %package testsuite
-License: GPLv2
+License: GPLv2+
 Group: Development/Libraries
 Summary: Performance Co-Pilot (PCP) test suite
 URL: http://oss.sgi.com/projects/pcp/
@@ -104,7 +104,7 @@ Quality assurance test suite for Performance Co-Pilot (PCP).
 # perl-PCP-PMDA. This is the PCP agent perl binding.
 #
 %package -n perl-PCP-PMDA
-License: GPLv2
+License: GPLv2+
 Group: Development/Libraries
 Summary: Performance Co-Pilot (PCP) Perl bindings and documentation
 URL: http://oss.sgi.com/projects/pcp/
@@ -121,7 +121,7 @@ an application, etc.
 # perl-PCP-MMV
 #
 %package -n perl-PCP-MMV
-License: GPLv2
+License: GPLv2+
 Group: Development/Libraries
 Summary: Performance Co-Pilot (PCP) Perl bindings for PCP Memory Mapped Values
 URL: http://oss.sgi.com/projects/pcp/
@@ -139,7 +139,7 @@ and analysis with pmchart, pmie, pmlogger and other PCP tools.
 # perl-PCP-LogImport
 #
 %package -n perl-PCP-LogImport
-License: GPLv2
+License: GPLv2+
 Group: Development/Libraries
 Summary: Performance Co-Pilot (PCP) Perl bindings for importing external data into PCP archives
 URL: http://oss.sgi.com/projects/pcp/
@@ -154,7 +154,7 @@ they can be replayed with standard PCP monitoring tools.
 # perl-PCP-LogSummary
 #
 %package -n perl-PCP-LogSummary
-License: GPLv2
+License: GPLv2+
 Group: Development/Libraries
 Summary: Performance Co-Pilot (PCP) Perl bindings for post-processing output of pmlogsummary
 URL: http://oss.sgi.com/projects/pcp/
@@ -233,7 +233,7 @@ into standard PCP archive logs for replay with any PCP monitoring tool.
 # pcp-pmda-infiniband
 #
 %package pmda-infiniband
-License: GPLv2
+License: GPLv2+
 Group: Applications/System
 Summary: Performance Co-Pilot (PCP) metrics for Infiniband HCAs and switches
 URL: http://oss.sgi.com/projects/pcp/
@@ -250,7 +250,7 @@ but can also be configured to monitor remote GUIDs such as IB switches.
 # python-pcp. This is the PCP library bindings for python.
 #
 %package -n python-pcp
-License: GPLv2
+License: GPLv2+
 Group: Development/Libraries
 Summary: Performance Co-Pilot (PCP) Python bindings and documentation
 URL: http://oss.sgi.com/projects/pcp/
@@ -568,6 +568,10 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %defattr(-,root,root)
 
 %changelog
+* Sun Sep 15 2013 Nathan Scott <nathans@redhat.com> - 3.8.4-1
+- Very minor release containing mostly QA related changes.
+- Enables many more metrics to be logged for Linux hosts.
+
 * Wed Sep 11 2013 Stan Cox <scox@redhat.com> - 3.8.3-2
 - Disable pmcd.stp on el5 ppc.
 
