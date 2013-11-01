@@ -1,6 +1,6 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.8.5
+Version: 3.8.6
 %define buildversion 1
 
 Release: %{buildversion}%{?dist}
@@ -11,6 +11,7 @@ Source0: pcp-%{version}.src.tar.gz
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: procps autoconf bison flex
+BuildRequires: avahi-devel
 BuildRequires: nss-devel
 BuildRequires: python-devel
 BuildRequires: ncurses-devel
@@ -328,7 +329,7 @@ cat base_pmdas.list base_binfiles.list base_man1files.list > base_specialfiles.l
 %pre testsuite
 getent group pcpqa >/dev/null || groupadd -r pcpqa
 getent passwd pcpqa >/dev/null || \
-  useradd -c "PCP Quality Assurance" -g pcpqa -m -r -s /bin/bash pcpqa 2>/dev/null
+  useradd -c "PCP Quality Assurance" -g pcpqa -d %{_testsdir} -m -r -s /bin/bash pcpqa 2>/dev/null
 exit 0
 
 %post testsuite
@@ -603,6 +604,11 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %defattr(-,root,root)
 
 %changelog
+* Fri Nov 01 2013 Nathan Scott <nathans@redhat.com> - 3.8.6-1
+- Update to latest PCP sources.
+- Rework pmpost test which confused virus checkers (BZ 1024850)
+- Tackle pmatop reporting issues via alternate metrics (BZ 998735)
+
 * Fri Oct 18 2013 Nathan Scott <nathans@redhat.com> - 3.8.5-1
 - Update to latest PCP sources.
 - Disable pcp-pmda-infiniband sub-package on RHEL5 (BZ 1016368)
