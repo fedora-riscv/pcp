@@ -1,6 +1,6 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.8.6
+Version: 3.8.9
 %define buildversion 1
 
 Release: %{buildversion}%{?dist}
@@ -283,8 +283,7 @@ building Performance Metric API (PMAPI) tools using Python.
 rm -Rf $RPM_BUILD_ROOT
 
 %build
-%configure --with-rcdir=%{_initddir} --with-tmpdir=%{_tempsdir} \
-%{?_with_doc} %{?_with_ib}
+%configure --with-rcdir=%{_initddir} %{?_with_doc} %{?_with_ib}
 make default_pcp
 
 %install
@@ -325,6 +324,7 @@ sed -e 's#^#'%{_mandir}'\/man1\/#' >base_man1files.list
 cat base_pmdas.list base_binfiles.list base_man1files.list > base_specialfiles.list
 
 %pre testsuite
+test -d %{_testsdir} || mkdir -p -m 755 %{_testsdir}
 getent group pcpqa >/dev/null || groupadd -r pcpqa
 getent passwd pcpqa >/dev/null || \
   useradd -c "PCP Quality Assurance" -g pcpqa -d %{_testsdir} -m -r -s /bin/bash pcpqa 2>/dev/null
@@ -439,6 +439,8 @@ chown -R pcp:pcp %{_logsdir}/pmlogger 2>/dev/null
 chown -R pcp:pcp %{_logsdir}/pmie 2>/dev/null
 chown -R pcp:pcp %{_logsdir}/pmwebd 2>/dev/null
 chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
+touch "$PCP_PMNS_DIR/.NeedRebuild"
+chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 # we only need this manual Rebuild as long as pmcd is condstart below
 [ -f "$PCP_PMNS_DIR/root" ] || ( cd "$PCP_PMNS_DIR" && ./Rebuild -sud )
 /sbin/chkconfig --add pmcd >/dev/null 2>&1
@@ -470,7 +472,9 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %dir %{_localstatedir}/lib/pcp
 %dir %{_localstatedir}/lib/pcp/config
 %dir %attr(0775,pcp,pcp) %{_localstatedir}/lib/pcp/config/pmda
-%dir %attr(1777,root,root) %{_tempsdir}
+%dir %attr(0775,pcp,pcp) %{_tempsdir}
+%dir %attr(0775,pcp,pcp) %{_tempsdir}/pmie
+%dir %attr(0775,pcp,pcp) %{_tempsdir}/pmlogger
 
 %{_libexecdir}/pcp
 %{_datadir}/pcp/lib
@@ -602,6 +606,15 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %defattr(-,root,root)
 
 %changelog
+* Thu Dec 12 2013 Nathan Scott <nathans@redhat.com> - 3.8.9-1
+- Reduce set of exported symbols from DSO PMDAs (BZ 1025694)
+- Symbol-versioning for PCP shared libraries (BZ 1037771)
+- Fix pmcd/Avahi interaction with multiple ports (BZ 1035513)
+- Update to latest PCP sources.
+
+* Sun Nov 03 2013 Nathan Scott <nathans@redhat.com> - 3.8.8-1
+- Update to latest PCP sources (simple build fixes only).
+
 * Fri Nov 01 2013 Nathan Scott <nathans@redhat.com> - 3.8.6-1
 - Update to latest PCP sources.
 - Rework pmpost test which confused virus checkers (BZ 1024850)
