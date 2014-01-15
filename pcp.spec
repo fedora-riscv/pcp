@@ -1,6 +1,6 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.8.9
+Version: 3.8.10
 %define buildversion 1
 
 Release: %{buildversion}%{?dist}
@@ -11,8 +11,9 @@ Source0: pcp-%{version}.src.tar.gz
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: procps autoconf bison flex
-BuildRequires: avahi-devel
 BuildRequires: nss-devel
+BuildRequires: rpm-devel
+BuildRequires: avahi-devel
 BuildRequires: python-devel
 BuildRequires: ncurses-devel
 BuildRequires: readline-devel
@@ -305,7 +306,7 @@ rm -fr $RPM_BUILD_ROOT/%{_pmdasdir}/infiniband
 %endif
 
 # default chkconfig off for Fedora and RHEL
-for f in $RPM_BUILD_ROOT/%{_initddir}/{pcp,pmcd,pmlogger,pmie,pmwebd,pmproxy}; do
+for f in $RPM_BUILD_ROOT/%{_initddir}/{pcp,pmcd,pmlogger,pmie,pmwebd,pmmgr,pmproxy}; do
 	sed -i -e '/^# chkconfig/s/:.*$/: - 95 05/' -e '/^# Default-Start:/s/:.*$/:/' $f
 done
 
@@ -386,21 +387,25 @@ exit 0
 %preun
 if [ "$1" -eq 0 ]
 then
-    #
-    # Stop daemons before erasing the package
-    #
+    # stop daemons before erasing the package
     /sbin/service pmlogger stop >/dev/null 2>&1
     /sbin/service pmie stop >/dev/null 2>&1
     /sbin/service pmproxy stop >/dev/null 2>&1
     /sbin/service pmwebd stop >/dev/null 2>&1
+    /sbin/service pmmgr stop >/dev/null 2>&1
     /sbin/service pmcd stop >/dev/null 2>&1
 
     /sbin/chkconfig --del pcp >/dev/null 2>&1
     /sbin/chkconfig --del pmcd >/dev/null 2>&1
     /sbin/chkconfig --del pmlogger >/dev/null 2>&1
     /sbin/chkconfig --del pmie >/dev/null 2>&1
+    /sbin/chkconfig --del pmmgr >/dev/null 2>&1
     /sbin/chkconfig --del pmwebd >/dev/null 2>&1
     /sbin/chkconfig --del pmproxy >/dev/null 2>&1
+
+    # cleanup namespace state/flag, may still exist
+    PCP_PMNS_DIR=%{_pmnsdir}
+    rm -f "$PCP_PMNS_DIR/.NeedRebuild" >/dev/null 2>&1
 fi
 
 %post
@@ -437,18 +442,19 @@ done
 chown -R pcp:pcp %{_logsdir}/pmcd 2>/dev/null
 chown -R pcp:pcp %{_logsdir}/pmlogger 2>/dev/null
 chown -R pcp:pcp %{_logsdir}/pmie 2>/dev/null
+chown -R pcp:pcp %{_logsdir}/pmmgr 2>/dev/null
 chown -R pcp:pcp %{_logsdir}/pmwebd 2>/dev/null
 chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 touch "$PCP_PMNS_DIR/.NeedRebuild"
 chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
-# we only need this manual Rebuild as long as pmcd is condstart below
-[ -f "$PCP_PMNS_DIR/root" ] || ( cd "$PCP_PMNS_DIR" && ./Rebuild -sud )
 /sbin/chkconfig --add pmcd >/dev/null 2>&1
 /sbin/service pmcd condrestart
 /sbin/chkconfig --add pmlogger >/dev/null 2>&1
 /sbin/service pmlogger condrestart
 /sbin/chkconfig --add pmie >/dev/null 2>&1
 /sbin/service pmie condrestart
+/sbin/chkconfig --add pmmgr >/dev/null 2>&1
+/sbin/service pmmgr condrestart
 /sbin/chkconfig --add pmwebd >/dev/null 2>&1
 /sbin/service pmwebd condrestart
 /sbin/chkconfig --add pmproxy >/dev/null 2>&1
@@ -489,6 +495,7 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %{_initddir}/pmcd
 %{_initddir}/pmlogger
 %{_initddir}/pmie
+%{_initddir}/pmmgr
 %{_initddir}/pmwebd
 %{_initddir}/pmproxy
 %{_mandir}/man5/*
@@ -502,6 +509,7 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %config(noreplace) %{_confdir}/pmcd/pmcd.conf
 %config(noreplace) %{_confdir}/pmcd/pmcd.options
 %config(noreplace) %{_confdir}/pmcd/rc.local
+%config(noreplace) %{_confdir}/pmmgr/pmmgr.options
 %config(noreplace) %{_confdir}/pmwebd/pmwebd.options
 %config(noreplace) %{_confdir}/pmproxy/pmproxy.options
 %dir %attr(0775,pcp,pcp) %{_confdir}/pmie
@@ -606,6 +614,9 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root)
 
 %changelog
+* Wed Jan 15 2014 Nathan Scott <nathans@redhat.com> - 3.8.10-1
+- Update to latest PCP sources.
+
 * Thu Dec 12 2013 Nathan Scott <nathans@redhat.com> - 3.8.9-1
 - Reduce set of exported symbols from DSO PMDAs (BZ 1025694)
 - Symbol-versioning for PCP shared libraries (BZ 1037771)
@@ -631,9 +642,13 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 - Very minor release containing mostly QA related changes.
 - Enables many more metrics to be logged for Linux hosts.
 
+* Wed Sep 11 2013 Stan Cox <scox@redhat.com> - 3.8.3-2
+- Disable pmcd.stp on el5 ppc.
+
 * Mon Sep 09 2013 Nathan Scott <nathans@redhat.com> - 3.8.3-1
 - Default to Unix domain socket (authenticated) local connections.
 - Introduces new pcp-pmda-infiniband sub-package.
+- Disable systemtap-sdt-devel usage on ppc.
 
 * Sat Aug 03 2013 Petr Pisar <ppisar@redhat.com> - 3.8.2-1.1
 - Perl 5.18 rebuild
