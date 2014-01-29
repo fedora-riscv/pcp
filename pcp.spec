@@ -1,6 +1,6 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.8.10
+Version: 3.8.11
 %define buildversion 1
 
 Release: %{buildversion}%{?dist}
@@ -110,6 +110,7 @@ Group: Development/Libraries
 Summary: Performance Co-Pilot (PCP) test suite
 URL: http://oss.sgi.com/projects/pcp/
 Requires: pcp = %{version}-%{release}
+Requires: pcp-libs = %{version}-%{release}
 Requires: pcp-libs-devel = %{version}-%{release}
 
 %description testsuite
@@ -614,6 +615,10 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root)
 
 %changelog
+* Wed Jan 29 2014 Nathan Scott <nathans@redhat.com> - 3.8.11-1
+- Resolves SNMP procfs file ICMP line parse issue (BZ 1055818)
+- Update to latest PCP sources.
+
 * Wed Jan 15 2014 Nathan Scott <nathans@redhat.com> - 3.8.10-1
 - Update to latest PCP sources.
 
