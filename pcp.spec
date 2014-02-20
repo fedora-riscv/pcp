@@ -1,7 +1,7 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
 Version: 3.9.0
-%define buildversion 1
+%define buildversion 2
 
 Release: %{buildversion}%{?dist}
 License: GPLv2+ and LGPLv2.1+
@@ -19,8 +19,12 @@ BuildRequires: ncurses-devel
 BuildRequires: readline-devel
 BuildRequires: cyrus-sasl-devel
 BuildRequires: libmicrohttpd-devel
+%if 0%{?rhel} == 0 || 0%{?rhel} > 5
+BuildRequires: systemtap-sdt-devel
+%else
 %ifnarch ppc ppc64
 BuildRequires: systemtap-sdt-devel
+%endif
 %endif
 BuildRequires: perl(ExtUtils::MakeMaker)
 BuildRequires: initscripts man
@@ -600,7 +604,7 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %attr(0664,pcp,pcp) %config(noreplace) %{_confdir}/pmlogger/control
 %{_localstatedir}/lib/pcp/config/*
 
-%if 0%{?rhel} == 0 || 0%{?rhel} > 5 
+%if 0%{?rhel} == 0 || 0%{?rhel} > 5
 %{tapsetdir}/pmcd.stp
 %else				# rhel5
 %ifarch ppc ppc64
@@ -718,7 +722,8 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root)
 
 %changelog
-* Wed Feb 19 2014 Nathan Scott <nathans@redhat.com> - 3.9.0-1
+* Thu Feb 20 2014 Nathan Scott <nathans@redhat.com> - 3.9.0-2
+- Workaround further PowerPC/tapset-related build fallout.
 - Create new sub-packages for pcp-webapi and pcp-manager
 - Split configuration from pcp-libs into pcp-conf (multilib)
 - Fix pmdagluster to handle more volumes, fileops (BZ 1066544)
