@@ -1,7 +1,7 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.9.0
-%define buildversion 2
+Version: 3.9.1
+%define buildversion 1
 
 Release: %{buildversion}%{?dist}
 License: GPLv2+ and LGPLv2.1+
@@ -722,8 +722,14 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root)
 
 %changelog
+=======
+* Wed Mar 19 2014 Nathan Scott <nathans@redhat.com> - 3.9.1-1
+- Update to latest PCP sources.
+
 * Thu Feb 20 2014 Nathan Scott <nathans@redhat.com> - 3.9.0-2
 - Workaround further PowerPC/tapset-related build fallout.
+
+* Wed Feb 19 2014 Nathan Scott <nathans@redhat.com> - 3.9.0-1
 - Create new sub-packages for pcp-webapi and pcp-manager
 - Split configuration from pcp-libs into pcp-conf (multilib)
 - Fix pmdagluster to handle more volumes, fileops (BZ 1066544)
