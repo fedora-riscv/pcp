@@ -1,13 +1,15 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
 Version: 3.9.1
-%define buildversion 1
+%define buildversion 2
 
 Release: %{buildversion}%{?dist}
 License: GPLv2+ and LGPLv2.1+
 URL: http://oss.sgi.com/projects/pcp
 Group: Applications/System
 Source0: pcp-%{version}.src.tar.gz
+
+Patch0: statics.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: procps autoconf bison flex
@@ -340,6 +342,7 @@ building Performance Metric API (PMAPI) tools using Python.
 
 %prep
 %setup -q
+%patch0 -p1 
 
 %clean
 rm -Rf $RPM_BUILD_ROOT
@@ -718,6 +721,9 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root)
 
 %changelog
+* Sun Mar 23 2014 Frank Ch. Eigler <fche@redhat.com> - 3.9.1-2
+- RHEL5 check-statics build fix
+
 * Wed Mar 19 2014 Nathan Scott <nathans@redhat.com> - 3.9.1-1
 - Update to latest PCP sources.
 
