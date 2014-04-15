@@ -9,8 +9,6 @@ URL: http://www.performancecopilot.org
 Group: Applications/System
 Source0: pcp-%{version}.src.tar.gz
 
-Patch0: statics.patch
-
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: procps autoconf bison flex
 BuildRequires: nss-devel
@@ -342,7 +340,6 @@ building Performance Metric API (PMAPI) tools using Python.
 
 %prep
 %setup -q
-%patch0 -p1 
 
 %clean
 rm -Rf $RPM_BUILD_ROOT
@@ -721,15 +718,10 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root)
 
 %changelog
-<<<<<<< HEAD
-* Sun Mar 23 2014 Frank Ch. Eigler <fche@redhat.com> - 3.9.1-2
-- RHEL5 check-statics build fix
-=======
 * Tue Apr 15 2014 Dave Brolley <brolley@redhat.com> - 3.9.2-1
 - Improve pmdarpm(1) concurrency complications (BZ 1044297)
 - Fix pmconfig(1) shell output string quoting (BZ 1085401)
 - Update to latest PCP sources.
->>>>>>> master
 
 * Wed Mar 19 2014 Nathan Scott <nathans@redhat.com> - 3.9.1-1
 - Update to latest PCP sources.
