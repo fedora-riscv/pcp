@@ -1,6 +1,6 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.9.2
+Version: 3.9.4
 %define buildversion 1
 
 Release: %{buildversion}%{?dist}
@@ -8,6 +8,8 @@ License: GPLv2+ and LGPLv2.1+
 URL: http://www.performancecopilot.org
 Group: Applications/System
 Source0: pcp-%{version}.src.tar.gz
+
+%define disable_microhttpd 0
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: procps autoconf bison flex
@@ -18,7 +20,9 @@ BuildRequires: python-devel
 BuildRequires: ncurses-devel
 BuildRequires: readline-devel
 BuildRequires: cyrus-sasl-devel
+%if !%{disable_microhttpd}
 BuildRequires: libmicrohttpd-devel
+%endif
 %if 0%{?rhel} == 0 || 0%{?rhel} > 5
 BuildRequires: systemtap-sdt-devel
 %else
@@ -31,6 +35,8 @@ BuildRequires: initscripts man
 %if 0%{?fedora} >= 18 || 0%{?rhel} >= 7
 BuildRequires: systemd-devel
 %endif
+BuildRequires: desktop-file-utils
+BuildRequires: qt4-devel >= 4.4
  
 Requires: bash gawk sed grep fileutils findutils initscripts perl
 Requires: python
@@ -51,6 +57,8 @@ Requires: perl-PCP-PMDA = %{version}-%{release}
 %define _tempsdir %{_localstatedir}/lib/pcp/tmp
 %define _pmdasdir %{_localstatedir}/lib/pcp/pmdas
 %define _testsdir %{_localstatedir}/lib/pcp/testsuite
+%define _pixmapdir %{_datadir}/pcp-gui/pixmaps
+%define _booksdir %{_datadir}/doc/pcp-doc
 
 %if 0%{?fedora} >= 20
 %define _with_doc --with-docdir=%{_docdir}/%{name}
@@ -163,6 +171,7 @@ efficient log management services.
 The pcp-manager package aims to aggressively enable new PCP features
 and as a result may not be suited to all production environments.
 
+%if !%{disable_microhttpd}
 #
 # pcp-webapi
 #
@@ -179,6 +188,7 @@ Requires: pcp-libs = %{version}-%{release}
 Provides a daemon (pmwebd) that binds a large subset of the Performance
 Co-Pilot (PCP) client API (PMAPI) to RESTful web applications using the
 HTTP (PMWEBAPI) protocol.
+%endif
 
 #
 # perl-PCP-PMDA. This is the PCP agent perl binding.
@@ -342,6 +352,42 @@ Requires: pcp-libs = %{version}-%{release}
 The python PCP module contains the language bindings for
 building Performance Metric API (PMAPI) tools using Python.
 
+#
+# pcp-gui package for Qt tools
+#
+%package -n pcp-gui
+License: GPLv2+ and LGPLv2+ and LGPLv2+ with exceptions
+Group: Applications/System
+Summary: Visualization tools for the Performance Co-Pilot toolkit
+URL: http://www.performancecopilot.org
+Requires: pcp-libs = %{version}-%{release}
+
+%description -n pcp-gui
+Visualization tools for the Performance Co-Pilot toolkit.
+The pcp-gui package primarily includes visualization tools for
+monitoring systems using live and archived Performance Co-Pilot
+(PCP) sources.
+
+#
+# pcp-doc package
+#
+%package -n pcp-doc
+Group: Documentation
+BuildArch: noarch
+Summary: Documentation and tutorial for the Performance Co-Pilot
+URL: http://www.performancecopilot.org
+
+%description -n pcp-doc
+Documentation and tutorial for the Performance Co-Pilot
+Performance Co-Pilot (PCP) provides a framework and services to support
+system-level performance monitoring and performance management.
+
+The pcp-doc package provides useful information on using and
+configuring the Performance Co-Pilot (PCP) toolkit for system
+level performance management.  It includes tutorials, HOWTOs,
+and other detailed documentation about the internals of core
+PCP utilities and daemons, and the PCP graphical tools.
+
 %prep
 %setup -q
 
@@ -367,33 +413,56 @@ rm -f $RPM_BUILD_ROOT/%{_bindir}/sheet2pcp $RPM_BUILD_ROOT/%{_mandir}/man1/sheet
 # remove configsz.h as this is not multilib friendly.
 rm -f $RPM_BUILD_ROOT/%{_includedir}/pcp/configsz.h
 
+%if %{disable_microhttpd}
+rm -f $RPM_BUILD_ROOT/%{_mandir}/man1/pmwebd.*
+rm -f $RPM_BUILD_ROOT/%{_mandir}/man3/PMWEBAPI.*
+rm -fr $RPM_BUILD_ROOT/%{_confdir}/pmwebd
+rm -fr $RPM_BUILD_ROOT/%{_initddir}/pmwebd
+rm -f $RPM_BUILD_ROOT/%{_libexecdir}/pcp/bin/pmwebd
+%endif
+
 %if %{disable_infiniband}
 # remove pmdainfiniband on platforms lacking IB devel packages.
-rm -f $RPM_BUILD_ROOT/%{_pmdasdir}/ib $RPM_BUILD_ROOT/man1/pmdaib.1.gz
+rm -f $RPM_BUILD_ROOT/%{_pmdasdir}/ib
+rm -f $RPM_BUILD_ROOT/%{_mandir}/man1/pmdaib.1.gz
 rm -fr $RPM_BUILD_ROOT/%{_pmdasdir}/infiniband
 %endif
 
+rm -rf $RPM_BUILD_ROOT/usr/share/doc/pcp-gui
+desktop-file-validate $RPM_BUILD_ROOT/%{_datadir}/applications/pmchart.desktop
+
 # default chkconfig off for Fedora and RHEL
 for f in $RPM_BUILD_ROOT/%{_initddir}/{pcp,pmcd,pmlogger,pmie,pmwebd,pmmgr,pmproxy}; do
+	test -f "$f" || continue
 	sed -i -e '/^# chkconfig/s/:.*$/: - 95 05/' -e '/^# Default-Start:/s/:.*$/:/' $f
 done
 
 # list of PMDAs in the base pkg
 ls -1 $RPM_BUILD_ROOT/%{_pmdasdir} |\
-egrep -v 'simple|sample|trivial|txmon' |\
-egrep -v '^ib$|infiniband' |\
-sed -e 's#^#'%{_pmdasdir}'\/#' >base_pmdas.list
+  egrep -v 'simple|sample|trivial|txmon' |\
+  egrep -v '^ib$|infiniband' |\
+  sed -e 's#^#'%{_pmdasdir}'\/#' >base_pmdas.list
 
 # all base pcp package files except those split out into sub packages
 ls -1 $RPM_BUILD_ROOT/%{_bindir} |\
-sed -e 's#^#'%{_bindir}'\/#' >base_bin.list
+  sed -e 's#^#'%{_bindir}'\/#' >base_bin.list
 ls -1 $RPM_BUILD_ROOT/%{_libexecdir}/pcp/bin |\
-sed -e 's#^#'%{_libexecdir}/pcp/bin'\/#' >base_exec.list
+  sed -e 's#^#'%{_libexecdir}/pcp/bin'\/#' >base_exec.list
 ls -1 $RPM_BUILD_ROOT/%{_mandir}/man1 |\
-sed -e 's#^#'%{_mandir}'\/man1\/#' >base_man.list
-cat base_pmdas.list base_bin.list base_conf.list base_exec.list base_man.list |\
-egrep -v 'pmdaib|pmmgr|pmweb|2pcp' |\
-egrep -v %{_confdir} | egrep -v %{_logsdir} > base.list
+  sed -e 's#^#'%{_mandir}'\/man1\/#' >base_man.list
+ls -1 $RPM_BUILD_ROOT/%{_booksdir} |\
+  sed -e 's#^#'%{_booksdir}'\/#' > pcp-doc.list
+ls -1 $RPM_BUILD_ROOT/%{_datadir}/pcp/demos/tutorials |\
+  sed -e 's#^#'%{_datadir}/pcp/demos/tutorials'\/#' >>pcp-doc.list
+ls -1 $RPM_BUILD_ROOT/%{_pixmapdir} |\
+  sed -e 's#^#'%{_pixmapdir}'\/#' > pcp-gui.list
+PCP_GUI='pmchart|pmconfirm|pmdumptext|pmmessage|pmquery|pmsnap|pmtime'
+cat base_bin.list base_exec.list base_man.list |\
+  egrep "$PCP_GUI" >> pcp-gui.list
+cat base_pmdas.list base_bin.list base_exec.list base_man.list |\
+  egrep -v 'pmdaib|pmmgr|pmweb|2pcp' |\
+  egrep -v "$PCP_GUI|pixmaps|pcp-doc|tutorials" |\
+  egrep -v %{_confdir} | egrep -v %{_logsdir} > base.list
 
 # all devel pcp package files except those split out into sub packages
 ls -1 $RPM_BUILD_ROOT/%{_mandir}/man3 |\
@@ -460,12 +529,14 @@ do
 done
 exit 0
 
+%if !%{disable_microhttpd}
 %preun webapi
 if [ "$1" -eq 0 ]
 then
     /sbin/service pmwebd stop >/dev/null 2>&1
     /sbin/chkconfig --del pmwebd >/dev/null 2>&1
 fi
+%endif
 
 %preun manager
 if [ "$1" -eq 0 ]
@@ -494,10 +565,12 @@ then
     rm -f "$PCP_PMNS_DIR/.NeedRebuild" >/dev/null 2>&1
 fi
 
+%if !%{disable_microhttpd}
 %post webapi
 chown -R pcp:pcp %{_logsdir}/pmwebd 2>/dev/null
 /sbin/chkconfig --add pmwebd >/dev/null 2>&1
 /sbin/service pmwebd condrestart
+%endif
 
 %post manager
 chown -R pcp:pcp %{_logsdir}/pmmgr 2>/dev/null
@@ -659,6 +732,7 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,pcpqa,pcpqa)
 %{_testsdir}
 
+%if !%{disable_microhttpd}
 %files webapi
 %defattr(-,root,root)
 %{_initddir}/pmwebd
@@ -668,6 +742,7 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %config(noreplace) %{_confdir}/pmwebd/pmwebd.options
 %{_mandir}/man1/pmwebd.1.gz
 %{_mandir}/man3/PMWEBAPI.3.gz
+%endif
 
 %files manager
 %defattr(-,root,root)
@@ -721,7 +796,29 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %files -n python-pcp -f python-pcp.list.rpm
 %defattr(-,root,root)
 
+%files -n pcp-gui -f pcp-gui.list
+%defattr(-,root,root,-)
+
+%{_sysconfdir}/pcp/pmsnap
+%config(noreplace) %{_sysconfdir}/pcp/pmsnap
+%{_localstatedir}/lib/pcp/config/pmsnap
+%dir %{_localstatedir}/lib/pcp/config/pmsnap
+%{_localstatedir}/lib/pcp/config/pmchart
+%dir %{_localstatedir}/lib/pcp/config/pmchart
+%{_localstatedir}/lib/pcp/config/pmafm/pcp-gui
+%{_datadir}/applications/pmchart.desktop
+
+%files -n pcp-doc -f pcp-doc.list
+%defattr(-,root,root,-)
+
 %changelog
+* Thu May 15 2014 Nathan Scott <nathans@redhat.com> - 3.9.4-1
+- Merged pcp-gui and pcp-doc packages into core PCP.
+- Allow for conditional libmicrohttpd builds in spec file.
+- Adopt slow-start capability in systemd PMDA (BZ 1073658)
+- Resolve pmcollectl network/disk mis-reporting (BZ 1097095)
+- Update to latest PCP sources.
+
 * Tue Apr 15 2014 Dave Brolley <brolley@redhat.com> - 3.9.2-1
 - Improve pmdarpm(1) concurrency complications (BZ 1044297)
 - Fix pmconfig(1) shell output string quoting (BZ 1085401)
