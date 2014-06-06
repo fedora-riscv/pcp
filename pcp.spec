@@ -3,7 +3,7 @@ Name: pcp
 Version: 3.9.4
 %define buildversion 1
 
-Release: %{buildversion}%{?dist}
+Release: %{buildversion}%{?dist}.1
 License: GPLv2+ and LGPLv2.1+
 URL: http://www.performancecopilot.org
 Group: Applications/System
@@ -812,6 +812,9 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root,-)
 
 %changelog
+* Fri Jun 06 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.9.4-1.1
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_Mass_Rebuild
+
 * Thu May 15 2014 Nathan Scott <nathans@redhat.com> - 3.9.4-1
 - Merged pcp-gui and pcp-doc packages into core PCP.
 - Allow for conditional libmicrohttpd builds in spec file.
