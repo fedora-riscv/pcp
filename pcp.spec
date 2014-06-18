@@ -476,9 +476,9 @@ ls -1 $RPM_BUILD_ROOT/%{_datadir}/pcp/demos/tutorials |\
 %if !%{disable_qt}
 ls -1 $RPM_BUILD_ROOT/%{_pixmapdir} |\
   sed -e 's#^#'%{_pixmapdir}'\/#' > pcp-gui.list
-%endif
 cat base_bin.list base_exec.list base_man.list |\
   egrep "$PCP_GUI" >> pcp-gui.list
+%endif
 cat base_pmdas.list base_bin.list base_exec.list base_man.list |\
   egrep -v 'pmdaib|pmmgr|pmweb|2pcp' |\
   egrep -v "$PCP_GUI|pixmaps|pcp-doc|tutorials" |\
