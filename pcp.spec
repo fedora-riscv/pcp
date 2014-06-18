@@ -1,15 +1,20 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.9.4
+Version: 3.9.5
 %define buildversion 1
 
-Release: %{buildversion}%{?dist}.1
+Release: %{buildversion}%{?dist}
 License: GPLv2+ and LGPLv2.1+
 URL: http://www.performancecopilot.org
 Group: Applications/System
 Source0: pcp-%{version}.src.tar.gz
 
 %define disable_microhttpd 0
+%if 0%{?rhel} == 0 || 0%{?rhel} > 5
+%define disable_qt 0
+%else
+%define disable_qt 1
+%endif
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: procps autoconf bison flex
@@ -35,8 +40,10 @@ BuildRequires: initscripts man
 %if 0%{?fedora} >= 18 || 0%{?rhel} >= 7
 BuildRequires: systemd-devel
 %endif
+%if !%{disable_qt}
 BuildRequires: desktop-file-utils
 BuildRequires: qt4-devel >= 4.4
+%endif
  
 Requires: bash gawk sed grep fileutils findutils initscripts perl
 Requires: python
@@ -47,6 +54,7 @@ Requires: python-ctypes
 Requires: pcp-libs = %{version}-%{release}
 Requires: python-pcp = %{version}-%{release}
 Requires: perl-PCP-PMDA = %{version}-%{release}
+Obsoletes: pcp-gui-debuginfo
 
 %global tapsetdir      %{_datadir}/systemtap/tapset
 
@@ -80,6 +88,10 @@ Requires: perl-PCP-PMDA = %{version}-%{release}
 
 %if %{disable_infiniband}
 %define _with_ib --with-infiniband=no
+%endif
+
+%if %{disable_qt}
+%define _with_ib --with-qt=no
 %endif
 
 %description
@@ -143,6 +155,7 @@ URL: http://www.performancecopilot.org
 Requires: pcp = %{version}-%{release}
 Requires: pcp-libs = %{version}-%{release}
 Requires: pcp-libs-devel = %{version}-%{release}
+Obsoletes: pcp-gui-testsuite
 
 %description testsuite
 Quality assurance test suite for Performance Co-Pilot (PCP).
@@ -352,6 +365,7 @@ Requires: pcp-libs = %{version}-%{release}
 The python PCP module contains the language bindings for
 building Performance Metric API (PMAPI) tools using Python.
 
+%if !%{disable_qt}
 #
 # pcp-gui package for Qt tools
 #
@@ -367,6 +381,7 @@ Visualization tools for the Performance Co-Pilot toolkit.
 The pcp-gui package primarily includes visualization tools for
 monitoring systems using live and archived Performance Co-Pilot
 (PCP) sources.
+%endif
 
 #
 # pcp-doc package
@@ -395,17 +410,17 @@ PCP utilities and daemons, and the PCP graphical tools.
 rm -Rf $RPM_BUILD_ROOT
 
 %build
-%configure --with-rcdir=%{_initddir} %{?_with_doc} %{?_with_ib}
+%configure --with-rcdir=%{_initddir} %{?_with_doc} %{?_with_ib} %{?_with_qt}
 make default_pcp
 
 %install
 rm -Rf $RPM_BUILD_ROOT
 export NO_CHOWN=true DIST_ROOT=$RPM_BUILD_ROOT
 make install_pcp
+PCP_GUI='pmchart|pmconfirm|pmdumptext|pmmessage|pmquery|pmsnap|pmtime'
 
 # Fix stuff we do/don't want to ship
 rm -f $RPM_BUILD_ROOT/%{_libdir}/*.a
-mkdir -p $RPM_BUILD_ROOT/%{_localstatedir}/run/pcp
 
 # remove sheet2pcp until BZ 830923 and BZ 754678 are resolved.
 rm -f $RPM_BUILD_ROOT/%{_bindir}/sheet2pcp $RPM_BUILD_ROOT/%{_mandir}/man1/sheet2pcp.1.gz
@@ -428,8 +443,13 @@ rm -f $RPM_BUILD_ROOT/%{_mandir}/man1/pmdaib.1.gz
 rm -fr $RPM_BUILD_ROOT/%{_pmdasdir}/infiniband
 %endif
 
+%if %{disable_qt}
+rm -fr $RPM_BUILD_ROOT/%{_pixmapdir}
+rm -f `find $RPM_BUILD_ROOT/%{_mandir}/man1 | egrep "$PCP_GUI"`
+%else
 rm -rf $RPM_BUILD_ROOT/usr/share/doc/pcp-gui
 desktop-file-validate $RPM_BUILD_ROOT/%{_datadir}/applications/pmchart.desktop
+%endif
 
 # default chkconfig off for Fedora and RHEL
 for f in $RPM_BUILD_ROOT/%{_initddir}/{pcp,pmcd,pmlogger,pmie,pmwebd,pmmgr,pmproxy}; do
@@ -456,7 +476,6 @@ ls -1 $RPM_BUILD_ROOT/%{_datadir}/pcp/demos/tutorials |\
   sed -e 's#^#'%{_datadir}/pcp/demos/tutorials'\/#' >>pcp-doc.list
 ls -1 $RPM_BUILD_ROOT/%{_pixmapdir} |\
   sed -e 's#^#'%{_pixmapdir}'\/#' > pcp-gui.list
-PCP_GUI='pmchart|pmconfirm|pmdumptext|pmmessage|pmquery|pmsnap|pmtime'
 cat base_bin.list base_exec.list base_man.list |\
   egrep "$PCP_GUI" >> pcp-gui.list
 cat base_pmdas.list base_bin.list base_exec.list base_man.list |\
@@ -467,6 +486,8 @@ cat base_pmdas.list base_bin.list base_exec.list base_man.list |\
 # all devel pcp package files except those split out into sub packages
 ls -1 $RPM_BUILD_ROOT/%{_mandir}/man3 |\
 sed -e 's#^#'%{_mandir}'\/man3\/#' | egrep -v '3pm|PMWEBAPI' >devel.list
+ls -1 $RPM_BUILD_ROOT/%{_datadir}/pcp/demos |\
+sed -e 's#^#'%{_datadir}'\/pcp\/demos\/#' | egrep -v tutorials >> devel.list
 
 %pre testsuite
 test -d %{_testsdir} || mkdir -p -m 755 %{_testsdir}
@@ -638,7 +659,6 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %dir %{_confdir}
 %dir %{_pmdasdir}
 %dir %{_datadir}/pcp
-%dir %attr(0775,pcp,pcp) %{_localstatedir}/run/pcp
 %dir %{_localstatedir}/lib/pcp
 %dir %{_localstatedir}/lib/pcp/config
 %dir %attr(0775,pcp,pcp) %{_localstatedir}/lib/pcp/config/pmda
@@ -718,7 +738,6 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %{_libdir}/libpcp_trace.so
 %{_libdir}/libpcp_import.so
 %{_includedir}/pcp/*.h
-%{_datadir}/pcp/demos
 %{_datadir}/pcp/examples
 
 # PMDAs that ship src and are not for production use
@@ -796,6 +815,7 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %files -n python-pcp -f python-pcp.list.rpm
 %defattr(-,root,root)
 
+%if !%{disable_qt}
 %files -n pcp-gui -f pcp-gui.list
 %defattr(-,root,root,-)
 
@@ -807,11 +827,20 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %dir %{_localstatedir}/lib/pcp/config/pmchart
 %{_localstatedir}/lib/pcp/config/pmafm/pcp-gui
 %{_datadir}/applications/pmchart.desktop
+%endif
 
 %files -n pcp-doc -f pcp-doc.list
 %defattr(-,root,root,-)
 
 %changelog
+* Wed Jun 18 2014 Dave Brolley <brolley@redhat.com> - 3.9.5-1
+- Daemon signal handlers no longer use unsafe APIs (BZ 847343)
+- Handle /var/run setups on a temporary filesystem (BZ 656659)
+- Resolve pmlogcheck sigsegv for some archives (BZ 1077432)
+- Ensure pcp-gui-{testsuite,debuginfo} packages get replaced.
+- Revive support for EPEL5 builds, post pcp-gui merge.
+- Update to latest PCP sources.
+
 * Fri Jun 06 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.9.4-1.1
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_21_Mass_Rebuild
 
