@@ -388,7 +388,6 @@ monitoring systems using live and archived Performance Co-Pilot
 #
 %package -n pcp-doc
 Group: Documentation
-BuildArch: noarch
 Summary: Documentation and tutorial for the Performance Co-Pilot
 URL: http://www.performancecopilot.org
 
