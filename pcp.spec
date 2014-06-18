@@ -388,7 +388,6 @@ monitoring systems using live and archived Performance Co-Pilot
 #
 %package -n pcp-doc
 Group: Documentation
-#BuildArch: noarch
 Summary: Documentation and tutorial for the Performance Co-Pilot
 URL: http://www.performancecopilot.org
 
@@ -474,8 +473,10 @@ ls -1 $RPM_BUILD_ROOT/%{_booksdir} |\
   sed -e 's#^#'%{_booksdir}'\/#' > pcp-doc.list
 ls -1 $RPM_BUILD_ROOT/%{_datadir}/pcp/demos/tutorials |\
   sed -e 's#^#'%{_datadir}/pcp/demos/tutorials'\/#' >>pcp-doc.list
+%if !%{disable_qt}
 ls -1 $RPM_BUILD_ROOT/%{_pixmapdir} |\
   sed -e 's#^#'%{_pixmapdir}'\/#' > pcp-gui.list
+%endif
 cat base_bin.list base_exec.list base_man.list |\
   egrep "$PCP_GUI" >> pcp-gui.list
 cat base_pmdas.list base_bin.list base_exec.list base_man.list |\
