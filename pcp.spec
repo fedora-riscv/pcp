@@ -1,6 +1,6 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.9.5
+Version: 3.9.7
 %define buildversion 1
 
 Release: %{buildversion}%{?dist}
@@ -55,6 +55,7 @@ Requires: pcp-libs = %{version}-%{release}
 Requires: python-pcp = %{version}-%{release}
 Requires: perl-PCP-PMDA = %{version}-%{release}
 Obsoletes: pcp-gui-debuginfo
+Obsoletes: pcp-pmda-nvidia
 
 %global tapsetdir      %{_datadir}/systemtap/tapset
 
@@ -388,6 +389,9 @@ monitoring systems using live and archived Performance Co-Pilot
 #
 %package -n pcp-doc
 Group: Documentation
+%if 0%{?rhel} == 0 || 0%{?rhel} > 5
+BuildArch: noarch
+%endif
 Summary: Documentation and tutorial for the Performance Co-Pilot
 URL: http://www.performancecopilot.org
 
@@ -834,6 +838,9 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root,-)
 
 %changelog
+* Wed Jul 16 2014 Mark Goodwin <mgoodwin@redhat.com> - 3.9.7-1
+- Update to latest PCP sources.
+
 * Wed Jun 18 2014 Dave Brolley <brolley@redhat.com> - 3.9.5-1
 - Daemon signal handlers no longer use unsafe APIs (BZ 847343)
 - Handle /var/run setups on a temporary filesystem (BZ 656659)
