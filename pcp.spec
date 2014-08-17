@@ -3,7 +3,7 @@ Name: pcp
 Version: 3.9.9
 %define buildversion 1
 
-Release: %{buildversion}%{?dist}
+Release: %{buildversion}%{?dist}.1
 License: GPLv2+ and LGPLv2.1+
 URL: http://www.performancecopilot.org
 Group: Applications/System
@@ -838,6 +838,9 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root,-)
 
 %changelog
+* Sun Aug 17 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.9.9-1.1
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_22_Mass_Rebuild
+
 * Wed Aug 13 2014 Nathan Scott <nathans@redhat.com> - 3.9.9-1
 - Update to latest PCP sources.
 
