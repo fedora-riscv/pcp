@@ -930,6 +930,12 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 - New conditionally-built pcp-pmda-papi sub-package.
 - Update to latest PCP sources.
 
+* Tue Aug 26 2014 Jitka Plesnikova <jplesnik@redhat.com> - 3.9.9-1.2
+- Perl 5.20 rebuild
+
+* Sun Aug 17 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.9.9-1.1
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_22_Mass_Rebuild
+
 * Wed Aug 13 2014 Nathan Scott <nathans@redhat.com> - 3.9.9-1
 - Update to latest PCP sources.
 
