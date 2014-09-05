@@ -77,9 +77,9 @@ Obsoletes: pcp-pmda-nvidia
 %define _with_doc --with-docdir=%{_docdir}/%{name}
 %endif
 %if 0%{?fedora} >= 19 || 0%{?rhel} >= 7
-%define _with_initd --with-rcdir=%{_initddir}
 %define disable_systemd 0
 %else
+%define _with_initd --with-rcdir=%{_initddir}
 %define disable_systemd 1
 %endif
 
@@ -468,6 +468,7 @@ rm -f $RPM_BUILD_ROOT/%{_mandir}/man1/pmwebd.*
 rm -f $RPM_BUILD_ROOT/%{_mandir}/man3/PMWEBAPI.*
 rm -fr $RPM_BUILD_ROOT/%{_confdir}/pmwebd
 rm -fr $RPM_BUILD_ROOT/%{_initddir}/pmwebd
+rm -fr $RPM_BUILD_ROOT/%{_unitdir}/pmwebd.service
 rm -f $RPM_BUILD_ROOT/%{_libexecdir}/pcp/bin/pmwebd
 %endif
 
@@ -486,13 +487,11 @@ rm -rf $RPM_BUILD_ROOT/usr/share/doc/pcp-gui
 desktop-file-validate $RPM_BUILD_ROOT/%{_datadir}/applications/pmchart.desktop
 %endif
 
-%if %{disable_systemd}
 # default chkconfig off for Fedora and RHEL
 for f in $RPM_BUILD_ROOT/%{_initddir}/{pcp,pmcd,pmlogger,pmie,pmwebd,pmmgr,pmproxy}; do
 	test -f "$f" || continue
 	sed -i -e '/^# chkconfig/s/:.*$/: - 95 05/' -e '/^# Default-Start:/s/:.*$/:/' $f
 done
-%endif
 
 # list of PMDAs in the base pkg
 ls -1 $RPM_BUILD_ROOT/%{_pmdasdir} |\
@@ -755,6 +754,11 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %{_initddir}/pmlogger
 %{_initddir}/pmie
 %{_initddir}/pmproxy
+%else
+%{_unitdir}/pmcd.service
+%{_unitdir}/pmlogger.service
+%{_unitdir}/pmie.service
+%{_unitdir}/pmproxy.service
 %endif
 %{_mandir}/man5/*
 %config(noreplace) %{_sysconfdir}/sasl2/pmcd.conf
@@ -834,6 +838,8 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root)
 %if %{disable_systemd}
 %{_initddir}/pmwebd
+%else
+%{_unitdir}/pmwebd.service
 %endif
 %{_libexecdir}/pcp/bin/pmwebd
 %attr(0775,pcp,pcp) %{_logsdir}/pmwebd
@@ -847,6 +853,8 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root)
 %if %{disable_systemd}
 %{_initddir}/pmmgr
+%else
+%{_unitdir}/pmmgr.service
 %endif
 %{_libexecdir}/pcp/bin/pmmgr
 %attr(0775,pcp,pcp) %{_logsdir}/pmmgr
