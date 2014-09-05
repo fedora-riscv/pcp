@@ -9,7 +9,7 @@ URL: http://www.performancecopilot.org
 Group: Applications/System
 Source0: pcp-%{version}.src.tar.gz
 
-%define disable_papi 0
+%define disable_papi 1
 %define disable_microhttpd 0
 %if 0%{?rhel} == 0 || 0%{?rhel} > 5
 %define disable_qt 0
