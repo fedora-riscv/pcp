@@ -3,7 +3,7 @@ Name: pcp
 Version: 3.9.10
 %define buildversion 1
 
-Release: %{buildversion}%{?dist}
+Release: %{buildversion}%{?dist}.1
 License: GPLv2+ and LGPLv2.1+
 URL: http://www.performancecopilot.org
 Group: Applications/System
@@ -930,6 +930,9 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root,-)
 
 %changelog
+* Fri Sep 05 2014 Jitka Plesnikova <jplesnik@redhat.com> - 3.9.10-1.1
+- Perl 5.20 rebuild
+
 * Fri Sep 05 2014 Nathan Scott <nathans@redhat.com> - 3.9.10-1
 - Convert PCP init scripts to systemd services (BZ 996438)
 - Fix pmlogsummary -S/-T time window reporting (BZ 1132476)
