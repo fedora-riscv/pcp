@@ -1,16 +1,23 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
 Version: 3.9.10
-%define buildversion 1
+%define buildversion 4
 
 Release: %{buildversion}%{?dist}
-License: GPLv2+ and LGPLv2.1+
+License: GPLv2+ and LGPLv2.1+ and ASL2.0 and MIT and CC-BY
 URL: http://www.performancecopilot.org
 Group: Applications/System
-Source0: pcp-%{version}.src.tar.gz
+Source0: pcpfans-%{version}.src.tar.gz
 
-%define disable_papi 0
+# There is no papi-devel package for s390 or prior to rhel6, disable it
+%ifarch s390 s390x
+%{!?disable_papi: %global disable_papi 1}
+%else
+%{!?disable_papi: %global disable_papi 0%{?rhel} < 6}
+%endif
+
 %define disable_microhttpd 0
+%define disable_cairo 0
 %if 0%{?rhel} == 0 || 0%{?rhel} > 5
 %define disable_qt 0
 %else
@@ -31,6 +38,9 @@ BuildRequires: papi-devel
 %endif
 %if !%{disable_microhttpd}
 BuildRequires: libmicrohttpd-devel
+%endif
+%if !%{disable_cairo}
+BuildRequires: cairo-devel
 %endif
 %if 0%{?rhel} == 0 || 0%{?rhel} > 5
 BuildRequires: systemtap-sdt-devel
@@ -73,9 +83,7 @@ Obsoletes: pcp-pmda-nvidia
 %define _pixmapdir %{_datadir}/pcp-gui/pixmaps
 %define _booksdir %{_datadir}/doc/pcp-doc
 
-%if 0%{?fedora} >= 20
-%define _with_doc --with-docdir=%{_docdir}/%{name}
-%endif
+%define _with_doc --with-docdir=%{_pkgdocdir}
 %if 0%{?fedora} >= 19 || 0%{?rhel} >= 7
 %define disable_systemd 0
 %else
@@ -204,7 +212,7 @@ and as a result may not be suited to all production environments.
 # pcp-webapi
 #
 %package webapi
-License: GPLv2+
+License: GPLv2+ and ASL2.0 and MIT and CC-BY
 Group: Applications/System
 Summary: Performance Co-Pilot (PCP) web API service
 URL: http://www.performancecopilot.org
@@ -518,7 +526,7 @@ cat base_bin.list base_exec.list base_man.list |\
   egrep "$PCP_GUI" >> pcp-gui.list
 %endif
 cat base_pmdas.list base_bin.list base_exec.list base_man.list |\
-  egrep -v 'pmdaib|pmmgr|pmweb|2pcp' |\
+  egrep -v 'pmdaib|pmmgr|pmweb|jsdemos|2pcp' |\
   egrep -v "$PCP_GUI|pixmaps|pcp-doc|tutorials" |\
   egrep -v %{_confdir} | egrep -v %{_logsdir} > base.list
 
@@ -845,6 +853,7 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %attr(0775,pcp,pcp) %{_logsdir}/pmwebd
 %{_confdir}/pmwebd
 %config(noreplace) %{_confdir}/pmwebd/pmwebd.options
+%{_datadir}/pcp/jsdemos
 %{_mandir}/man1/pmwebd.1.gz
 %{_mandir}/man3/PMWEBAPI.3.gz
 %endif
@@ -916,12 +925,9 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %files -n pcp-gui -f pcp-gui.list
 %defattr(-,root,root,-)
 
-%{_sysconfdir}/pcp/pmsnap
 %config(noreplace) %{_sysconfdir}/pcp/pmsnap
 %{_localstatedir}/lib/pcp/config/pmsnap
-%dir %{_localstatedir}/lib/pcp/config/pmsnap
 %{_localstatedir}/lib/pcp/config/pmchart
-%dir %{_localstatedir}/lib/pcp/config/pmchart
 %{_localstatedir}/lib/pcp/config/pmafm/pcp-gui
 %{_datadir}/applications/pmchart.desktop
 %endif
@@ -930,6 +936,12 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root,-)
 
 %changelog
+* Fri Sep 12 2014 Frank Ch. Eigler <fche@redhat.com> - 3.9.10-4
+- Respin with pcpfans 3.9.10 add-ons.
+
+* Fri Sep 05 2014 Jitka Plesnikova <jplesnik@redhat.com> - 3.9.10-1.1
+- Perl 5.20 rebuild
+
 * Fri Sep 05 2014 Nathan Scott <nathans@redhat.com> - 3.9.10-1
 - Convert PCP init scripts to systemd services (BZ 996438)
 - Fix pmlogsummary -S/-T time window reporting (BZ 1132476)
