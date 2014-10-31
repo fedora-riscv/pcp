@@ -1,16 +1,28 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.9.10
+Version: 3.10.0
 %define buildversion 1
 
 Release: %{buildversion}%{?dist}
 License: GPLv2+ and LGPLv2.1+
-URL: http://www.performancecopilot.org
+URL: http://www.pcp.io
 Group: Applications/System
 Source0: pcp-%{version}.src.tar.gz
+Source1: pcp-webjs.src.tar.gz
 
-%define disable_papi 1
+# There is no papi-devel package for s390 or prior to rhel6, disable it
+%ifarch s390 s390x
+%{!?disable_papi: %global disable_papi 1}
+%else
+%{!?disable_papi: %global disable_papi 0%{?rhel} < 6}
+%endif
 %define disable_microhttpd 0
+%define disable_cairo 0
+%if 0%{?rhel} == 0 || 0%{?rhel} > 6
+%define disable_python3 0
+%else
+%define disable_python3 1
+%endif
 %if 0%{?rhel} == 0 || 0%{?rhel} > 5
 %define disable_qt 0
 %else
@@ -23,6 +35,9 @@ BuildRequires: nss-devel
 BuildRequires: rpm-devel
 BuildRequires: avahi-devel
 BuildRequires: python-devel
+%if !%{disable_python3}
+BuildRequires: python3-devel
+%endif
 BuildRequires: ncurses-devel
 BuildRequires: readline-devel
 BuildRequires: cyrus-sasl-devel
@@ -31,6 +46,9 @@ BuildRequires: papi-devel
 %endif
 %if !%{disable_microhttpd}
 BuildRequires: libmicrohttpd-devel
+%endif
+%if !%{disable_cairo}
+BuildRequires: cairo-devel
 %endif
 %if 0%{?rhel} == 0 || 0%{?rhel} > 5
 BuildRequires: systemtap-sdt-devel
@@ -64,7 +82,6 @@ Obsoletes: pcp-pmda-nvidia
 %global tapsetdir      %{_datadir}/systemtap/tapset
 
 %define _confdir  %{_sysconfdir}/pcp
-%define _initddir %{_sysconfdir}/rc.d/init.d
 %define _logsdir  %{_localstatedir}/log/pcp
 %define _pmnsdir  %{_localstatedir}/lib/pcp/pmns
 %define _tempsdir %{_localstatedir}/lib/pcp/tmp
@@ -77,8 +94,10 @@ Obsoletes: pcp-pmda-nvidia
 %define _with_doc --with-docdir=%{_docdir}/%{name}
 %endif
 %if 0%{?fedora} >= 19 || 0%{?rhel} >= 7
+%define _initddir %{_datadir}/pcp/lib
 %define disable_systemd 0
 %else
+%define _initddir %{_sysconfdir}/rc.d/init.d
 %define _with_initd --with-rcdir=%{_initddir}
 %define disable_systemd 1
 %endif
@@ -124,7 +143,7 @@ applications to easily retrieve and process any subset of that data.
 License: LGPLv2+
 Group: Development/Libraries
 Summary: Performance Co-Pilot run-time configuration
-URL: http://www.performancecopilot.org
+URL: http://www.pcp.io
 
 # http://fedoraproject.org/wiki/Packaging:Conflicts "Splitting Packages"
 Conflicts: pcp-libs < 3.9
@@ -139,7 +158,7 @@ Performance Co-Pilot (PCP) run-time configuration
 License: LGPLv2+
 Group: Development/Libraries
 Summary: Performance Co-Pilot run-time libraries
-URL: http://www.performancecopilot.org
+URL: http://www.pcp.io
 
 Requires: pcp-conf = %{version}-%{release}
 
@@ -153,7 +172,7 @@ Performance Co-Pilot (PCP) run-time libraries
 License: GPLv2+ and LGPLv2.1+
 Group: Development/Libraries
 Summary: Performance Co-Pilot (PCP) development headers and documentation
-URL: http://www.performancecopilot.org
+URL: http://www.pcp.io
 Requires: pcp-libs = %{version}-%{release}
 
 %description libs-devel
@@ -166,7 +185,7 @@ Performance Co-Pilot (PCP) headers, documentation and tools for development.
 License: GPLv2+
 Group: Development/Libraries
 Summary: Performance Co-Pilot (PCP) test suite
-URL: http://www.performancecopilot.org
+URL: http://www.pcp.io
 Requires: pcp = %{version}-%{release}
 Requires: pcp-libs = %{version}-%{release}
 Requires: pcp-libs-devel = %{version}-%{release}
@@ -182,7 +201,7 @@ Quality assurance test suite for Performance Co-Pilot (PCP).
 License: GPLv2+
 Group: Applications/System
 Summary: Performance Co-Pilot (PCP) manager daemon
-URL: http://www.performancecopilot.org
+URL: http://www.pcp.io
 
 Requires: pcp = %{version}-%{release}
 Requires: pcp-libs = %{version}-%{release}
@@ -207,7 +226,7 @@ and as a result may not be suited to all production environments.
 License: GPLv2+
 Group: Applications/System
 Summary: Performance Co-Pilot (PCP) web API service
-URL: http://www.performancecopilot.org
+URL: http://www.pcp.io
 
 Requires: pcp = %{version}-%{release}
 Requires: pcp-libs = %{version}-%{release}
@@ -218,6 +237,27 @@ Co-Pilot (PCP) client API (PMAPI) to RESTful web applications using the
 HTTP (PMWEBAPI) protocol.
 %endif
 
+%if !%{disable_microhttpd}
+#
+# pcp-webjs
+#
+%package webjs
+License: ASL2.0 and MIT and CC-BY
+Group: Applications/System
+%if 0%{?rhel} == 0 || 0%{?rhel} > 5
+BuildArch: noarch
+%endif
+Summary: Performance Co-Pilot (PCP) web applications
+URL: http://www.pcp.io
+
+Requires: pcp-libs = %{version}-%{release}
+Requires: pcp-webapi = %{version}-%{release}
+
+%description webjs
+Javascript web application content for the Performance Co-Pilot (PCP)
+web service.
+%endif
+
 #
 # perl-PCP-PMDA. This is the PCP agent perl binding.
 #
@@ -225,7 +265,7 @@ HTTP (PMWEBAPI) protocol.
 License: GPLv2+
 Group: Development/Libraries
 Summary: Performance Co-Pilot (PCP) Perl bindings and documentation
-URL: http://www.performancecopilot.org
+URL: http://www.pcp.io
 Requires: pcp-libs = %{version}-%{release}
 
 %description -n perl-PCP-PMDA
@@ -242,7 +282,7 @@ an application, etc.
 License: GPLv2+
 Group: Development/Libraries
 Summary: Performance Co-Pilot (PCP) Perl bindings for PCP Memory Mapped Values
-URL: http://www.performancecopilot.org
+URL: http://www.pcp.io
 Requires: pcp-libs = %{version}-%{release}
 
 %description -n perl-PCP-MMV
@@ -260,7 +300,7 @@ and analysis with pmchart, pmie, pmlogger and other PCP tools.
 License: GPLv2+
 Group: Development/Libraries
 Summary: Performance Co-Pilot (PCP) Perl bindings for importing external data into PCP archives
-URL: http://www.performancecopilot.org
+URL: http://www.pcp.io
 Requires: pcp-libs = %{version}-%{release}
 
 %description -n perl-PCP-LogImport
@@ -275,7 +315,7 @@ they can be replayed with standard PCP monitoring tools.
 License: GPLv2+
 Group: Development/Libraries
 Summary: Performance Co-Pilot (PCP) Perl bindings for post-processing output of pmlogsummary
-URL: http://www.performancecopilot.org
+URL: http://www.pcp.io
 Requires: pcp-libs = %{version}-%{release}
 
 %description -n perl-PCP-LogSummary
@@ -293,7 +333,7 @@ exporting this data into third-party tools (e.g. spreadsheets).
 License: LGPLv2+
 Group: Applications/System
 Summary: Performance Co-Pilot tools for importing sar data into PCP archive logs
-URL: http://www.performancecopilot.org
+URL: http://www.pcp.io
 Requires: pcp-libs = %{version}-%{release}
 Requires: perl-PCP-LogImport = %{version}-%{release}
 Requires: sysstat
@@ -309,7 +349,7 @@ into standard PCP archive logs for replay with any PCP monitoring tool.
 License: LGPLv2+
 Group: Applications/System
 Summary: Performance Co-Pilot tools for importing iostat data into PCP archive logs
-URL: http://www.performancecopilot.org
+URL: http://www.pcp.io
 Requires: pcp-libs = %{version}-%{release}
 Requires: perl-PCP-LogImport = %{version}-%{release}
 Requires: sysstat
@@ -325,7 +365,7 @@ into standard PCP archive logs for replay with any PCP monitoring tool.
 License: LGPLv2+
 Group: Applications/System
 Summary: Performance Co-Pilot tools for importing MTRG data into PCP archive logs
-URL: http://www.performancecopilot.org
+URL: http://www.pcp.io
 Requires: pcp-libs = %{version}-%{release}
 Requires: perl-PCP-LogImport = %{version}-%{release}
 
@@ -340,7 +380,7 @@ into standard PCP archive logs for replay with any PCP monitoring tool.
 License: LGPLv2+
 Group: Applications/System
 Summary: Performance Co-Pilot tools for importing collectl log files into PCP archive logs
-URL: http://www.performancecopilot.org
+URL: http://www.pcp.io
 Requires: pcp-libs = %{version}-%{release}
 
 %description import-collectl2pcp
@@ -355,7 +395,7 @@ into standard PCP archive logs for replay with any PCP monitoring tool.
 License: GPLv2+
 Group: Applications/System
 Summary: Performance Co-Pilot (PCP) metrics for Performance API and hardware counters
-URL: http://www.performancecopilot.org
+URL: http://www.pcp.io
 Requires: pcp-libs = %{version}-%{release}
 Requires: papi-devel
 BuildRequires: papi-devel
@@ -373,7 +413,7 @@ collecting hardware counters statistics through PAPI (Performance API).
 License: GPLv2+
 Group: Applications/System
 Summary: Performance Co-Pilot (PCP) metrics for Infiniband HCAs and switches
-URL: http://www.performancecopilot.org
+URL: http://www.pcp.io
 Requires: pcp-libs = %{version}-%{release}
 Requires: libibmad >= 1.3.7 libibumad >= 1.3.7
 BuildRequires: libibmad-devel >= 1.3.7 libibumad-devel >= 1.3.7
@@ -391,12 +431,30 @@ but can also be configured to monitor remote GUIDs such as IB switches.
 License: GPLv2+
 Group: Development/Libraries
 Summary: Performance Co-Pilot (PCP) Python bindings and documentation
-URL: http://www.performancecopilot.org
+URL: http://www.pcp.io
 Requires: pcp-libs = %{version}-%{release}
 
 %description -n python-pcp
-The python PCP module contains the language bindings for
-building Performance Metric API (PMAPI) tools using Python.
+This python PCP module contains the language bindings for
+Performance Metric API (PMAPI) monitor tools and Performance
+Metric Domain Agent (PMDA) collector tools written in Python.
+
+%if !%{disable_python3}
+#
+# python3-pcp. This is the PCP library bindings for python3.
+#
+%package -n python3-pcp
+License: GPLv2+
+Group: Development/Libraries
+Summary: Performance Co-Pilot (PCP) Python3 bindings and documentation
+URL: http://www.pcp.io
+Requires: pcp-libs = %{version}-%{release}
+
+%description -n python3-pcp
+This python PCP module contains the language bindings for
+Performance Metric API (PMAPI) monitor tools and Performance
+Metric Domain Agent (PMDA) collector tools written in Python3.
+%endif
 
 %if !%{disable_qt}
 #
@@ -406,7 +464,7 @@ building Performance Metric API (PMAPI) tools using Python.
 License: GPLv2+ and LGPLv2+ and LGPLv2+ with exceptions
 Group: Applications/System
 Summary: Visualization tools for the Performance Co-Pilot toolkit
-URL: http://www.performancecopilot.org
+URL: http://www.pcp.io
 Requires: pcp-libs = %{version}-%{release}
 
 %description -n pcp-gui
@@ -420,12 +478,13 @@ monitoring systems using live and archived Performance Co-Pilot
 # pcp-doc package
 #
 %package -n pcp-doc
+License: GPLv2+ and CC-BY
 Group: Documentation
 %if 0%{?rhel} == 0 || 0%{?rhel} > 5
 BuildArch: noarch
 %endif
 Summary: Documentation and tutorial for the Performance Co-Pilot
-URL: http://www.performancecopilot.org
+URL: http://www.pcp.io
 
 %description -n pcp-doc
 Documentation and tutorial for the Performance Co-Pilot
@@ -440,6 +499,7 @@ PCP utilities and daemons, and the PCP graphical tools.
 
 %prep
 %setup -q
+%setup -q -T -D -a 1
 
 %clean
 rm -Rf $RPM_BUILD_ROOT
@@ -452,6 +512,7 @@ make default_pcp
 rm -Rf $RPM_BUILD_ROOT
 export NO_CHOWN=true DIST_ROOT=$RPM_BUILD_ROOT
 make install_pcp
+
 PCP_GUI='pmchart|pmconfirm|pmdumptext|pmmessage|pmquery|pmsnap|pmtime'
 
 # Fix stuff we do/don't want to ship
@@ -470,6 +531,8 @@ rm -fr $RPM_BUILD_ROOT/%{_confdir}/pmwebd
 rm -fr $RPM_BUILD_ROOT/%{_initddir}/pmwebd
 rm -fr $RPM_BUILD_ROOT/%{_unitdir}/pmwebd.service
 rm -f $RPM_BUILD_ROOT/%{_libexecdir}/pcp/bin/pmwebd
+%else
+mv pcp-webjs $RPM_BUILD_ROOT/%{_datadir}/pcp/jsdemos
 %endif
 
 %if %{disable_infiniband}
@@ -481,6 +544,7 @@ rm -fr $RPM_BUILD_ROOT/%{_pmdasdir}/infiniband
 
 %if %{disable_qt}
 rm -fr $RPM_BUILD_ROOT/%{_pixmapdir}
+rm -fr $RPM_BUILD_ROOT/%{_confdir}/pmsnap
 rm -f `find $RPM_BUILD_ROOT/%{_mandir}/man1 | egrep "$PCP_GUI"`
 %else
 rm -rf $RPM_BUILD_ROOT/usr/share/doc/pcp-gui
@@ -518,7 +582,7 @@ cat base_bin.list base_exec.list base_man.list |\
   egrep "$PCP_GUI" >> pcp-gui.list
 %endif
 cat base_pmdas.list base_bin.list base_exec.list base_man.list |\
-  egrep -v 'pmdaib|pmmgr|pmweb|2pcp' |\
+  egrep -v 'pmdaib|pmmgr|pmweb|pmsnap|2pcp' |\
   egrep -v "$PCP_GUI|pixmaps|pcp-doc|tutorials" |\
   egrep -v %{_confdir} | egrep -v %{_logsdir} > base.list
 
@@ -736,25 +800,31 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %dir %{_datadir}/pcp
 %dir %{_localstatedir}/lib/pcp
 %dir %{_localstatedir}/lib/pcp/config
-%dir %attr(0775,pcp,pcp) %{_localstatedir}/lib/pcp/config/pmda
 %dir %attr(0775,pcp,pcp) %{_tempsdir}
 %dir %attr(0775,pcp,pcp) %{_tempsdir}/pmie
 %dir %attr(0775,pcp,pcp) %{_tempsdir}/pmlogger
-%dir %attr(0775,pcp,pcp) %{_logsdir}
 
-%{_datadir}/pcp/lib
+%dir %{_datadir}/pcp/lib
+%{_datadir}/pcp/lib/ReplacePmnsSubtree
+%{_datadir}/pcp/lib/bashproc.sh
+%{_datadir}/pcp/lib/lockpmns
+%{_datadir}/pcp/lib/pmdaproc.sh
+%{_datadir}/pcp/lib/rc-proc.sh
+%{_datadir}/pcp/lib/rc-proc.sh.minimal
+%{_datadir}/pcp/lib/unlockpmns
+
+%dir %attr(0775,pcp,pcp) %{_logsdir}
 %attr(0775,pcp,pcp) %{_logsdir}/pmcd
 %attr(0775,pcp,pcp) %{_logsdir}/pmlogger
 %attr(0775,pcp,pcp) %{_logsdir}/pmie
 %attr(0775,pcp,pcp) %{_logsdir}/pmproxy
 %{_localstatedir}/lib/pcp/pmns
-%if %{disable_systemd}
 %{_initddir}/pcp
 %{_initddir}/pmcd
 %{_initddir}/pmlogger
 %{_initddir}/pmie
 %{_initddir}/pmproxy
-%else
+%if !%{disable_systemd}
 %{_unitdir}/pmcd.service
 %{_unitdir}/pmlogger.service
 %{_unitdir}/pmie.service
@@ -777,7 +847,13 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %attr(0664,pcp,pcp) %config(noreplace) %{_confdir}/pmie/control
 %dir %attr(0775,pcp,pcp) %{_confdir}/pmlogger
 %attr(0664,pcp,pcp) %config(noreplace) %{_confdir}/pmlogger/control
-%{_localstatedir}/lib/pcp/config/*
+
+%{_localstatedir}/lib/pcp/config/pmafm
+%{_localstatedir}/lib/pcp/config/pmieconf
+%{_localstatedir}/lib/pcp/config/pmlogconf
+%{_localstatedir}/lib/pcp/config/pmlogger
+%{_localstatedir}/lib/pcp/config/pmlogrewrite
+%dir %attr(0775,pcp,pcp) %{_localstatedir}/lib/pcp/config/pmda
 
 %if 0%{?rhel} == 0 || 0%{?rhel} > 5
 %{tapsetdir}/pmcd.stp
@@ -836,9 +912,8 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %if !%{disable_microhttpd}
 %files webapi
 %defattr(-,root,root)
-%if %{disable_systemd}
 %{_initddir}/pmwebd
-%else
+%if !%{disable_systemd}
 %{_unitdir}/pmwebd.service
 %endif
 %{_libexecdir}/pcp/bin/pmwebd
@@ -849,11 +924,16 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %{_mandir}/man3/PMWEBAPI.3.gz
 %endif
 
+%if !%{disable_microhttpd}
+%files webjs
+%defattr(-,root,root)
+%{_datadir}/pcp/jsdemos
+%endif
+
 %files manager
 %defattr(-,root,root)
-%if %{disable_systemd}
 %{_initddir}/pmmgr
-%else
+%if !%{disable_systemd}
 %{_unitdir}/pmmgr.service
 %endif
 %{_libexecdir}/pcp/bin/pmmgr
@@ -912,16 +992,19 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %files -n python-pcp -f python-pcp.list.rpm
 %defattr(-,root,root)
 
+%if !%{disable_python3}
+%files -n python3-pcp -f python3-pcp.list.rpm
+%defattr(-,root,root)
+%endif
+
 %if !%{disable_qt}
 %files -n pcp-gui -f pcp-gui.list
 %defattr(-,root,root,-)
 
-%{_sysconfdir}/pcp/pmsnap
-%config(noreplace) %{_sysconfdir}/pcp/pmsnap
+%{_confdir}/pmsnap
+%config(noreplace) %{_confdir}/pmsnap/control
 %{_localstatedir}/lib/pcp/config/pmsnap
-%dir %{_localstatedir}/lib/pcp/config/pmsnap
 %{_localstatedir}/lib/pcp/config/pmchart
-%dir %{_localstatedir}/lib/pcp/config/pmchart
 %{_localstatedir}/lib/pcp/config/pmafm/pcp-gui
 %{_datadir}/applications/pmchart.desktop
 %endif
@@ -930,6 +1013,11 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root,-)
 
 %changelog
+* Fri Oct 31 2014 Nathan Scott <nathans@redhat.com> - 3.10.0-1
+- Create new sub-packages for pcp-webjs and python3-pcp.
+- Fix __pmDiscoverServicesWithOptions(1) codes (BZ 1139529)
+- Update to latest PCP sources.
+
 * Fri Sep 05 2014 Nathan Scott <nathans@redhat.com> - 3.9.10-1
 - Convert PCP init scripts to systemd services (BZ 996438)
 - Fix pmlogsummary -S/-T time window reporting (BZ 1132476)
