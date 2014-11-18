@@ -1,7 +1,7 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
 Version: 3.10.0
-%define buildversion 1
+%define buildversion 2
 
 Release: %{buildversion}%{?dist}
 License: GPLv2+ and LGPLv2.1+
@@ -1013,6 +1013,9 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root,-)
 
 %changelog
+* Tue Nov 18 2014 Dave Brolley <brolley@redhat.com> - 3.10.0-2
+- papi 5.4.0 rebuild
+
 * Fri Oct 31 2014 Nathan Scott <nathans@redhat.com> - 3.10.0-1
 - Create new sub-packages for pcp-webjs and python3-pcp.
 - Fix __pmDiscoverServicesWithOptions(1) codes (BZ 1139529)
