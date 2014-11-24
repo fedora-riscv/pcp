@@ -872,7 +872,7 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 
 %{_localstatedir}/lib/pcp/config/pmafm
 %dir %attr(0775,pcp,pcp) %{_localstatedir}/lib/pcp/config/pmie
-%{_localstatedir}/lib/pcp/config/pmie/*
+%{_localstatedir}/lib/pcp/config/pmie
 %{_localstatedir}/lib/pcp/config/pmieconf
 %dir %attr(0775,pcp,pcp) %{_localstatedir}/lib/pcp/config/pmlogger
 %{_localstatedir}/lib/pcp/config/pmlogger/*
@@ -1049,12 +1049,6 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root,-)
 
 %changelog
-* Mon Nov 24 2014 Lukas Berk <lberk@redhat.com> - 3.10.1-0.759.gf6d6a93
-- Automated weekly rawhide release
-
-* Mon Nov 24 2014 Lukas Berk <lberk@redhat.com> - 3.10.1-0.759.gf6d6a93
-- Automated weekly rawhide release
-
 * Mon Nov 24 2014 Lukas Berk <lberk@redhat.com> - 3.10.1-0.759.gf6d6a93
 - Automated weekly rawhide release
 - Applied spec changes from upstream git
