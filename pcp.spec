@@ -1054,6 +1054,9 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 
 * Mon Nov 24 2014 Lukas Berk <lberk@redhat.com> - 3.10.1-0.759.gf6d6a93
 - Automated weekly rawhide release
+
+* Mon Nov 24 2014 Lukas Berk <lberk@redhat.com> - 3.10.1-0.759.gf6d6a93
+- Automated weekly rawhide release
 - Applied spec changes from upstream git
 
 * Tue Nov 18 2014 Dave Brolley <brolley@redhat.com> - 3.10.0-2
