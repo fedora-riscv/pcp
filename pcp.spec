@@ -12,10 +12,14 @@ Source1: pcp-webjs.src.tar.gz
 
 # There are no papi/libpfm devel packages for s390 nor for some rhels, disable
 %ifarch s390 s390x
-%{!?disable_papi: %global disable_papi 1}
-%{!?disable_perfevent: %global disable_perfevent 1}
+%define disable_papi 1
+%define disable_perfevent 1
 %else
-%{!?disable_papi: %global disable_papi 0%{?rhel} < 6}
+%if 0%{?rhel} == 0 || 0%{?rhel} > 5
+%define disable_papi 0
+%else
+%define disable_papi 1
+%endif
 %if 0%{?fedora} >= 20 || 0%{?rhel} > 6
 %define disable_perfevent 0
 %else
