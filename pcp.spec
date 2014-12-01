@@ -39,6 +39,12 @@ Source1: pcp-webjs.src.tar.gz
 %else
 %define disable_cairo 1
 %endif
+# Python development environment before el6 is pre-2.6 (too old)
+%if 0%{?rhel} == 0 || 0%{?rhel} > 5
+%define disable_python2 0
+%else
+%define disable_python2 1
+%endif
 # No python3 development environment before el7
 %if 0%{?rhel} == 0 || 0%{?rhel} > 6
 %define disable_python3 0
@@ -57,7 +63,9 @@ BuildRequires: procps autoconf bison flex
 BuildRequires: nss-devel
 BuildRequires: rpm-devel
 BuildRequires: avahi-devel
+%if !%{disable_python2}
 BuildRequires: python-devel
+%endif
 %if !%{disable_python3}
 BuildRequires: python3-devel
 %endif
@@ -132,14 +140,12 @@ Obsoletes: pcp-pmda-nvidia
 %ifarch s390 s390x
 %define disable_infiniband 1
 %else
-
 # we never want Infiniband on RHEL5 or earlier
 %if 0%{?rhel} != 0 && 0%{?rhel} < 6
 %define disable_infiniband 1
 %else
 %define disable_infiniband 0
 %endif
-
 %endif
 
 %if %{disable_infiniband}
@@ -154,9 +160,6 @@ Obsoletes: pcp-pmda-nvidia
 %define _with_perfevent --with-perfevent=yes
 %endif
 
-%if %{disable_qt}
-%define _with_ib --with-qt=no
-%endif
 
 %description
 Performance Co-Pilot (PCP) provides a framework and services to support
@@ -464,6 +467,7 @@ collecting Infiniband statistics.  By default, it monitors the local HCAs
 but can also be configured to monitor remote GUIDs such as IB switches.
 %endif
 
+%if !%{disable_python2}
 #
 # python-pcp. This is the PCP library bindings for python.
 #
@@ -478,6 +482,7 @@ Requires: pcp-libs = %{version}-%{release}
 This python PCP module contains the language bindings for
 Performance Metric API (PMAPI) monitor tools and Performance
 Metric Domain Agent (PMDA) collector tools written in Python.
+%endif
 
 %if !%{disable_python3}
 #
@@ -545,7 +550,7 @@ PCP utilities and daemons, and the PCP graphical tools.
 rm -Rf $RPM_BUILD_ROOT
 
 %build
-%configure %{?_with_initd} %{?_with_doc} %{?_with_ib} %{?_with_papi} %{?_with_perfevent} %{?_with_qt}
+%configure %{?_with_initd} %{?_with_doc} %{?_with_ib} %{?_with_papi} %{?_with_perfevent}
 make default_pcp
 
 %install
@@ -586,6 +591,10 @@ rm -fr $RPM_BUILD_ROOT/%{_pmdasdir}/infiniband
 %if %{disable_qt}
 rm -fr $RPM_BUILD_ROOT/%{_pixmapdir}
 rm -fr $RPM_BUILD_ROOT/%{_confdir}/pmsnap
+rm -fr $RPM_BUILD_ROOT/%{_localstatedir}/lib/pcp/config/pmsnap
+rm -fr $RPM_BUILD_ROOT/%{_localstatedir}/lib/pcp/config/pmchart
+rm -f $RPM_BUILD_ROOT/%{_localstatedir}/lib/pcp/config/pmafm/pcp-gui
+rm -f $RPM_BUILD_ROOT/%{_datadir}/applications/pmchart.desktop
 rm -f `find $RPM_BUILD_ROOT/%{_mandir}/man1 | egrep "$PCP_GUI"`
 %else
 rm -rf $RPM_BUILD_ROOT/usr/share/doc/pcp-gui
@@ -1045,8 +1054,10 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %files -n perl-PCP-LogSummary -f perl-pcp-logsummary.list
 %defattr(-,root,root)
 
+%if !%{disable_python2}
 %files -n python-pcp -f python-pcp.list.rpm
 %defattr(-,root,root)
+%endif
 
 %if !%{disable_python3}
 %files -n python3-pcp -f python3-pcp.list.rpm
