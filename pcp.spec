@@ -7,7 +7,7 @@ Release: %{buildversion}%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
-Source0: %{name}-%{version}-0.759.gf6d6a93.tar.gz
+Source0: %{name}-%{version}.src.tar.gz
 Source1: pcp-webjs.src.tar.gz
 
 # There are no papi/libpfm devel packages for s390 nor for some rhels, disable
