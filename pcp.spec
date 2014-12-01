@@ -27,17 +27,25 @@ Source1: pcp-webjs.src.tar.gz
 %endif
 %endif
 
+# https://bugzilla.redhat.com/show_bug.cgi?id=1169226
+%if 0%{?rhel} == 0 || 0%{?rhel} > 5
 %define disable_microhttpd 0
+%else
+%define disable_microhttpd 1
+%endif
+# Cairo headers on el5 incompatible with graphite code
 %if 0%{?rhel} == 0 || 0%{?rhel} > 5
 %define disable_cairo 0
 %else
 %define disable_cairo 1
 %endif
+# No python3 development environment before el7
 %if 0%{?rhel} == 0 || 0%{?rhel} > 6
 %define disable_python3 0
 %else
 %define disable_python3 1
 %endif
+# Qt development and runtime environment missing components before el6
 %if 0%{?rhel} == 0 || 0%{?rhel} > 5
 %define disable_qt 0
 %else
