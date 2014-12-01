@@ -1,8 +1,7 @@
 pcp-3.3.3-1.src.tar.gz
+/pcp-webjs.src.tar.gz
 /pcp-3.5.0-1.src.tar.gz
 /pcp-3.5.11-1.src.tar.gz
-/pcp.spec
-/pcp_configure_ppc64.patch
 /pcp-3.5.11-2.src.tar.gz
 /pcp-3.6.3-1.src.tar.gz
 /pcp-3.6.5-1.src.tar.gz
@@ -34,7 +33,5 @@ pcp-3.3.3-1.src.tar.gz
 /pcp-3.9.7.src.tar.gz
 /pcp-3.9.9.src.tar.gz
 /pcp-3.9.10.src.tar.gz
-/pcpfans-3.9.10.tar.gz
-/pcpfans-3.9.10.src.tar.gz
 /pcp-3.10.0.src.tar.gz
-/pcp-webjs.src.tar.gz
+/pcp-3.10.1.src.tar.gz
