@@ -16,7 +16,11 @@ Source1: pcp-webjs.src.tar.gz
 %{!?disable_perfevent: %global disable_perfevent 1}
 %else
 %{!?disable_papi: %global disable_papi 0%{?rhel} < 6}
-%{!?disable_perfevent: %global disable_perfevent 0%{?rhel} < 7}
+%if 0%{?fedora} >= 20 || 0%{?rhel} > 6
+%define disable_perfevent 0
+%else
+%define disable_perfevent 1
+%endif
 %endif
 
 %define disable_microhttpd 0
