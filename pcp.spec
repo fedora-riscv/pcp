@@ -28,7 +28,11 @@ Source1: pcp-webjs.src.tar.gz
 %endif
 
 %define disable_microhttpd 0
+%if 0%{?rhel} == 0 || 0%{?rhel} > 5
 %define disable_cairo 0
+%else
+%define disable_cairo 1
+%endif
 %if 0%{?rhel} == 0 || 0%{?rhel} > 6
 %define disable_python3 0
 %else
