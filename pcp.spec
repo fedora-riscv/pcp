@@ -3,11 +3,11 @@ Name: pcp
 Version: 3.10.2
 %define buildversion 1
 
-Release: 0.124.g1e0c939%{?dist}
+Release: 0.222.g77dcbbf%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
-Source0: %{name}-%{version}-0.124.g1e0c939.tar.gz
+Source0: %{name}-%{version}-0.222.g77dcbbf.tar.gz
 Source1: ftp://oss.sgi.com/projects/pcp/download/pcp-webjs.src.tar.gz
 
 # There are no papi/libpfm devel packages for s390 nor for some rhels, disable
@@ -100,7 +100,8 @@ BuildRequires: systemd-devel
 BuildRequires: desktop-file-utils
 BuildRequires: qt4-devel >= 4.4
 %endif
- 
+BuildRequires: flex-devel
+
 Requires: bash gawk sed grep fileutils findutils initscripts perl which
 Requires: python
 %if 0%{?rhel} <= 5
@@ -854,6 +855,7 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %dir %attr(0775,pcp,pcp) %{_tempsdir}
 %dir %attr(0775,pcp,pcp) %{_tempsdir}/pmie
 %dir %attr(0775,pcp,pcp) %{_tempsdir}/pmlogger
+%dir %attr(0700,root,root) %{_tempsdir}/pmcd
 
 %dir %{_datadir}/pcp/lib
 %{_datadir}/pcp/lib/ReplacePmnsSubtree
@@ -1080,6 +1082,10 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root,-)
 
 %changelog
+* Mon Dec 22 2014 Lukas Berk <lberk@redhat.com> - 3.10.2-0.222.g77dcbbf
+- Automated weekly rawhide release
+- Applied spec changes from upstream git
+
 * Mon Dec 15 2014 Lukas Berk <lberk@redhat.com> - 3.10.2-0.124.g1e0c939
 - Automated weekly rawhide release
 
