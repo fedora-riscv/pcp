@@ -3,11 +3,11 @@ Name: pcp
 Version: 3.10.2
 %define buildversion 1
 
-Release: 0.305.g64a0d4b%{?dist}
+Release: 0.309.g3c90ff9%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
-Source0: %{name}-%{version}-0.305.g64a0d4b.tar.gz
+Source0: %{name}-%{version}-0.309.g3c90ff9.tar.gz
 Source1: ftp://oss.sgi.com/projects/pcp/download/pcp-webjs.src.tar.gz
 
 # There are no papi/libpfm devel packages for s390 nor for some rhels, disable
@@ -1082,6 +1082,9 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root,-)
 
 %changelog
+* Mon Jan 19 2015 Lukas Berk <lberk@redhat.com> - 3.10.2-0.309.g3c90ff9
+- Automated weekly rawhide release
+
 * Mon Jan 12 2015 Lukas Berk <lberk@redhat.com> - 3.10.2-0.305.g64a0d4b
 - Automated weekly rawhide release
 
