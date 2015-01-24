@@ -1,14 +1,14 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.10.1
+Version: 3.10.2
 %define buildversion 1
 
-Release: %{buildversion}%{?dist}
+Release: 0.309.g3c90ff9%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
-Source0: %{name}-%{version}.src.tar.gz
-Source1: pcp-webjs.src.tar.gz
+Source0: %{name}-%{version}-0.309.g3c90ff9.tar.gz
+Source1: ftp://oss.sgi.com/projects/pcp/download/pcp-webjs.src.tar.gz
 
 # There are no papi/libpfm devel packages for s390 nor for some rhels, disable
 %ifarch s390 s390x
@@ -100,7 +100,8 @@ BuildRequires: systemd-devel
 BuildRequires: desktop-file-utils
 BuildRequires: qt4-devel >= 4.4
 %endif
- 
+BuildRequires: flex-devel
+
 Requires: bash gawk sed grep fileutils findutils initscripts perl which
 Requires: python
 %if 0%{?rhel} <= 5
@@ -595,7 +596,7 @@ rm -fr $RPM_BUILD_ROOT/%{_localstatedir}/lib/pcp/config/pmsnap
 rm -fr $RPM_BUILD_ROOT/%{_localstatedir}/lib/pcp/config/pmchart
 rm -f $RPM_BUILD_ROOT/%{_localstatedir}/lib/pcp/config/pmafm/pcp-gui
 rm -f $RPM_BUILD_ROOT/%{_datadir}/applications/pmchart.desktop
-rm -f `find $RPM_BUILD_ROOT/%{_mandir}/man1 | egrep "$PCP_GUI"`
+rm -f `find $RPM_BUILD_ROOT/%{_mandir}/man1 | grep -E "$PCP_GUI"`
 %else
 rm -rf $RPM_BUILD_ROOT/usr/share/doc/pcp-gui
 desktop-file-validate $RPM_BUILD_ROOT/%{_datadir}/applications/pmchart.desktop
@@ -609,10 +610,10 @@ done
 
 # list of PMDAs in the base pkg
 ls -1 $RPM_BUILD_ROOT/%{_pmdasdir} |\
-  egrep -v 'simple|sample|trivial|txmon' |\
-  egrep -v 'perfevent|perfalloc.1' |\
-  egrep -v '^ib$|infiniband' |\
-  egrep -v 'papi' |\
+  grep -E -v 'simple|sample|trivial|txmon' |\
+  grep -E -v 'perfevent|perfalloc.1' |\
+  grep -E -v '^ib$|infiniband' |\
+  grep -E -v 'papi' |\
   sed -e 's#^#'%{_pmdasdir}'\/#' >base_pmdas.list
 
 # all base pcp package files except those split out into sub packages
@@ -630,18 +631,18 @@ ls -1 $RPM_BUILD_ROOT/%{_datadir}/pcp/demos/tutorials |\
 ls -1 $RPM_BUILD_ROOT/%{_pixmapdir} |\
   sed -e 's#^#'%{_pixmapdir}'\/#' > pcp-gui.list
 cat base_bin.list base_exec.list base_man.list |\
-  egrep "$PCP_GUI" >> pcp-gui.list
+  grep -E "$PCP_GUI" >> pcp-gui.list
 %endif
 cat base_pmdas.list base_bin.list base_exec.list base_man.list |\
-  egrep -v 'pmdaib|pmmgr|pmweb|pmsnap|2pcp' |\
-  egrep -v "$PCP_GUI|pixmaps|pcp-doc|tutorials" |\
-  egrep -v %{_confdir} | egrep -v %{_logsdir} > base.list
+  grep -E -v 'pmdaib|pmmgr|pmweb|pmsnap|2pcp' |\
+  grep -E -v "$PCP_GUI|pixmaps|pcp-doc|tutorials" |\
+  grep -E -v %{_confdir} | grep -E -v %{_logsdir} > base.list
 
 # all devel pcp package files except those split out into sub packages
 ls -1 $RPM_BUILD_ROOT/%{_mandir}/man3 |\
-sed -e 's#^#'%{_mandir}'\/man3\/#' | egrep -v '3pm|PMWEBAPI' >devel.list
+sed -e 's#^#'%{_mandir}'\/man3\/#' | grep -E -v '3pm|PMWEBAPI' >devel.list
 ls -1 $RPM_BUILD_ROOT/%{_datadir}/pcp/demos |\
-sed -e 's#^#'%{_datadir}'\/pcp\/demos\/#' | egrep -v tutorials >> devel.list
+sed -e 's#^#'%{_datadir}'\/pcp\/demos\/#' | grep -E -v tutorials >> devel.list
 
 %pre testsuite
 test -d %{_testsdir} || mkdir -p -m 755 %{_testsdir}
@@ -854,6 +855,7 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %dir %attr(0775,pcp,pcp) %{_tempsdir}
 %dir %attr(0775,pcp,pcp) %{_tempsdir}/pmie
 %dir %attr(0775,pcp,pcp) %{_tempsdir}/pmlogger
+%dir %attr(0700,root,root) %{_tempsdir}/pmcd
 
 %dir %{_datadir}/pcp/lib
 %{_datadir}/pcp/lib/ReplacePmnsSubtree
@@ -1080,6 +1082,33 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root,-)
 
 %changelog
+* Fri Jan 23 2015 Dave Brolley <brolley@redhat.com> - 3.10.2-1
+- Update to latest PCP sources.
+- Improve pmdaInit diagnostics for DSO helptext (BZ 1182949)
+- Tighten up PMDA termination on pmcd stop (BZ 1180109)
+- Correct units for cgroup memory metrics (BZ 1180351)
+- Add the pcp2graphite(1) export script (BZ 1163986)
+
+* Mon Jan 19 2015 Lukas Berk <lberk@redhat.com> - 3.10.2-0.309.g3c90ff9
+- Automated weekly rawhide release
+
+* Mon Jan 12 2015 Lukas Berk <lberk@redhat.com> - 3.10.2-0.305.g64a0d4b
+- Automated weekly rawhide release
+
+* Mon Jan 05 2015 Lukas Berk <lberk@redhat.com> - 3.10.2-0.292.g764a0fb
+- Automated weekly rawhide release
+
+* Mon Dec 22 2014 Lukas Berk <lberk@redhat.com> - 3.10.2-0.222.g77dcbbf
+- Automated weekly rawhide release
+- Applied spec changes from upstream git
+
+* Mon Dec 15 2014 Lukas Berk <lberk@redhat.com> - 3.10.2-0.124.g1e0c939
+- Automated weekly rawhide release
+
+* Mon Dec 08 2014 Lukas Berk <lberk@redhat.com> - 3.10.2-0.21.g6bad98e
+- Automated weekly rawhide release
+- Applied spec changes from upstream git
+
 * Mon Dec 01 2014 Nathan Scott <nathans@redhat.com> - 3.10.1-1
 - New conditionally-built pcp-pmda-perfevent sub-package.
 - Update to latest PCP sources.
