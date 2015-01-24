@@ -3,7 +3,7 @@ Name: pcp
 Version: 3.10.2
 %define buildversion 1
 
-Release: 0.309.g3c90ff9%{?dist}
+Release: 1%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
