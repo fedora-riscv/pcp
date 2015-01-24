@@ -3,11 +3,11 @@ Name: pcp
 Version: 3.10.2
 %define buildversion 1
 
-Release: 1%{?dist}
+Release: %{buildversion}%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
-Source0: %{name}-%{version}-0.309.g3c90ff9.tar.gz
+Source0: %{name}-%{version}-src.tar.gz
 Source1: ftp://oss.sgi.com/projects/pcp/download/pcp-webjs.src.tar.gz
 
 # There are no papi/libpfm devel packages for s390 nor for some rhels, disable
