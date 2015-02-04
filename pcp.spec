@@ -1,7 +1,7 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
 Version: 3.10.2
-%define buildversion 1
+%define buildversion 2
 
 Release: %{buildversion}%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
@@ -9,6 +9,8 @@ URL: http://www.pcp.io
 Group: Applications/System
 Source0: ftp://oss.sgi.com/projects/pcp/download/%{name}-%{version}.src.tar.gz
 Source1: ftp://oss.sgi.com/projects/pcp/download/pcp-webjs.src.tar.gz
+patch0: pcp.3.10.2.el5.python-1.patch
+patch1: pcp.3.10.2.el5.python-2.patch
 
 # There are no papi/libpfm devel packages for s390 nor for some rhels, disable
 %ifarch s390 s390x
@@ -28,7 +30,7 @@ Source1: ftp://oss.sgi.com/projects/pcp/download/pcp-webjs.src.tar.gz
 %endif
 
 # https://bugzilla.redhat.com/show_bug.cgi?id=1169226
-%if 0%{?rhel} == 0 || 0%{?rhel} > 5
+%if 0%{?rhel} == 0 || 0%{?rhel} >= 5
 %define disable_microhttpd 0
 %else
 %define disable_microhttpd 1
@@ -102,13 +104,17 @@ BuildRequires: qt4-devel >= 4.4
 %endif
 
 Requires: bash gawk sed grep fileutils findutils initscripts perl which
-Requires: python
+%if !%{disable_python2}
 %if 0%{?rhel} <= 5
 Requires: python-ctypes
 %endif
+Requires: python
+%endif
 
 Requires: pcp-libs = %{version}-%{release}
+%if !%{disable_python2}
 Requires: python-pcp = %{version}-%{release}
+%endif
 Requires: perl-PCP-PMDA = %{version}-%{release}
 Obsoletes: pcp-gui-debuginfo
 Obsoletes: pcp-pmda-nvidia
@@ -539,6 +545,8 @@ and other detailed documentation about the internals of core
 PCP utilities and daemons, and the PCP graphical tools.
 
 %prep
+%patch0 -p1
+%patch1 -p1
 %setup -q
 %setup -q -T -D -a 1
 
@@ -1077,6 +1085,9 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root,-)
 
 %changelog
+* Wed Feb 04 2015 Dave Brolley <brolley@redhat.com> - 3.10.2-2
+- Resolve python-pcp dependency
+
 * Fri Jan 23 2015 Dave Brolley <brolley@redhat.com> - 3.10.2-1
 - Update to latest PCP sources.
 - Improve pmdaInit diagnostics for DSO helptext (BZ 1182949)

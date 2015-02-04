@@ -1,0 +1,35 @@
+diff --git a/qa/common.python b/qa/common.python
+index e9d4dcc..d8e917b 100755
+--- a/qa/common.python
++++ b/qa/common.python
+@@ -10,6 +10,7 @@
+ 
+ # allow alternate versions of python to be used
+ python=${PYTHON:-/usr/bin/python}
++eval $python -c exit 2>/dev/null || _notrun "$python unavailable"
+ 
+ # verify output from unittest indicates successful testing
+ _check_unittest()
+diff --git a/src/GNUmakefile b/src/GNUmakefile
+index bd4205f..98682d0 100644
+--- a/src/GNUmakefile
++++ b/src/GNUmakefile
+@@ -90,6 +90,7 @@ OTHER_SUBDIRS = \
+ 	pmval \
+ 	pmwebapi \
+ 	perl \
++	python \
+ 	procmemstat \
+ 	autofsd-probe \
+ 	telnet-probe \
+@@ -102,10 +103,6 @@ OTHER_SUBDIRS = \
+ 	pcp2graphite \
+ 	#
+ 
+-ifeq "$(ENABLE_PYTHON)" "true"
+-OTHER_SUBDIRS += python
+-endif
+-
+ SUBDIRS = \
+ 	$(INCLUDE_SUBDIR) \
+ 	$(LIBPCP_SUBDIR) \
