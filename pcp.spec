@@ -545,10 +545,10 @@ and other detailed documentation about the internals of core
 PCP utilities and daemons, and the PCP graphical tools.
 
 %prep
-%patch0 -p1
-%patch1 -p1
 %setup -q
 %setup -q -T -D -a 1
+%patch0 -p1
+%patch1 -p1
 
 %clean
 rm -Rf $RPM_BUILD_ROOT
