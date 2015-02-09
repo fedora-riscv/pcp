@@ -1,14 +1,14 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.10.2
+Version: 3.10.3
 %define buildversion 1
 
-Release: %{buildversion}%{?dist}
+Release: 0.508.g8090873%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
-Source0: ftp://oss.sgi.com/projects/pcp/download/%{name}-%{version}.src.tar.gz
-Source1: ftp://oss.sgi.com/projects/pcp/download/pcp-webjs.src.tar.gz
+Source0: %{name}-%{version}-0.508.g8090873.tar.gz
+Source1: ftp://ftp.pcp.io/projects/pcp/download/pcp-webjs.src.tar.gz
 
 # There are no papi/libpfm devel packages for s390 nor for some rhels, disable
 %ifarch s390 s390x
@@ -27,18 +27,8 @@ Source1: ftp://oss.sgi.com/projects/pcp/download/pcp-webjs.src.tar.gz
 %endif
 %endif
 
-# https://bugzilla.redhat.com/show_bug.cgi?id=1169226
-%if 0%{?rhel} == 0 || 0%{?rhel} > 5
 %define disable_microhttpd 0
-%else
-%define disable_microhttpd 1
-%endif
-# Cairo headers on el5 incompatible with graphite code
-%if 0%{?rhel} == 0 || 0%{?rhel} > 5
 %define disable_cairo 0
-%else
-%define disable_cairo 1
-%endif
 # Python development environment before el6 is pre-2.6 (too old)
 %if 0%{?rhel} == 0 || 0%{?rhel} > 5
 %define disable_python2 0
@@ -102,13 +92,17 @@ BuildRequires: qt4-devel >= 4.4
 %endif
 
 Requires: bash gawk sed grep fileutils findutils initscripts perl which
-Requires: python
+%if !%{disable_python2}
 %if 0%{?rhel} <= 5
 Requires: python-ctypes
 %endif
+Requires: python
+%endif
 
 Requires: pcp-libs = %{version}-%{release}
+%if !%{disable_python2}
 Requires: python-pcp = %{version}-%{release}
+%endif
 Requires: perl-PCP-PMDA = %{version}-%{release}
 Obsoletes: pcp-gui-debuginfo
 Obsoletes: pcp-pmda-nvidia
@@ -1077,6 +1071,10 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root,-)
 
 %changelog
+* Mon Feb 09 2015 Lukas Berk <lberk@redhat.com> - 3.10.3-0.508.g8090873
+- Automated weekly rawhide release
+- Applied spec changes from upstream git
+
 * Fri Jan 23 2015 Dave Brolley <brolley@redhat.com> - 3.10.2-1
 - Update to latest PCP sources.
 - Improve pmdaInit diagnostics for DSO helptext (BZ 1182949)
