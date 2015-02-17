@@ -3,11 +3,11 @@ Name: pcp
 Version: 3.10.3
 %define buildversion 1
 
-Release: 0.508.g8090873%{?dist}
+Release: 0.620.g89545ba%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
-Source0: %{name}-%{version}-0.508.g8090873.tar.gz
+Source0: %{name}-%{version}-0.620.g89545ba.tar.gz
 Source1: ftp://ftp.pcp.io/projects/pcp/download/pcp-webjs.src.tar.gz
 
 # There are no papi/libpfm devel packages for s390 nor for some rhels, disable
@@ -387,6 +387,21 @@ Requires: perl-PCP-LogImport = %{version}-%{release}
 
 %description import-mrtg2pcp
 Performance Co-Pilot (PCP) front-end tools for importing MTRG data
+into standard PCP archive logs for replay with any PCP monitoring tool.
+
+#
+# pcp-import-ganglia2pcp
+#
+%package import-ganglia2pcp
+License: LGPLv2+
+Group: Applications/System
+Summary: Performance Co-Pilot tools for importing ganglia data into PCP archive logs
+URL: http://www.pcp.io
+Requires: pcp-libs = %{version}-%{release}
+Requires: perl-PCP-LogImport = %{version}-%{release}
+
+%description import-ganglia2pcp
+Performance Co-Pilot (PCP) front-end tools for importing ganglia data
 into standard PCP archive logs for replay with any PCP monitoring tool.
 
 #
@@ -1003,6 +1018,11 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %{_bindir}/mrtg2pcp
 %{_mandir}/man1/mrtg2pcp.1.gz
 
+%files import-ganglia2pcp
+%defattr(-,root,root)
+%{_bindir}/ganglia2pcp
+%{_mandir}/man1/ganglia2pcp.1.gz
+
 %files import-collectl2pcp
 %defattr(-,root,root)
 %{_bindir}/collectl2pcp
@@ -1071,6 +1091,10 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root,-)
 
 %changelog
+* Tue Feb 17 2015 Lukas Berk <lberk@redhat.com> - 3.10.3-0.620.g89545ba
+- Automated weekly rawhide release
+- Applied spec changes from upstream git
+
 * Mon Feb 09 2015 Lukas Berk <lberk@redhat.com> - 3.10.3-0.508.g8090873
 - Automated weekly rawhide release
 - Applied spec changes from upstream git
