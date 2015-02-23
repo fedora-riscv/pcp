@@ -1,7 +1,7 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
 Version: 3.10.2
-%define buildversion 2
+%define buildversion 3
 
 Release: %{buildversion}%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
@@ -43,7 +43,7 @@ Patch1: bz1194324.patch
 %if 0%{?rhel} == 0 || 0%{?rhel} > 6
 %define disable_python3 0
 # Do we wish to mandate python3 use in pcp?  (f22+ and el8+)
-%if 0%{?fedora} >= 22 || 0%{?rhel} > 7
+%if 0%{?fedora} >= 23 || 0%{?rhel} > 7
 %define default_python3 1
 %else
 %define default_python3 0
@@ -1096,6 +1096,10 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root,-)
 
 %changelog
+* Mon Feb 23 2015 Slavek Kabrda <bkabrda@redhat.com> - 3.10.2-3
+- Only use Python 3 in Fedora >= 23, more info at
+  https://bugzilla.redhat.com/show_bug.cgi?id=1194324#c4
+
 * Mon Feb 23 2015 Nathan Scott <nathans@redhat.com> - 3.10.2-2
 - Initial changes to support python3 as default (BZ 1194324)
 
