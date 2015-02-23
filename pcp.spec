@@ -1,14 +1,17 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.10.3
-%define buildversion 1
+Version: 3.10.2
+%define buildversion 2
 
-Release: 0.508.g8090873%{?dist}
+Release: %{buildversion}%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
-Source0: %{name}-%{version}-0.508.g8090873.tar.gz
+Source0: ftp://ftp.pcp.io/projects/pcp/download/%{name}-%{version}.src.tar.gz
 Source1: ftp://ftp.pcp.io/projects/pcp/download/pcp-webjs.src.tar.gz
+
+# python3 conversion patch
+Patch1: bz1194324.patch
 
 # There are no papi/libpfm devel packages for s390 nor for some rhels, disable
 %ifarch s390 s390x
@@ -29,6 +32,7 @@ Source1: ftp://ftp.pcp.io/projects/pcp/download/pcp-webjs.src.tar.gz
 
 %define disable_microhttpd 0
 %define disable_cairo 0
+
 # Python development environment before el6 is pre-2.6 (too old)
 %if 0%{?rhel} == 0 || 0%{?rhel} > 5
 %define disable_python2 0
@@ -38,9 +42,18 @@ Source1: ftp://ftp.pcp.io/projects/pcp/download/pcp-webjs.src.tar.gz
 # No python3 development environment before el7
 %if 0%{?rhel} == 0 || 0%{?rhel} > 6
 %define disable_python3 0
+# Do we wish to mandate python3 use in pcp?  (f22+ and el8+)
+%if 0%{?fedora} >= 22 || 0%{?rhel} > 7
+%define default_python3 1
+%else
+%define default_python3 0
+%define
+%endif
 %else
 %define disable_python3 1
+%define default_python3 0
 %endif
+
 # Qt development and runtime environment missing components before el6
 %if 0%{?rhel} == 0 || 0%{?rhel} > 5
 %define disable_qt 0
@@ -55,6 +68,14 @@ BuildRequires: rpm-devel
 BuildRequires: avahi-devel
 %if !%{disable_python2}
 BuildRequires: python-devel
+# systemtap dtrace utility requires python2, so only use it if we can
+%if 0%{?rhel} == 0 || 0%{?rhel} > 5
+BuildRequires: systemtap-sdt-devel
+%else
+%ifnarch ppc ppc64
+BuildRequires: systemtap-sdt-devel
+%endif
+%endif
 %endif
 %if !%{disable_python3}
 BuildRequires: python3-devel
@@ -74,13 +95,6 @@ BuildRequires: libmicrohttpd-devel
 %if !%{disable_cairo}
 BuildRequires: cairo-devel
 %endif
-%if 0%{?rhel} == 0 || 0%{?rhel} > 5
-BuildRequires: systemtap-sdt-devel
-%else
-%ifnarch ppc ppc64
-BuildRequires: systemtap-sdt-devel
-%endif
-%endif
 BuildRequires: perl(ExtUtils::MakeMaker)
 BuildRequires: initscripts man
 %if 0%{?fedora} >= 18 || 0%{?rhel} >= 7
@@ -92,7 +106,7 @@ BuildRequires: qt4-devel >= 4.4
 %endif
 
 Requires: bash gawk sed grep fileutils findutils initscripts perl which
-%if !%{disable_python2}
+%if !%{disable_python2} && !%{default_python3}
 %if 0%{?rhel} <= 5
 Requires: python-ctypes
 %endif
@@ -100,7 +114,10 @@ Requires: python
 %endif
 
 Requires: pcp-libs = %{version}-%{release}
-%if !%{disable_python2}
+%if %{default_python3}
+Requires: python3-pcp = %{version}-%{release}
+%endif
+%if !%{disable_python2} && !%{default_python3}
 Requires: python-pcp = %{version}-%{release}
 %endif
 Requires: perl-PCP-PMDA = %{version}-%{release}
@@ -535,6 +552,7 @@ PCP utilities and daemons, and the PCP graphical tools.
 %prep
 %setup -q
 %setup -q -T -D -a 1
+%patch1 -p1
 
 %clean
 rm -Rf $RPM_BUILD_ROOT
@@ -596,6 +614,13 @@ for f in $RPM_BUILD_ROOT/%{_initddir}/{pcp,pmcd,pmlogger,pmie,pmwebd,pmmgr,pmpro
 	test -f "$f" || continue
 	sed -i -e '/^# chkconfig/s/:.*$/: - 95 05/' -e '/^# Default-Start:/s/:.*$/:/' $f
 done
+
+%if %{default_python3}
+# defaulting to python3 requires /usr/bin/python3 hashbang lines, make it so
+for f in `find $RPM_BUILD_ROOT -type f -print`; do
+	sed -i -e "1 s|^#!/usr/bin/python\b|#!/usr/bin/python3|" $f
+done
+%endif
 
 # list of PMDAs in the base pkg
 ls -1 $RPM_BUILD_ROOT/%{_pmdasdir} |\
@@ -1071,9 +1096,8 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root,-)
 
 %changelog
-* Mon Feb 09 2015 Lukas Berk <lberk@redhat.com> - 3.10.3-0.508.g8090873
-- Automated weekly rawhide release
-- Applied spec changes from upstream git
+* Mon Feb 23 2015 Nathan Scott <nathans@redhat.com> - 3.10.2-2
+- Initial changes to support python3 as default (BZ 1194324)
 
 * Fri Jan 23 2015 Dave Brolley <brolley@redhat.com> - 3.10.2-1
 - Update to latest PCP sources.
@@ -1081,26 +1105,6 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 - Tighten up PMDA termination on pmcd stop (BZ 1180109)
 - Correct units for cgroup memory metrics (BZ 1180351)
 - Add the pcp2graphite(1) export script (BZ 1163986)
-
-* Mon Jan 19 2015 Lukas Berk <lberk@redhat.com> - 3.10.2-0.309.g3c90ff9
-- Automated weekly rawhide release
-
-* Mon Jan 12 2015 Lukas Berk <lberk@redhat.com> - 3.10.2-0.305.g64a0d4b
-- Automated weekly rawhide release
-
-* Mon Jan 05 2015 Lukas Berk <lberk@redhat.com> - 3.10.2-0.292.g764a0fb
-- Automated weekly rawhide release
-
-* Mon Dec 22 2014 Lukas Berk <lberk@redhat.com> - 3.10.2-0.222.g77dcbbf
-- Automated weekly rawhide release
-- Applied spec changes from upstream git
-
-* Mon Dec 15 2014 Lukas Berk <lberk@redhat.com> - 3.10.2-0.124.g1e0c939
-- Automated weekly rawhide release
-
-* Mon Dec 08 2014 Lukas Berk <lberk@redhat.com> - 3.10.2-0.21.g6bad98e
-- Automated weekly rawhide release
-- Applied spec changes from upstream git
 
 * Mon Dec 01 2014 Nathan Scott <nathans@redhat.com> - 3.10.1-1
 - New conditionally-built pcp-pmda-perfevent sub-package.
