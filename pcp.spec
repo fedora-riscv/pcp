@@ -1,7 +1,7 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.10.2
-%define buildversion 3
+Version: 3.10.3
+%define buildversion 1
 
 Release: %{buildversion}%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
@@ -9,9 +9,6 @@ URL: http://www.pcp.io
 Group: Applications/System
 Source0: ftp://ftp.pcp.io/projects/pcp/download/%{name}-%{version}.src.tar.gz
 Source1: ftp://ftp.pcp.io/projects/pcp/download/pcp-webjs.src.tar.gz
-
-# python3 conversion patch
-Patch1: bz1194324.patch
 
 # There are no papi/libpfm devel packages for s390 nor for some rhels, disable
 %ifarch s390 s390x
@@ -42,7 +39,7 @@ Patch1: bz1194324.patch
 # No python3 development environment before el7
 %if 0%{?rhel} == 0 || 0%{?rhel} > 6
 %define disable_python3 0
-# Do we wish to mandate python3 use in pcp?  (f22+ and el8+)
+# Do we wish to mandate python3 use in pcp?  (f23+ and el8+)
 %if 0%{?fedora} >= 23 || 0%{?rhel} > 7
 %define default_python3 1
 %else
@@ -407,6 +404,21 @@ Performance Co-Pilot (PCP) front-end tools for importing MTRG data
 into standard PCP archive logs for replay with any PCP monitoring tool.
 
 #
+# pcp-import-ganglia2pcp
+#
+%package import-ganglia2pcp
+License: LGPLv2+
+Group: Applications/System
+Summary: Performance Co-Pilot tools for importing ganglia data into PCP archive logs
+URL: http://www.pcp.io
+Requires: pcp-libs = %{version}-%{release}
+Requires: perl-PCP-LogImport = %{version}-%{release}
+
+%description import-ganglia2pcp
+Performance Co-Pilot (PCP) front-end tools for importing ganglia data
+into standard PCP archive logs for replay with any PCP monitoring tool.
+
+#
 # pcp-import-collectl2pcp
 #
 %package import-collectl2pcp
@@ -552,7 +564,6 @@ PCP utilities and daemons, and the PCP graphical tools.
 %prep
 %setup -q
 %setup -q -T -D -a 1
-%patch1 -p1
 
 %clean
 rm -Rf $RPM_BUILD_ROOT
@@ -1028,6 +1039,11 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %{_bindir}/mrtg2pcp
 %{_mandir}/man1/mrtg2pcp.1.gz
 
+%files import-ganglia2pcp
+%defattr(-,root,root)
+%{_bindir}/ganglia2pcp
+%{_mandir}/man1/ganglia2pcp.1.gz
+
 %files import-collectl2pcp
 %defattr(-,root,root)
 %{_bindir}/collectl2pcp
@@ -1096,6 +1112,11 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root,-)
 
 %changelog
+* Mon Mar 02 2015 Dave Brolley <brolley@redhat.com> - 3.10.3-1
+- Update to latest PCP sources.
+- New sub-package for pcp-import-ganglia2pcp.
+- Python3 support, enabled by default in f22 onward (BZ 1194324)
+
 * Mon Feb 23 2015 Slavek Kabrda <bkabrda@redhat.com> - 3.10.2-3
 - Only use Python 3 in Fedora >= 23, more info at
   https://bugzilla.redhat.com/show_bug.cgi?id=1194324#c4
