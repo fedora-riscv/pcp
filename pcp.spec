@@ -65,14 +65,6 @@ BuildRequires: rpm-devel
 BuildRequires: avahi-devel
 %if !%{disable_python2}
 BuildRequires: python-devel
-# systemtap dtrace utility requires python2, so only use it if we can
-%if 0%{?rhel} == 0 || 0%{?rhel} > 5
-BuildRequires: systemtap-sdt-devel
-%else
-%ifnarch ppc ppc64
-BuildRequires: systemtap-sdt-devel
-%endif
-%endif
 %endif
 %if !%{disable_python3}
 BuildRequires: python3-devel
@@ -91,6 +83,13 @@ BuildRequires: libmicrohttpd-devel
 %endif
 %if !%{disable_cairo}
 BuildRequires: cairo-devel
+%endif
+%if 0%{?rhel} == 0 || 0%{?rhel} > 5
+BuildRequires: systemtap-sdt-devel
+%else
+%ifnarch ppc ppc64
+BuildRequires: systemtap-sdt-devel
+%endif
 %endif
 BuildRequires: perl(ExtUtils::MakeMaker)
 BuildRequires: initscripts man
