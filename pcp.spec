@@ -1,7 +1,7 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
 Version: 3.10.3
-%define buildversion 1
+%define buildversion 2
 
 Release: %{buildversion}%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
@@ -1112,6 +1112,9 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root,-)
 
 %changelog
+* Wed Mar 04 2015 Dave Brolley <brolley@redhat.com> - 3.10.3-2
+- papi 5.4.1 rebuild
+
 * Mon Mar 02 2015 Dave Brolley <brolley@redhat.com> - 3.10.3-1
 - Update to latest PCP sources.
 - New sub-package for pcp-import-ganglia2pcp.
