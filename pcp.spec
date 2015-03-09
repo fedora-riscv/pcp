@@ -1,13 +1,13 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
 Version: 3.10.3
-%define buildversion 2
+%define buildversion 1
 
-Release: %{buildversion}%{?dist}
+Release: 0.750.g326298d%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
-Source0: ftp://ftp.pcp.io/projects/pcp/download/%{name}-%{version}.src.tar.gz
+Source0: %{name}-%{version}-0.750.g326298d.tar.gz
 Source1: ftp://ftp.pcp.io/projects/pcp/download/pcp-webjs.src.tar.gz
 
 # There are no papi/libpfm devel packages for s390 nor for some rhels, disable
@@ -39,8 +39,8 @@ Source1: ftp://ftp.pcp.io/projects/pcp/download/pcp-webjs.src.tar.gz
 # No python3 development environment before el7
 %if 0%{?rhel} == 0 || 0%{?rhel} > 6
 %define disable_python3 0
-# Do we wish to mandate python3 use in pcp?  (f23+ and el8+)
-%if 0%{?fedora} >= 23 || 0%{?rhel} > 7
+# Do we wish to mandate python3 use in pcp?  (f22+ and el8+)
+%if 0%{?fedora} >= 22 || 0%{?rhel} > 7
 %define default_python3 1
 %else
 %define default_python3 0
@@ -65,14 +65,6 @@ BuildRequires: rpm-devel
 BuildRequires: avahi-devel
 %if !%{disable_python2}
 BuildRequires: python-devel
-# systemtap dtrace utility requires python2, so only use it if we can
-%if 0%{?rhel} == 0 || 0%{?rhel} > 5
-BuildRequires: systemtap-sdt-devel
-%else
-%ifnarch ppc ppc64
-BuildRequires: systemtap-sdt-devel
-%endif
-%endif
 %endif
 %if !%{disable_python3}
 BuildRequires: python3-devel
@@ -91,6 +83,13 @@ BuildRequires: libmicrohttpd-devel
 %endif
 %if !%{disable_cairo}
 BuildRequires: cairo-devel
+%endif
+%if 0%{?rhel} == 0 || 0%{?rhel} > 5
+BuildRequires: systemtap-sdt-devel
+%else
+%ifnarch ppc ppc64
+BuildRequires: systemtap-sdt-devel
+%endif
 %endif
 BuildRequires: perl(ExtUtils::MakeMaker)
 BuildRequires: initscripts man
@@ -1112,6 +1111,10 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root,-)
 
 %changelog
+* Mon Mar 09 2015 Lukas Berk <lberk@redhat.com> - 3.10.3-0.750.g326298d
+- Automated weekly rawhide release
+- Applied spec changes from upstream git
+
 * Wed Mar 04 2015 Dave Brolley <brolley@redhat.com> - 3.10.3-2
 - papi 5.4.1 rebuild
 
