@@ -1,13 +1,13 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
 Version: 3.10.3
-%define buildversion 1
+%define buildversion 3
 
-Release: 0.804.g2e0fe59%{?dist}
+Release: 3.20150323git12b566f%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
-Source0: %{name}-%{version}-0.804.g2e0fe59.tar.gz
+Source0: %{name}-%{version}-3.20150323git12b566f.tar.gz
 Source1: ftp://ftp.pcp.io/projects/pcp/download/pcp-webjs.src.tar.gz
 
 # There are no papi/libpfm devel packages for s390 nor for some rhels, disable
@@ -1109,6 +1109,9 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %defattr(-,root,root,-)
 
 %changelog
+* Mon Mar 23 2015 Lukas Berk <lberk@redhat.com> - 3.10.3-3.20150323git12b566f
+- Automated weekly rawhide release
+
 * Mon Mar 16 2015 Lukas Berk <lberk@redhat.com> - 3.10.3-0.804.g2e0fe59
 - Automated weekly rawhide release
 - Applied spec changes from upstream git
