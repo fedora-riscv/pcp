@@ -3,11 +3,11 @@ Name: pcp
 Version: 3.10.4
 %global buildversion 0
 
-Release: 0.20150331git8184d99%{?dist}
+Release: 0.20150413git42cfcf1%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
-Source0: %{name}-%{version}-0.20150331git8184d99.tar.gz
+Source0: %{name}-%{version}-0.20150413git42cfcf1.tar.gz
 Source1: ftp://ftp.pcp.io/projects/pcp/download/pcp-webjs.src.tar.gz
 
 # There are no papi/libpfm devel packages for s390 nor for some rhels, disable
@@ -271,6 +271,8 @@ License: ASL2.0 and MIT and CC-BY
 Group: Applications/System
 %if 0%{?rhel} == 0 || 0%{?rhel} > 5
 BuildArch: noarch
+# pcp-webapi provides the .../webapps base path relied on here
+Requires: pcp-webapi = %{version}-%{release}
 %endif
 Summary: Performance Co-Pilot (PCP) web applications
 URL: http://www.pcp.io
@@ -1080,6 +1082,10 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %files -n pcp-doc -f pcp-doc.list
 
 %changelog
+* Mon Apr 13 2015 Lukas Berk <lberk@redhat.com> - 3.10.4-0.20150413git42cfcf1
+- Automated weekly rawhide release
+- Applied spec changes from upstream git
+
 * Tue Mar 31 2015 Lukas Berk <lberk@redhat.com> - 3.10.4-0.20150331git8184d99
 - Automated weekly rawhide release
 - Applied spec changes from upstream git
