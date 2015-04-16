@@ -1,0 +1,3411 @@
+diff -Naurp pcp-3.10.2.orig/configure pcp-3.10.2/configure
+--- pcp-3.10.2.orig/configure	2015-01-24 07:23:07.000000000 +1100
++++ pcp-3.10.2/configure	2015-02-23 21:24:36.653658342 +1100
+@@ -798,6 +798,7 @@ qmake
+ enable_qt
+ qt_release
+ QMAKE
++pcp_python_prog
+ enable_python3
+ enable_python
+ PYTHON3
+@@ -6229,6 +6230,14 @@ done
+ fi
+ 
+ 
++if test "$enable_python3" = "true"
++then
++    pcp_python_prog=$PYTHON3
++else
++    pcp_python_prog=$PYTHON
++fi
++
++
+ qmake=$QMAKE
+ enable_qt=false
+ qt_release=release
+diff -Naurp pcp-3.10.2.orig/configure.ac pcp-3.10.2/configure.ac
+--- pcp-3.10.2.orig/configure.ac	2015-01-24 07:23:07.000000000 +1100
++++ pcp-3.10.2/configure.ac	2015-02-23 21:24:36.655658340 +1100
+@@ -534,6 +534,15 @@ AS_IF([test "x$do_python3" != "xno"], [
+ ])
+ AC_SUBST(enable_python3)
+ 
++dnl choose the prefered python executable (py2 -> py3 transtion)
++if test "$enable_python3" = "true"
++then
++    pcp_python_prog=$PYTHON3
++else
++    pcp_python_prog=$PYTHON
++fi
++AC_SUBST(pcp_python_prog)
++
+ qmake=$QMAKE
+ enable_qt=false
+ qt_release=release
+diff -Naurp pcp-3.10.2.orig/man/man1/pmatop.1 pcp-3.10.2/man/man1/pmatop.1
+--- pcp-3.10.2.orig/man/man1/pmatop.1	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/man/man1/pmatop.1	2015-02-23 21:21:18.198838491 +1100
+@@ -1,45 +1,50 @@
++'\"macro stdmacro
++.\"
++.\" Copyright (c) 2014-2015 Red Hat.
++.\" 
++.\" This program is free software; you can redistribute it and/or modify it
++.\" under the terms of the GNU General Public License as published by the
++.\" Free Software Foundation; either version 2 of the License, or (at your
++.\" option) any later version.
++.\" 
++.\" This program is distributed in the hope that it will be useful, but
++.\" WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
++.\" or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++.\" for more details.
++.\"
+ .TH PMATOP 1 "PCP" "Performance Co-Pilot"
+ .SH NAME
+-.B pmatop 
+-\- System & Process Monitor
++\f3pmatop\f1 \- System and Process Monitor
+ .SH SYNOPSIS
+ Interactive usage:
+ .P
+ .B pmatop
+-[\-g|\-m] [\-L linelen] [\-h host]
+-[
+-.I interval
+-[
+-.I samples
+-]]
++[\-g|\-m] [\-L \f2linelen\f1] [\-h \f2host\f1 | \-a \f2archive\f1]
++[\f2interval\f1 [\f2samples\f1]]
+ .P
+-Writing and reading raw logfiles:
++Writing and reading PCP archive folios:
+ .P
+-.B pmatop
+-\-w
+-.I rawfile
+-[
+-.I interval
+-[
+-.I samples
+-]]
++.BR pmatop
++\-w \f2rawfile\f1 [\f2interval\f1 [\f2samples\f1]]
+ .br
+ .B pmatop
+-\-r [
+-.I rawfile
+-] [\-g|\-m] [\-L linelen] [\-h host]
++\-r [\f2rawfile\f1] [\-g|\-m] [\-L \f2linelen\f1]
+ .SH DESCRIPTION
+ The program
+-.I pmatop
++.B pmatop
+ is an interactive monitor to view the load on a Linux system.
+ It shows the occupation of the most critical hardware resources 
+ (from a performance point of view) on system level, i.e. cpu, memory, disk
+ and network.  By default metrics from the local host are
+ displayed, but a different host may be specified with the 
+-.I [-h host]
+-option.  It is modeled after
++.IR \-h/\-\-host
++option, or from a PCP archive using the
++.IR \-a/\-\-archive
++option.
++.PP
++It is modeled on
+ .BR atop (1)
+-and provides a showcase for the variety of data available via
++and provides a showcase for the variety of data available from
+ .BR pmcd (1).
+ .br
+ .PP
+@@ -57,33 +62,33 @@ The intervals are repeated till the numb
+ in interactive mode.
+ .PP
+ When 
+-.I pmatop
++.B pmatop
+ is started, it checks whether the standard output channel is connected to a
+ screen, or to a file/pipe. In the first case it produces screen control 
+ codes (via the ncurses library) and behaves interactively; in the second case
+ it produces flat ASCII-output.
+ .PP
+ In interactive mode, the output of 
+-.I pmatop
++.B pmatop
+ scales dynamically to the current dimensions of the screen/window.
+ .PP
+ Furthermore in interactive mode the output of 
+-.I pmatop
++.B pmatop
+ can be controlled by pressing particular keys.
+ However it is also possible to specify such key as
+-.B flag
++.I flag
+ on the command line. In that case
+-.I pmatop
++.B pmatop
+ switches to the indicated mode on beforehand; this mode can 
+ be modified again interactively. Specifying such key as flag is especially
+ useful when running
+-.I pmatop
++.B pmatop
+ with output to a pipe or file (non-interactively).
+ These flags are the same as the keys that can be pressed in interactive
+ mode (see section INTERACTIVE COMMANDS).
+ .SH OUTPUT FORMAT
+ The output of 
+-.I pmatop
++.B pmatop
+ consists of system level and process level information.  The system
+ level information consists of the following output lines:
+ .PP
+@@ -146,7 +151,7 @@ The remaining lines are one line per pro
+ described below.
+ .SH INTERACTIVE COMMANDS
+ When running
+-.I pmatop
++.B pmatop
+ interactively (no output redirection), keys can be pressed to control the
+ output.
+ .PP
+@@ -191,16 +196,16 @@ Request for help information (also the k
+ .B z
+ The pause key can be used to freeze the current situation in order to
+ investigate the output on the screen. While 
+-.I pmatop
++.B pmatop
+ is paused, the keys described above can be pressed to show other
+ information about the current list of processes.
+ Whenever the pause key is pressed again,
+-pmatop will continue with a next sample.
++.B pmatop
++will continue with a next sample.
+ .PP
+ .SH "SEE ALSO"
+ .BR PCPIntro (1),
+-.BR collectl (1),
+-.BR perl (1),
++.BR atop (1),
+ .BR python (1),
+ .BR pmlogger (1),
+ .BR pmcd (1),
+@@ -209,4 +214,3 @@ pmatop will continue with a next sample.
+ .BR PMAPI (3),
+ and
+ .BR pcp.conf (5).
+-
+diff -Naurp pcp-3.10.2.orig/qa/553 pcp-3.10.2/qa/553
+--- pcp-3.10.2.orig/qa/553	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/qa/553	2015-02-23 21:24:36.655658340 +1100
+@@ -10,6 +10,7 @@ echo "QA output created by $seq"
+ 
+ . ./common.python
+ 
++python_path=`which $python`
+ pmda_path="$PCP_PMDAS_DIR/gluster"
+ pmda_script="$pmda_path/pmdagluster.python"
+ test -f "$pmda_script" || _notrun "pmdagluster not supported"
+@@ -27,6 +28,9 @@ _filter()
+ 	-e "s;$PCP_PMDAS_DIR;\$PCP_PMDAS_DIR;" \
+         -e '/pmResult/s/ .* numpmid/ ... numpmid/' \
+         -e '/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/s/[^ ]*/TIMESTAMP/' \
++	-e "s;$python_path;\$PCP_PYTHON_PROG;" \
++	-e "s;$python;python;" \
++    #end
+ 
+     test -f gluster.log && cat gluster.log >> $seq.full
+ }
+@@ -49,13 +53,13 @@ PCP_PYTHON_PMNS=root $python "$pmda_scri
+ 
+ echo "== Testing volume instance domain" | tee -a $seq.full
+ $sudo dbpmda -n $tmp.root -ie <<End-of-File 2>&1 | _filter
+-open pipe $python $pmda_script
++open pipe $python_path $pmda_script
+ instance $domain.0
+ End-of-File
+ 
+ echo "== Testing volume information metrics" | tee -a $seq.full
+ $sudo dbpmda -n $tmp.root -ie <<End-of-File 2>&1 | _filter
+-open pipe $python $pmda_script
++open pipe $python_path $pmda_script
+ getdesc on
+ desc gluster.volume.dist.count
+ desc gluster.volume.stripe.count
+@@ -68,7 +72,7 @@ End-of-File
+ echo "== Testing volume control metric store" | tee -a $seq.full
+ $sudo rm -f $tmp.start $tmp.stop
+ $sudo dbpmda -n $tmp.root -ie <<End-of-File 2>&1 | _filter
+-open pipe $python $pmda_script
++open pipe $python_path $pmda_script
+ getdesc on
+ desc gluster.volume.profile
+ fetch gluster.volume.profile
+@@ -81,13 +85,13 @@ $sudo rm -f $tmp.start $tmp.stop
+ 
+ echo "== Testing brick instance domain" | tee -a $seq.full
+ $sudo dbpmda -n $tmp.root -ie <<End-of-File 2>&1 | _filter
+-open pipe $python $pmda_script
++open pipe $python_path $pmda_script
+ instance $domain.1
+ End-of-File
+ 
+ echo "== Testing brick throughput metrics" | tee -a $seq.full
+ $sudo dbpmda -n $tmp.root -ie <<End-of-File 2>&1 | _filter
+-open pipe $python $pmda_script
++open pipe $python_path $pmda_script
+ getdesc on
+ desc gluster.brick.read_bytes
+ fetch gluster.brick.read_bytes
+@@ -97,7 +101,7 @@ End-of-File
+ 
+ echo "== Testing brick file operation latency metrics" | tee -a $seq.full
+ $sudo dbpmda -n $tmp.root -ie <<End-of-File 2>&1 | _filter
+-open pipe $python $pmda_script
++open pipe $python_path $pmda_script
+ getdesc on
+ desc gluster.brick.latency.getxattr.avg
+ desc gluster.brick.latency.getxattr.min
+diff -Naurp pcp-3.10.2.orig/qa/553.out pcp-3.10.2/qa/553.out
+--- pcp-3.10.2.orig/qa/553.out	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/qa/553.out	2015-02-23 21:24:36.656658340 +1100
+@@ -1,14 +1,14 @@
+ QA output created by 553
+ == Testing volume instance domain
+-dbpmda> open pipe /usr/bin/python $PCP_PMDAS_DIR/gluster/pmdagluster.python
+-Start python PMDA: /usr/bin/python $PCP_PMDAS_DIR/gluster/pmdagluster.python
++dbpmda> open pipe $PCP_PYTHON_PROG $PCP_PMDAS_DIR/gluster/pmdagluster.python
++Start python PMDA: $PCP_PYTHON_PROG $PCP_PMDAS_DIR/gluster/pmdagluster.python
+ dbpmda> instance 118.0
+ pmInDom: 118.0
+ [  0] inst: 0 name: "gv0"
+ dbpmda> 
+ == Testing volume information metrics
+-dbpmda> open pipe /usr/bin/python $PCP_PMDAS_DIR/gluster/pmdagluster.python
+-Start python PMDA: /usr/bin/python $PCP_PMDAS_DIR/gluster/pmdagluster.python
++dbpmda> open pipe $PCP_PYTHON_PROG $PCP_PMDAS_DIR/gluster/pmdagluster.python
++Start python PMDA: $PCP_PYTHON_PROG $PCP_PMDAS_DIR/gluster/pmdagluster.python
+ dbpmda> getdesc on
+ dbpmda> desc gluster.volume.dist.count
+ PMID: 118.2.1
+@@ -39,8 +39,8 @@ pmResult ... numpmid: 1
+     inst [0 or ???] value 3
+ dbpmda> 
+ == Testing volume control metric store
+-dbpmda> open pipe /usr/bin/python $PCP_PMDAS_DIR/gluster/pmdagluster.python
+-Start python PMDA: /usr/bin/python $PCP_PMDAS_DIR/gluster/pmdagluster.python
++dbpmda> open pipe $PCP_PYTHON_PROG $PCP_PMDAS_DIR/gluster/pmdagluster.python
++Start python PMDA: $PCP_PYTHON_PROG $PCP_PMDAS_DIR/gluster/pmdagluster.python
+ dbpmda> getdesc on
+ dbpmda> desc gluster.volume.profile
+ PMID: 118.2.0
+@@ -67,15 +67,15 @@ dbpmda>
+ start gv0 - test 553
+ stop gv0 - test 553
+ == Testing brick instance domain
+-dbpmda> open pipe /usr/bin/python $PCP_PMDAS_DIR/gluster/pmdagluster.python
+-Start python PMDA: /usr/bin/python $PCP_PMDAS_DIR/gluster/pmdagluster.python
++dbpmda> open pipe $PCP_PYTHON_PROG $PCP_PMDAS_DIR/gluster/pmdagluster.python
++Start python PMDA: $PCP_PYTHON_PROG $PCP_PMDAS_DIR/gluster/pmdagluster.python
+ dbpmda> instance 118.1
+ pmInDom: 118.1
+ [  0] inst: 0 name: "smash.scott.net.au:/export/brick1/glusterdev1"
+ dbpmda> 
+ == Testing brick throughput metrics
+-dbpmda> open pipe /usr/bin/python $PCP_PMDAS_DIR/gluster/pmdagluster.python
+-Start python PMDA: /usr/bin/python $PCP_PMDAS_DIR/gluster/pmdagluster.python
++dbpmda> open pipe $PCP_PYTHON_PROG $PCP_PMDAS_DIR/gluster/pmdagluster.python
++Start python PMDA: $PCP_PYTHON_PROG $PCP_PMDAS_DIR/gluster/pmdagluster.python
+ dbpmda> getdesc on
+ dbpmda> desc gluster.brick.read_bytes
+ PMID: 118.0.0
+@@ -97,8 +97,8 @@ pmResult ... numpmid: 1
+     inst [0 or ???] value 24
+ dbpmda> 
+ == Testing brick file operation latency metrics
+-dbpmda> open pipe /usr/bin/python $PCP_PMDAS_DIR/gluster/pmdagluster.python
+-Start python PMDA: /usr/bin/python $PCP_PMDAS_DIR/gluster/pmdagluster.python
++dbpmda> open pipe $PCP_PYTHON_PROG $PCP_PMDAS_DIR/gluster/pmdagluster.python
++Start python PMDA: $PCP_PYTHON_PROG $PCP_PMDAS_DIR/gluster/pmdagluster.python
+ dbpmda> getdesc on
+ dbpmda> desc gluster.brick.latency.getxattr.avg
+ PMID: 118.1.74
+diff -Naurp pcp-3.10.2.orig/qa/718 pcp-3.10.2/qa/718
+--- pcp-3.10.2.orig/qa/718	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/qa/718	2015-02-23 21:24:36.656658340 +1100
+@@ -2,35 +2,40 @@
+ # PCP QA Test No. 718
+ # Exercise dbpmda use with the Python implementation of pmdasimple.
+ #
+-# Copyright (c) 2013 Red Hat.
++# Copyright (c) 2013,2015 Red Hat.
+ #
+ 
+ seq=`basename $0`
+ echo "QA output created by $seq"
+ 
+ . ./common.python
++
+ $python -c "from pcp import pmda" >/dev/null 2>&1
+ [ $? -eq 0 ] || _notrun "python pcp pmda module not installed"
+ test -f "$PCP_PMDAS_DIR/simple/pmdasimple.python"
+ [ $? -eq 0 ] || _notrun "python simple pmda not yet installed"
+ 
++python_path=`which $python`
+ trap "rm -f $tmp.*; exit" 0 1 2 3 15
+ 
+ _filter()
+ {
+     sed \
+ 	-e "s;$PCP_PMDAS_DIR;\$PCP_PMDAS_DIR;" \
++	-e "s;$python_path;\$PCP_PYTHON_PROG;" \
++	-e "s;$python;python;" \
+     | _filter_dumpresult
+ }
+ 
+ domain=253
++
+ # ensure help text exists
+ cd "$PCP_PMDAS_DIR/simple"
+ $sudo ./Install </dev/null >/dev/null 2>&1
+ 
+ # real QA test starts here
+ $sudo dbpmda -n root -ie <<End-of-File 2>&1 | _filter
+-open pipe $python pmdasimple.python
++open pipe $python_path pmdasimple.python
+ getdesc on
+ desc simple.numfetch
+ fetch simple.numfetch
+diff -Naurp pcp-3.10.2.orig/qa/718.out pcp-3.10.2/qa/718.out
+--- pcp-3.10.2.orig/qa/718.out	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/qa/718.out	2015-02-23 21:24:36.656658340 +1100
+@@ -1,6 +1,6 @@
+ QA output created by 718
+-dbpmda> open pipe /usr/bin/python pmdasimple.python
+-Start python PMDA: /usr/bin/python pmdasimple.python
++dbpmda> open pipe $PCP_PYTHON_PROG pmdasimple.python
++Start python PMDA: $PCP_PYTHON_PROG pmdasimple.python
+ dbpmda> getdesc on
+ dbpmda> desc simple.numfetch
+ PMID: 253.0.0
+diff -Naurp pcp-3.10.2.orig/qa/722 pcp-3.10.2/qa/722
+--- pcp-3.10.2.orig/qa/722	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/qa/722	2015-02-23 21:21:18.199838490 +1100
+@@ -2,7 +2,7 @@
+ # PCP QA Test No. 722
+ # Exercise the python pmatop implementation
+ #
+-# Copyright (c) 2013-2014 Red Hat.
++# Copyright (c) 2013-2015 Red Hat.
+ #
+ 
+ seq=`basename $0`
+@@ -68,18 +68,44 @@ if [ $? -ne 0 ]; then
+ fi
+ 
+ # real QA test starts here
+-$PMATOP -r $here/src/pmatop-log.folio -m 1 1 2>&1 | tee -a $tmp.out | redact_header | remove_extra_whitespace
+-$PMATOP -r $here/src/pmatop-log.folio -g 1 1 2>&1 | tee -a $tmp.out | redact_header | remove_extra_whitespace
++rm -f test.pmatop $tmp.folio $tmp.direct
+ 
+-rm -f test.pmatop
++# verify mkaf(1) archive folios
++echo "generic metrics mode" >> $tmp.folio
++$PMATOP -r $here/src/pmatop-log.folio -m 1 1 2>&1 | tee -a $tmp.folio | redact_header | remove_extra_whitespace
++echo "memory metrics mode" >> $tmp.folio
++$PMATOP -r $here/src/pmatop-log.folio -g 1 1 2>&1 | tee -a $tmp.folio | redact_header | remove_extra_whitespace
++cat $tmp.folio >> $here/seq.full
++echo "== Archive folio testing complete"
++
++# verify pmlogger archive logs
++echo "generic metrics mode" >> $tmp.direct
++$PMATOP -a $here/src/pmatop-log -m 1 1 2>&1 | tee -a $tmp.direct | redact_header | remove_extra_whitespace
++echo "memory metrics mode" >> $tmp.direct
++$PMATOP -a $here/src/pmatop-log -g 1 1 2>&1 | tee -a $tmp.direct | redact_header | remove_extra_whitespace
++cat $tmp.direct >> $here/seq.full
++echo "== Direct archive testing complete"
++
++echo "== Comparing direct to folio output"
++diff $tmp.folio $tmp.direct
++if [ $? -eq 0 ]; then
++    echo "  Output compares exactly - good"
++else
++    echo "  Folio differs to direct access - bad"
++fi
++echo "== Output comparisons all completed"
++
++# verify creating archive folios
+ $PMATOP -w test.pmatop 0.2 10
+ if pmafm test.pmatop  check | grep -q OK
+-then echo pmatop log creation OK | tee -a $tmp.out 2>&1
+-else echo pmatop log creation FAILED | tee -a $tmp.out 2>&1; fi
++then echo pmatop log creation OK | tee -a $tmp.write 2>&1
++else echo pmatop log creation FAILED | tee -a $tmp.write 2>&1; fi
++cat $tmp.write >> $here/seq.full
++echo "== Live writer testing complete"
+ 
+-cat $tmp.out >>$here/$seq.full
++# finished, clean up
++eval `pmafm test.pmatop remove`
+ 
+ # success, all done
+-eval `pmafm test.pmatop remove`
+ status=0
+ exit
+diff -Naurp pcp-3.10.2.orig/qa/722.out pcp-3.10.2/qa/722.out
+--- pcp-3.10.2.orig/qa/722.out	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/qa/722.out	2015-02-23 21:21:18.200838489 +1100
+@@ -447,4 +447,458 @@ PID SYSCPU USRCPU VGROW RGROW RUID THR S
+ 9 9s 9s 9 9 root 9 -- - S 9% kworker/9:9
+ 9 9s 9s 9 9 root 9 -- - S 9% kworker/9:9
+ 9 9s 9s 9K 9 root 9 -- - S 9% ssh-agent
++== Archive folio testing complete
++ATOP - Day Month 9 9:9:9 9 9:9:9 elapsed
++PRC | sys 9h9m | user 9d | #proc 9 | #zombie 9
++CPU | sys 9% | user 9% | irq 9% | idle 9% | wait 9% |
++cpu | sys 9% | user 9% | irq 9% | idle 9% | cpu9 9% |
++cpu | sys 9% | user 9% | irq 9% | idle 9% | cpu9 9% |
++cpu | sys 9% | user 9% | irq 9% | idle 9% | cpu9 9% |
++cpu | sys 9% | user 9% | irq 9% | idle 9% | cpu9 9% |
++CPL | avg9 .9 | avg9 .9 | avg9 .9 | csw 9 | intr 9 |
++MEM | tot 9G | free 9M | cache 9G | buff 9M | slab 9G |
++SWP | tot 9G | free 9G | | vmcom 9G | vmlim 9G |
++PAG | scan 9 | steal 9 | stall 9 | swin 9 | swout 9 |
++LVM | x | | read 9 | write 9 |
++LVM | x | | read 9 | write 9 |
++LVM | x | | read 9 | write 9 |
++LVM | x | | read 9 | write 9 |
++LVM | x | | read 9 | write 9 |
++DSK | sda | busy 9% | read 9 | write 9 | avio 9 ms |
++NET | transport | tcpi 9M | tcpo 9M | udpi 9M | udpo 9M |
++NET | network | ipi 9M | ipo 9M | ipfrw 9M | deliv 9M |
++NET | lo | pcki 9M | pcko 9M | si 9 Kbps | so 9 Kpbs |
++NET | em9 | pcki 9M | pcko 9M | si 9 Kbps | so 9 Kpbs |
++NET | wlan9 | pcki 9M | pcko 9M | si 9 Kbps | so 9 Kpbs |
++PID VDATA VSTACK VGROW RGROW VSIZE RSIZE MEM CMD
++9 9G 9K 9G 9M 9G 9M 9% firefox
++9 9M 9K 9G 9M 9G 9M 9% plugin-containe
++9 9K 9K 9M 9K 9M 9K 9% Xorg
++9 9G 9K 9G 9M 9G 9M 9% gnome-shell
++9 9G 9K 9G 9M 9G 9M 9% thunderbird
++9 9M 9K 9M 9K 9M 9K 9% ibus-daemon
++9 9M 9K 9M 9K 9M 9K 9% pulseaudio
++9 9K 9K 9M 9K 9M 9K 9% ibus-x9
++9 9M 9K 9M 9M 9M 9M 9% emacs
++9 9M 9K 9M 9K 9M 9K 9% xchat
++9 9M 9K 9M 9K 9M 9K 9% polkitd
++9 9M 9K 9M 9K 9M 9K 9% vino-server
++9 9M 9K 9M 9K 9M 9K 9% gnome-terminal
++9 9M 9K 9G 9K 9G 9K 9% gnome-settings-
++9 9K 9K 9K 9K 9K 9K 9% dbus-daemon
++9 9 9 9 9 9 9 9% irq/9-iwlwifi
++9 9M 9K 9M 9K 9M 9K 9% NetworkManager
++9 9K 9K 9M 9K 9M 9K 9% ibus-engine-sim
++9 9 9 9 9 9 9 9% rcu_sched
++9 9K 9K 9K 9K 9K 9K 9% cups-polld
++9 9M 9K 9M 9K 9M 9K 9% ibus-ui-gtk9
++9 9K 9K 9M 9K 9M 9K 9% cupsd
++9 9M 9K 9M 9K 9M 9K 9% nm-applet
++9 9K 9K 9K 9K 9K 9K 9% irqbalance
++9 9M 9K 9M 9K 9M 9K 9% upowerd
++9 9M 9K 9M 9K 9M 9K 9% udisksd
++9 9M 9K 9M 9K 9M 9K 9% SpiderOakBlue
++9 9M 9K 9M 9K 9M 9K 9% SpiderOakBlue
++9 9M 9K 9M 9K 9M 9K 9% mission-control
++9 9M 9K 9M 9K 9M 9K 9% evince
++9 9M 9K 9M 9K 9M 9K 9% gnome-screensav
++9 9K 9K 9K 9K 9K 9K 9% systemd-journal
++9 9K 9K 9K 9K 9K 9K 9% acpid
++9 9M 9K 9M 9K 9M 9K 9% gnome-session
++9 9 9 9 9 9 9 9% khugepaged
++9 9K 9K 9K 9K 9K 9K 9% wpa_supplicant
++9 9K 9K 9K 9 9K 9 9% gpm
++9 9 9 9 9 9 9 9% flush-9:9
++9 9M 9K 9M 9K 9M 9K 9% deja-dup-monito
++9 9M 9K 9M 9K 9M 9K 9% evolution-calen
++9 9M 9K 9M 9K 9M 9K 9% evolution-addre
++9 9 9 9 9 9 9 9% jbd9/dm-9-9
++9 9 9 9 9 9 9 9% ksoftirqd/9
++9 9M 9K 9M 9K 9M 9K 9% tracker-miner-f
++9 9K 9K 9K 9K 9K 9K 9% systemd-logind
++9 9K 9K 9M 9K 9M 9K 9% crond
++9 9 9 9 9 9 9 9% kswapd9
++9 9K 9K 9K 9K 9K 9K 9% systemd
++9 9 9 9 9 9 9 9% kworker/9:9
++9 9M 9K 9M 9K 9M 9K 9% rtkit-daemon
++9 9 9 9 9 9 9 9% ksoftirqd/9
++9 9 9 9 9 9 9 9% ksoftirqd/9
++9 9 9 9 9 9 9 9% flush-9:9
++9 9 9 9 9 9 9 9% jbd9/dm-9-9
++9 9K 9K 9M 9K 9M 9K 9% bash
++9 9 9 9 9 9 9 9% ksoftirqd/9
++9 9K 9K 9K 9K 9K 9K 9% pmie
++9 9M 9K 9M 9K 9M 9K 9% gvfs-udisks9-vo
++9 9M 9K 9M 9K 9M 9K 9% accounts-daemon
++9 9M 9K 9M 9K 9M 9K 9% gdm-session-wor
++9 9M 9K 9M 9K 9M 9K 9% rsyslogd
++9 9M 9K 9M 9K 9M 9K 9% gnote
++9 9K 9K 9K 9K 9K 9K 9% dbus-daemon
++9 9 9 9 9 9 9 9% migration/9
++9 9K 9K 9K 9K 9K 9K 9% pmdaproc
++9 9K 9K 9M 9K 9M 9K 9% bash
++9 9 9 9 9 9 9 9% migration/9
++9 9K 9K 9K 9K 9K 9K 9% auditd
++9 9K 9K 9M 9K 9M 9K 9% bash
++9 9K 9K 9M 9K 9M 9K 9% abrt-watch-log
++9 9M 9K 9M 9K 9M 9K 9% evolution-alarm
++9 9K 9K 9K 9K 9K 9K 9% dhclient
++9 9 9 9 9 9 9 9% kworker/9:9
++9 9 9 9 9 9 9 9% watchdog/9
++9 9M 9K 9M 9K 9M 9K 9% gnome-shell-cal
++9 9 9 9 9 9 9 9% watchdog/9
++9 9K 9K 9M 9K 9M 9K 9% abrt-applet
++9 9 9 9 9 9 9 9% watchdog/9
++9 9 9 9 9 9 9 9% watchdog/9
++9 9 9 9 9 9 9 9% migration/9
++9 9K 9K 9M 9K 9M 9K 9% modem-manager
++9 9 9 9 9 9 9 9% kworker/9:9
++9 9 9 9 9 9 9 9% kworker/9:9H
++9 9K 9K 9M 9K 9M 9K 9% gdm-binary
++9 9M 9K 9M 9K 9M 9K 9% colord
++9 9 9 9 9 9 9 9% migration/9
++9 9K 9K 9K 9K 9K 9K 9% avahi-daemon
++9 9 9 9 9 9 9 9% kworker/9:9
++9 9M 9K 9M 9K 9M 9K 9% tracker-store
++9 9K 9K 9K 9K 9K 9K 9% rpcbind
++9 9K 9K 9K 9K 9K 9K 9% chronyd
++9 9K 9K 9M 9K 9M 9K 9% pmcd
++9 9 9 9 9 9 9 9% kauditd
++9 9K 9K 9K 9K 9K 9K 9% dhclient
++9 9K 9K 9K 9K 9K 9K 9% udevd
++9 9K 9K 9M 9K 9M 9K 9% bash
++9 9 9 9 9 9 9 9% kworker/u:9
++9 9 9 9 9 9 9 9% kthreadd
++9 9M 9K 9M 9K 9M 9K 9% gnome-keyring-d
++9 9K 9K 9M 9K 9M 9K 9% bash
++9 9 9 9 9 9 9 9% jbd9/dm-9-9
++9 9 9 9 9 9 9 9% kworker/9:9H
++9 9M 9K 9M 9K 9M 9K 9% gsd-printer
++9 9K 9K 9K 9K 9K 9K 9% smartd
++9 9K 9K 9M 9K 9M 9K 9% gvfsd
++9 9M 9K 9M 9K 9M 9K 9% colord-sane
++9 9K 9K 9M 9K 9M 9K 9% gvfsd-trash
++9 9K 9K 9M 9K 9M 9K 9% pmatop.py
++9 9K 9K 9M 9K 9M 9K 9% abrtd
++9 9M 9K 9M 9K 9M 9K 9% dconf-service
++9 9 9 9 9 9 9 9% kworker/u:9
++9 9 9 9 9 9 9 9% bdi-default
++9 9 9 9 9 9 9 9% kworker/u:9
++9 9 9 9 9 9 9 9% khubd
++9 9 9 9 9 9 9 9% kworker/9:9H
++9 9K 9K 9K 9K 9K 9K 9% atd
++9 9K 9K 9M 9K 9M 9K 9% gvfsd-metadata
++9 9K 9K 9K 9K 9K 9K 9% udevd
++9 9K 9K 9K 9K 9K 9K 9% bluetoothd
++9 9M 9K 9M 9K 9M 9K 9% imsettings-daem
++9 9K 9K 9M 9K 9M 9K 9% abrt-watch-log
++9 9K 9K 9K 9K 9K 9K 9% rpc.statd
++9 9K 9K 9K 9K 9K 9K 9% pmlogger
++9 9 9 9 9 9 9 9% fsnotify_mark
++9 9K 9K 9M 9K 9M 9K 9% gdm-simple-slav
++9 9K 9K 9M 9K 9M 9K 9% gvfs-gphoto9-vo
++9 9 9 9 9 9 9 9% kdevtmpfs
++9 9K 9K 9M 9K 9M 9K 9% ibus-dconf
++9 9M 9K 9M 9K 9M 9K 9% gvfsd-http
++9 9K 9K 9K 9K 9K 9K 9% pmlogger
++9 9 9 9 9 9 9 9% kworker/9:9H
++9 9K 9K 9K 9K 9K 9K 9% sshd
++9 9K 9K 9M 9K 9M 9K 9% gconfd-9
++9 9M 9K 9M 9K 9M 9K 9% goa-daemon
++9 9K 9K 9M 9K 9M 9K 9% ibus-engine-pin
++9 9M 9K 9M 9K 9M 9K 9% evinced
++9 9 9 9 9 9 9 9% kworker/9:9H
++9 9 9 9 9 9 9 9% rcu_bh
++9 9 9 9 9 9 9 9% kworker/9:9H
++9 9 9 9 9 9 9 9% kworker/9:9H
++9 9 9 9 9 9 9 9% kworker/9:9H
++9 9 9 9 9 9 9 9% khelper
++9 9 9 9 9 9 9 9% netns
++9 9 9 9 9 9 9 9% kintegrityd
++9 9 9 9 9 9 9 9% kblockd
++9 9 9 9 9 9 9 9% ata_sff
++9 9 9 9 9 9 9 9% md
++9 9 9 9 9 9 9 9% ksmd
++9 9 9 9 9 9 9 9% crypto
++9 9 9 9 9 9 9 9% kthrotld
++9 9 9 9 9 9 9 9% scsi_eh_9
++9 9 9 9 9 9 9 9% scsi_eh_9
++9 9 9 9 9 9 9 9% scsi_eh_9
++9 9 9 9 9 9 9 9% scsi_eh_9
++9 9 9 9 9 9 9 9% scsi_eh_9
++9 9 9 9 9 9 9 9% scsi_eh_9
++9 9 9 9 9 9 9 9% kpsmoused
++9 9 9 9 9 9 9 9% deferwq
++9 9 9 9 9 9 9 9% kdmflush
++9 9 9 9 9 9 9 9% kdmflush
++9 9K 9K 9M 9K 9M 9K 9% gvfsd-burn
++9 9 9 9 9 9 9 9% ext9-dio-unwrit
++9 9 9 9 9 9 9 9% kvm-irqfd-clean
++9 9 9 9 9 9 9 9% ktpacpid
++9 9 9 9 9 9 9 9% hd-audio9
++9 9 9 9 9 9 9 9% cfg9
++9 9 9 9 9 9 9 9% kdmflush
++9 9 9 9 9 9 9 9% kdmflush
++9 9 9 9 9 9 9 9% kdmflush
++9 9 9 9 9 9 9 9% iwlwifi
++9 9 9 9 9 9 9 9% jbd9/dm-9-9
++9 9 9 9 9 9 9 9% ext9-dio-unwrit
++9 9 9 9 9 9 9 9% ext9-dio-unwrit
++9 9 9 9 9 9 9 9% ext9-dio-unwrit
++9 9K 9K 9K 9K 9K 9K 9% avahi-daemon
++9 9K 9K 9K 9 9K 9 9% system-setup-ke
++9 9K 9K 9K 9K 9K 9K 9% mcelog
++9 9 9 9 9 9 9 9% krfcommd
++9 9 9 9 9 9 9 9% rpciod
++9 9K 9K 9K 9K 9K 9K 9% dbus-launch
++9 9M 9K 9M 9K 9M 9K 9% gvfs-fuse-daemo
++9 9K 9K 9M 9K 9M 9K 9% gvfs-afc-volume
++9 9M 9K 9M 9K 9M 9K 9% at-spi-bus-laun
++9 9K 9K 9K 9K 9K 9K 9% gnome-pty-helpe
++9 9K 9K 9K 9K 9K 9K 9% emacsclient
++9 9K 9K 9M 9K 9M 9K 9% tools.sh
++9 9 9 9 9 9 9 9% kworker/9:9
++9 9 9 9 9 9 9 9% kworker/9:9
++9 9 9 9 9 9 9 9% kworker/u:9H
++9 9K 9K 9K 9K 9K 9K 9% emacsclient
++9 9K 9K 9K 9K 9K 9K 9% emacsclient
++9 9 9 9 9 9 9 9% irq/9-mei
++9 9 9 9 9 9 9 9% hci9
++9 9 9 9 9 9 9 9% hci9
++9 9 9 9 9 9 9 9% kworker/u:9H
++9 9K 9K 9K 9K 9K 9K 9% udevd
++9 9K 9K 9K 9K 9K 9K 9% pmdaxfs
++9 9 9 9 9 9 9 9% kworker/9:9
++9 9 9 9 9 9 9 9% kworker/9:9
++9 9 9 9 9 9 9 9% kworker/9:9
++9 9K 9K 9K 9K 9K 9K 9% ssh-agent
++ATOP - Day Month 9 9:9:9 9 9:9:9 elapsed
++PRC | sys 9h9m | user 9d | #proc 9 | #zombie 9
++CPU | sys 9% | user 9% | irq 9% | idle 9% | wait 9% |
++cpu | sys 9% | user 9% | irq 9% | idle 9% | cpu9 9% |
++cpu | sys 9% | user 9% | irq 9% | idle 9% | cpu9 9% |
++cpu | sys 9% | user 9% | irq 9% | idle 9% | cpu9 9% |
++cpu | sys 9% | user 9% | irq 9% | idle 9% | cpu9 9% |
++CPL | avg9 .9 | avg9 .9 | avg9 .9 | csw 9 | intr 9 |
++MEM | tot 9G | free 9M | cache 9G | buff 9M | slab 9G |
++SWP | tot 9G | free 9G | | vmcom 9G | vmlim 9G |
++PAG | scan 9 | steal 9 | stall 9 | swin 9 | swout 9 |
++LVM | x | | read 9 | write 9 |
++LVM | x | | read 9 | write 9 |
++LVM | x | | read 9 | write 9 |
++LVM | x | | read 9 | write 9 |
++LVM | x | | read 9 | write 9 |
++DSK | sda | busy 9% | read 9 | write 9 | avio 9 ms |
++NET | transport | tcpi 9M | tcpo 9M | udpi 9M | udpo 9M |
++NET | network | ipi 9M | ipo 9M | ipfrw 9M | deliv 9M |
++NET | lo | pcki 9M | pcko 9M | si 9 Kbps | so 9 Kpbs |
++NET | em9 | pcki 9M | pcko 9M | si 9 Kbps | so 9 Kpbs |
++NET | wlan9 | pcki 9M | pcko 9M | si 9 Kbps | so 9 Kpbs |
++PID SYSCPU USRCPU VGROW RGROW RUID THR ST EXC S CPU CMD
++9 9h9m 9h9m 9K 9K scox 9 -- - S 9% firefox
++9 9h9m 9h9m 9K 9K scox 9 -- - S 9% plugin-containe
++9 9h9m 9h9m 9K 9K root 9 -- - S 9% Xorg
++9 9m9s 9h9m 9K 9K scox 9 -- - S 9% gnome-shell
++9 9m9s 9h9m 9K 9K scox 9 -- - S 9% thunderbird
++9 9m9s 9m9s 9K 9K scox 9 -- - S 9% ibus-daemon
++9 9m9s 9m9s 9K 9K scox 9 -- - S 9% pulseaudio
++9 9m9s 9m9s 9K 9K scox 9 -- - S 9% ibus-x9
++9 9m9s 9m9s 9K 9K scox 9 -- - S 9% emacs
++9 9m9s 9m9s 9K 9K scox 9 -- - S 9% xchat
++9 9m9s 9m9s 9K 9K root 9 -- - S 9% polkitd
++9 9m9s 9m9s 9K 9K scox 9 -- - S 9% vino-server
++9 9m9s 9m9s 9K 9K scox 9 -- - S 9% gnome-terminal
++9 9m9s 9m9s 9K 9K scox 9 -- - S 9% gnome-settings-
++9 9m9s 9m9s 9K 9K dbus 9 -- - S 9% dbus-daemon
++9 9m9s 9s 9 9 root 9 -- - S 9% irq/9-iwlwifi
++9 9s 9m9s 9K 9K root 9 -- - S 9% NetworkManager
++9 9s 9m9s 9K 9K scox 9 -- - S 9% ibus-engine-sim
++9 9m9s 9s 9 9 root 9 -- - S 9% rcu_sched
++9 9m9s 9m9s 9K 9K lp 9 -- - S 9% cups-polld
++9 9s 9m9s 9K 9K scox 9 -- - S 9% ibus-ui-gtk9
++9 9s 9m9s 9K 9K root 9 -- - S 9% cupsd
++9 9s 9m9s 9K 9K scox 9 -- - S 9% nm-applet
++9 9m9s 9s 9K 9 root 9 -- - S 9% irqbalance
++9 9s 9m9s 9K 9K root 9 -- - S 9% upowerd
++9 9s 9m9s 9K 9K root 9 -- - S 9% udisksd
++9 9s 9m9s 9K 9K scox 9 -- - S 9% SpiderOakBlue
++9 9s 9s 9K 9K scox 9 -- - S 9% SpiderOakBlue
++9 9s 9s 9K 9K scox 9 -- - S 9% mission-control
++9 9s 9s 9K 9K scox 9 -- - S 9% evince
++9 9s 9s 9K 9K scox 9 -- - S 9% gnome-screensav
++9 9s 9s 9K 9 root 9 -- - S 9% systemd-journal
++9 9s 9s 9K 9 root 9 -- - S 9% acpid
++9 9s 9s 9K 9K scox 9 -- - S 9% gnome-session
++9 9s 9s 9 9 root 9 -- - S 9% khugepaged
++9 9s 9s 9K 9K root 9 -- - S 9% wpa_supplicant
++9 9s 9s 9K 9 root 9 -- - S 9% gpm
++9 9s 9s 9 9 root 9 -- - S 9% flush-9:9
++9 9s 9s 9K 9K scox 9 -- - S 9% deja-dup-monito
++9 9s 9s 9K 9K scox 9 -- - S 9% evolution-calen
++9 9s 9s 9K 9K scox 9 -- - S 9% evolution-addre
++9 9s 9s 9 9 root 9 -- - D 9% jbd9/dm-9-9
++9 9s 9s 9 9 root 9 -- - S 9% ksoftirqd/9
++9 9s 9s 9K 9K scox 9 -- - S 9% tracker-miner-f
++9 9s 9s 9K 9K root 9 -- - S 9% systemd-logind
++9 9s 9s 9K 9 root 9 -- - S 9% crond
++9 9s 9s 9 9 root 9 -- - S 9% kswapd9
++9 9s 9s 9K 9K root 9 -- - S 9% systemd
++9 9s 9s 9 9 root 9 -- - S 9% kworker/9:9
++9 9s 9s 9K 9 rtkit 9 -- - S 9% rtkit-daemon
++9 9s 9s 9 9 root 9 -- - S 9% ksoftirqd/9
++9 9s 9s 9 9 root 9 -- - S 9% ksoftirqd/9
++9 9s 9s 9 9 root 9 -- - S 9% flush-9:9
++9 9s 9s 9 9 root 9 -- - S 9% jbd9/dm-9-9
++9 9s 9s 9K 9K scox 9 -- - S 9% bash
++9 9s 9s 9 9 root 9 -- - S 9% ksoftirqd/9
++9 9s 9s 9K 9K pcp 9 -- - S 9% pmie
++9 9s 9s 9K 9K scox 9 -- - S 9% gvfs-udisks9-vo
++9 9s 9s 9K 9K root 9 -- - S 9% accounts-daemon
++9 9s 9s 9K 9K root 9 -- - S 9% gdm-session-wor
++9 9s 9s 9K 9K root 9 -- - S 9% rsyslogd
++9 9s 9s 9K 9K scox 9 -- - S 9% gnote
++9 9s 9s 9K 9K scox 9 -- - S 9% dbus-daemon
++9 9s 9s 9 9 root 9 -- - S 9% migration/9
++9 9s 9s 9K 9K root 9 -- - R 9% pmdaproc
++9 9s 9s 9K 9K scox 9 -- - S 9% bash
++9 9s 9s 9 9 root 9 -- - S 9% migration/9
++9 9s 9s 9K 9 root 9 -- - S 9% auditd
++9 9s 9s 9K 9K scox 9 -- - S 9% bash
++9 9s 9s 9K 9 root 9 -- - S 9% abrt-watch-log
++9 9s 9s 9K 9K scox 9 -- - S 9% evolution-alarm
++9 9s 9s 9K 9K root 9 -- - S 9% dhclient
++9 9s 9s 9 9 root 9 -- - S 9% kworker/9:9
++9 9s 9s 9 9 root 9 -- - S 9% watchdog/9
++9 9s 9s 9K 9K scox 9 -- - S 9% gnome-shell-cal
++9 9s 9s 9 9 root 9 -- - S 9% watchdog/9
++9 9s 9s 9K 9K scox 9 -- - S 9% abrt-applet
++9 9s 9s 9 9 root 9 -- - S 9% watchdog/9
++9 9s 9s 9 9 root 9 -- - S 9% watchdog/9
++9 9s 9s 9 9 root 9 -- - S 9% migration/9
++9 9s 9s 9K 9K root 9 -- - S 9% modem-manager
++9 9s 9s 9 9 root 9 -- - S 9% kworker/9:9
++9 9s 9s 9 9 root 9 -- - S 9% kworker/9:9H
++9 9s 9s 9K 9 root 9 -- - S 9% gdm-binary
++9 9s 9s 9K 9K colord 9 -- - S 9% colord
++9 9s 9s 9 9 root 9 -- - S 9% migration/9
++9 9s 9s 9K 9 avahi 9 -- - S 9% avahi-daemon
++9 9s 9s 9 9 root 9 -- - S 9% kworker/9:9
++9 9s 9s 9K 9K scox 9 -- - S 9% tracker-store
++9 9s 9s 9K 9 rpc 9 -- - S 9% rpcbind
++9 9s 9s 9K 9 chrony 9 -- - S 9% chronyd
++9 9s 9s 9K 9K pcp 9 -- - S 9% pmcd
++9 9s 9s 9 9 root 9 -- - S 9% kauditd
++9 9s 9s 9K 9K root 9 -- - S 9% dhclient
++9 9s 9s 9K 9 root 9 -- - S 9% udevd
++9 9s 9s 9K 9K scox 9 -- - S 9% bash
++9 9s 9s 9 9 root 9 -- - S 9% kworker/u:9
++9 9s 9s 9 9 root 9 -- - S 9% kthreadd
++9 9s 9s 9K 9K scox 9 -- - S 9% gnome-keyring-d
++9 9s 9s 9K 9K scox 9 -- - S 9% bash
++9 9s 9s 9 9 root 9 -- - S 9% jbd9/dm-9-9
++9 9s 9s 9 9 root 9 -- - S 9% kworker/9:9H
++9 9s 9s 9K 9K scox 9 -- - S 9% gsd-printer
++9 9s 9s 9K 9 root 9 -- - S 9% smartd
++9 9s 9s 9K 9 scox 9 -- - S 9% gvfsd
++9 9s 9s 9K 9 colord 9 -- - S 9% colord-sane
++9 9s 9s 9K 9K scox 9 -- - S 9% gvfsd-trash
++9 9s 9s 9K 9K scox 9 -- - S 9% pmatop.py
++9 9s 9s 9K 9 root 9 -- - S 9% abrtd
++9 9s 9s 9K 9K scox 9 -- - S 9% dconf-service
++9 9s 9s 9 9 root 9 -- - S 9% kworker/u:9
++9 9s 9s 9 9 root 9 -- - S 9% bdi-default
++9 9s 9s 9 9 root 9 -- - S 9% kworker/u:9
++9 9s 9s 9 9 root 9 -- - S 9% khubd
++9 9s 9s 9 9 root 9 -- - S 9% kworker/9:9H
++9 9s 9s 9K 9 root 9 -- - S 9% atd
++9 9s 9s 9K 9K scox 9 -- - S 9% gvfsd-metadata
++9 9s 9s 9K 9K root 9 -- - S 9% udevd
++9 9s 9s 9K 9K root 9 -- - S 9% bluetoothd
++9 9s 9s 9K 9 scox 9 -- - S 9% imsettings-daem
++9 9s 9s 9K 9 root 9 -- - S 9% abrt-watch-log
++9 9s 9s 9K 9 rpcuse 9 -- - S 9% rpc.statd
++9 9s 9s 9K 9K scox 9 -- - S 9% pmlogger
++9 9s 9s 9 9 root 9 -- - S 9% fsnotify_mark
++9 9s 9s 9K 9 root 9 -- - S 9% gdm-simple-slav
++9 9s 9s 9K 9 scox 9 -- - S 9% gvfs-gphoto9-vo
++9 9s 9s 9 9 root 9 -- - S 9% kdevtmpfs
++9 9s 9s 9K 9K scox 9 -- - S 9% ibus-dconf
++9 9s 9s 9K 9K scox 9 -- - S 9% gvfsd-http
++9 9s 9s 9K 9K pcp 9 -- - S 9% pmlogger
++9 9s 9s 9 9 root 9 -- - S 9% kworker/9:9H
++9 9s 9s 9K 9 root 9 -- - S 9% sshd
++9 9s 9s 9K 9 scox 9 -- - S 9% gconfd-9
++9 9s 9s 9K 9K scox 9 -- - S 9% goa-daemon
++9 9s 9s 9K 9 scox 9 -- - S 9% ibus-engine-pin
++9 9s 9s 9K 9K scox 9 -- - S 9% evinced
++9 9s 9s 9 9 root 9 -- - S 9% kworker/9:9H
++9 9s 9s 9 9 root 9 -- - S 9% rcu_bh
++9 9s 9s 9 9 root 9 -- - S 9% kworker/9:9H
++9 9s 9s 9 9 root 9 -- - S 9% kworker/9:9H
++9 9s 9s 9 9 root 9 -- - S 9% kworker/9:9H
++9 9s 9s 9 9 root 9 -- - S 9% khelper
++9 9s 9s 9 9 root 9 -- - S 9% netns
++9 9s 9s 9 9 root 9 -- - S 9% kintegrityd
++9 9s 9s 9 9 root 9 -- - S 9% kblockd
++9 9s 9s 9 9 root 9 -- - S 9% ata_sff
++9 9s 9s 9 9 root 9 -- - S 9% md
++9 9s 9s 9 9 root 9 -- - S 9% ksmd
++9 9s 9s 9 9 root 9 -- - S 9% crypto
++9 9s 9s 9 9 root 9 -- - S 9% kthrotld
++9 9s 9s 9 9 root 9 -- - S 9% scsi_eh_9
++9 9s 9s 9 9 root 9 -- - S 9% scsi_eh_9
++9 9s 9s 9 9 root 9 -- - S 9% scsi_eh_9
++9 9s 9s 9 9 root 9 -- - S 9% scsi_eh_9
++9 9s 9s 9 9 root 9 -- - S 9% scsi_eh_9
++9 9s 9s 9 9 root 9 -- - S 9% scsi_eh_9
++9 9s 9s 9 9 root 9 -- - S 9% kpsmoused
++9 9s 9s 9 9 root 9 -- - S 9% deferwq
++9 9s 9s 9 9 root 9 -- - S 9% kdmflush
++9 9s 9s 9 9 root 9 -- - S 9% kdmflush
++9 9s 9s 9K 9 scox 9 -- - S 9% gvfsd-burn
++9 9s 9s 9 9 root 9 -- - S 9% ext9-dio-unwrit
++9 9s 9s 9 9 root 9 -- - S 9% kvm-irqfd-clean
++9 9s 9s 9 9 root 9 -- - S 9% ktpacpid
++9 9s 9s 9 9 root 9 -- - S 9% hd-audio9
++9 9s 9s 9 9 root 9 -- - S 9% cfg9
++9 9s 9s 9 9 root 9 -- - S 9% kdmflush
++9 9s 9s 9 9 root 9 -- - S 9% kdmflush
++9 9s 9s 9 9 root 9 -- - S 9% kdmflush
++9 9s 9s 9 9 root 9 -- - S 9% iwlwifi
++9 9s 9s 9 9 root 9 -- - S 9% jbd9/dm-9-9
++9 9s 9s 9 9 root 9 -- - S 9% ext9-dio-unwrit
++9 9s 9s 9 9 root 9 -- - S 9% ext9-dio-unwrit
++9 9s 9s 9 9 root 9 -- - S 9% ext9-dio-unwrit
++9 9s 9s 9K 9 avahi 9 -- - S 9% avahi-daemon
++9 9s 9s 9K 9 root 9 -- - S 9% system-setup-ke
++9 9s 9s 9K 9 root 9 -- - S 9% mcelog
++9 9s 9s 9 9 root 9 -- - S 9% krfcommd
++9 9s 9s 9 9 root 9 -- - S 9% rpciod
++9 9s 9s 9K 9 scox 9 -- - S 9% dbus-launch
++9 9s 9s 9K 9 scox 9 -- - S 9% gvfs-fuse-daemo
++9 9s 9s 9K 9 scox 9 -- - S 9% gvfs-afc-volume
++9 9s 9s 9K 9 scox 9 -- - S 9% at-spi-bus-laun
++9 9s 9s 9K 9 scox 9 -- - S 9% gnome-pty-helpe
++9 9s 9s 9K 9 scox 9 -- - S 9% emacsclient
++9 9s 9s 9K 9 scox 9 -- - S 9% tools.sh
++9 9s 9s 9 9 root 9 -- - S 9% kworker/9:9
++9 9s 9s 9 9 root 9 -- - S 9% kworker/9:9
++9 9s 9s 9 9 root 9 -- - S 9% kworker/u:9H
++9 9s 9s 9K 9 scox 9 -- - T 9% emacsclient
++9 9s 9s 9K 9 scox 9 -- - T 9% emacsclient
++9 9s 9s 9 9 root 9 -- - S 9% irq/9-mei
++9 9s 9s 9 9 root 9 -- - S 9% hci9
++9 9s 9s 9 9 root 9 -- - S 9% hci9
++9 9s 9s 9 9 root 9 -- - S 9% kworker/u:9H
++9 9s 9s 9K 9K root 9 -- - S 9% udevd
++9 9s 9s 9K 9K root 9 -- - S 9% pmdaxfs
++9 9s 9s 9 9 root 9 -- - S 9% kworker/9:9
++9 9s 9s 9 9 root 9 -- - S 9% kworker/9:9
++9 9s 9s 9 9 root 9 -- - S 9% kworker/9:9
++9 9s 9s 9K 9 root 9 -- - S 9% ssh-agent
++== Direct archive testing complete
++== Comparing direct to folio output
++  Output compares exactly - good
++== Output comparisons all completed
+ pmatop log creation OK
++== Live writer testing complete
+diff -Naurp pcp-3.10.2.orig/qa/729 pcp-3.10.2/qa/729
+--- pcp-3.10.2.orig/qa/729	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/qa/729	2015-02-23 21:24:36.657658339 +1100
+@@ -24,7 +24,7 @@ fname = 'src/bug_v2'
+ context = pcp.pmapi.pmContext(c_api.PM_CONTEXT_ARCHIVE, fname)
+ pmids = context.pmLookupName(['proc.nprocs'])
+ descs = context.pmLookupDescs(pmids[0])
+-print '%s%s' % (descs[0].contents.units, 'Completed safely')
++print('%s%s' % (descs[0].contents.units, 'Completed safely'))
+ EOF
+ 
+ cat > $tmp.parse << EOF
+@@ -32,8 +32,8 @@ import pcp.pmapi
+ context = pcp.pmapi.pmContext(target='local:')
+ try:
+   print(context.pmParseInterval(''))
+-except pcp.pmapi.pmErr, error:
+-  print 'Completed safely'
++except pcp.pmapi.pmErr as error:
++  print('Completed safely')
+ EOF
+ 
+ # real QA test starts here
+diff -Naurp pcp-3.10.2.orig/qa/754 pcp-3.10.2/qa/754
+--- pcp-3.10.2.orig/qa/754	2015-01-24 07:23:07.000000000 +1100
++++ pcp-3.10.2/qa/754	2015-02-23 21:24:36.657658339 +1100
+@@ -2,7 +2,7 @@
+ # PCP QA Test No. 754
+ # Exercise the Unbound PMDA.
+ #
+-# Copyright (c) 2014 Red Hat.
++# Copyright (c) 2014-2015 Red Hat.
+ #
+ 
+ seq=`basename $0`
+@@ -10,6 +10,7 @@ echo "QA output created by $seq"
+ 
+ . ./common.python
+ 
++python_path=`which $python`
+ pmda_path="$PCP_PMDAS_DIR/unbound"
+ pmda_script="$pmda_path/pmdaunbound.python"
+ test -f "$pmda_script" || _notrun "pmdaunbound not supported"
+@@ -31,12 +32,12 @@ _filter()
+ {
+     tee -a $seq.full | \
+     sed \
+-	-e "s;$python;\$PYTHON;" \
+ 	-e "s;$PCP_PMDAS_DIR;\$PCP_PMDAS_DIR;" \
+ 	-e '/pmResult/s/ .* numpmid/ ... numpmid/' \
+ 	-e '/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/s/[^ ]*/TIMESTAMP/' \
+-
+-    test -f unbound.log && cat unbound.log >> $seq.full
++	-e "s;$python_path;\$PCP_PYTHON_PROG;" \
++	-e "s;$python;python;" \
++    #end
+ }
+ 
+ _filter_result()
+@@ -46,7 +47,7 @@ _filter_result()
+ 
+ domain=132
+ test="$here/unbound"
+-$sudo rm -f /tmp/unbound-qa.txt		# from test.sh
++$sudo rm -f unbound.log /tmp/unbound-qa.txt	 # the latter from test.sh
+ export UNBOUND_STATS="$here/unbound/test.sh"
+ 
+ # real QA test starts here
+@@ -54,7 +55,7 @@ PCP_PYTHON_PMNS=root $python "$pmda_scri
+ 
+ echo "== Testing unbound metric values" | tee -a $seq.full
+ cat > $tmp.fetch <<End-of-File
+-open pipe $python $pmda_script
++open pipe $python_path $pmda_script
+ getdesc on
+ End-of-File
+ cat $here/unbound/metrics.list | \
+@@ -62,7 +63,8 @@ while read metric
+ do
+     echo fetch $metric >> $tmp.fetch
+ done
+-$sudo dbpmda -n $tmp.root -ie < $tmp.fetch 2>&1 | _filter
++dbpmda -n $tmp.root -ie < $tmp.fetch 2>&1 | _filter
++test -f unbound.log && cat unbound.log >> $seq.full
+ 
+ status=0
+ exit
+diff -Naurp pcp-3.10.2.orig/qa/754.out pcp-3.10.2/qa/754.out
+--- pcp-3.10.2.orig/qa/754.out	2015-01-24 07:23:07.000000000 +1100
++++ pcp-3.10.2/qa/754.out	2015-02-23 21:24:36.658658338 +1100
+@@ -1,7 +1,7 @@
+ QA output created by 754
+ == Testing unbound metric values
+-dbpmda> open pipe $PYTHON $PCP_PMDAS_DIR/unbound/pmdaunbound.python
+-Start python PMDA: $PYTHON $PCP_PMDAS_DIR/unbound/pmdaunbound.python
++dbpmda> open pipe $PCP_PYTHON_PROG $PCP_PMDAS_DIR/unbound/pmdaunbound.python
++Start python PMDA: $PCP_PYTHON_PROG $PCP_PMDAS_DIR/unbound/pmdaunbound.python
+ dbpmda> getdesc on
+ dbpmda> fetch unbound.histogram.262144_000000_to_524288_000000
+ PMID(s): 132.0.139
+diff -Naurp pcp-3.10.2.orig/qa/972 pcp-3.10.2/qa/972
+--- pcp-3.10.2.orig/qa/972	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/qa/972	2015-02-23 21:24:36.658658338 +1100
+@@ -2,28 +2,20 @@
+ # PCP QA Test No. 972
+ # Exercise the zswap compressed swap PMDA using dbpmda.
+ #
+-# Copyright (c) 2014 Red Hat.
++# Copyright (c) 2014-2015 Red Hat.
+ #
+ 
+ seq=`basename $0`
+ echo "QA output created by $seq"
+ 
+-# get standard environment, filters and checks
+-. ./common.product
+-. ./common.filter
+-. ./common.check
++. ./common.python
+ 
++python_path=`which $python`
+ pmda_path="$PCP_PMDAS_DIR/zswap"
+ pmda_script="$pmda_path/pmdazswap.python"
+ test -f "$pmda_script" || _notrun "pmdazswap not supported"
+-python -c "from pcp import pmda" >/dev/null 2>&1
++$python -c "from pcp import pmda" >/dev/null 2>&1
+ [ $? -eq 0 ] || _notrun "python pcp pmda module not installed"
+-case `python -V 2>&1 | sed -e 's/Python //'`
+-in
+-    0.*.*|1.*.*|2.0.*|2.1.*|2.3.*|2.4.*)
+-	_notrun "need python 2.5 or later"
+-	;;
+-esac
+ 
+ status=1	# failure is the default!
+ $sudo rm -rf $tmp.* $seq.full
+@@ -34,10 +26,12 @@ _filter()
+     tee -a $seq.full | \
+     sed \
+ 	-e "s;$PCP_PMDAS_DIR;\$PCP_PMDAS_DIR;" \
++	-e "s;$PCP_PMDAS_DIR;\$PCP_PMDAS_DIR;" \
+         -e '/pmResult/s/ .* numpmid/ ... numpmid/' \
+         -e '/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/s/[^ ]*/TIMESTAMP/' \
+-
+-    test -f zswap.log && cat zswap.log >> $seq.full
++	-e "s;$python_path;\$PCP_PYTHON_PROG;" \
++	-e "s;$python;python;" \
++    #end
+ }
+ 
+ _setup_zswap_values()
+@@ -54,6 +48,8 @@ _setup_zswap_values()
+     echo 2     > reject_reclaim_fail
+     echo 89123 > stored_pages
+     echo 12435 > written_back_pages
++
++    cd $here
+ }
+ 
+ domain=125
+@@ -62,11 +58,11 @@ export ZSWAP_STATS_PATH="$tmp.zswap"
+ 
+ # real QA test starts here
+ _setup_zswap_values
+-PCP_PYTHON_PMNS=root python "$pmda_script" > $tmp.root
++PCP_PYTHON_PMNS=root $python "$pmda_script" > $tmp.root
+ 
+ echo "== Testing zswap metrics" | tee -a $seq.full
+-$sudo dbpmda -n $tmp.root -ie <<End-of-File 2>&1 | _filter
+-open pipe /usr/bin/python $pmda_script
++dbpmda -n $tmp.root -ie <<End-of-File 2>&1 | _filter
++open pipe $python_path $pmda_script
+ getdesc on
+ desc zswap.pool_limit_hit
+ desc zswap.reject_reclaim_fail
+@@ -87,6 +83,7 @@ fetch zswap.duplicate_entry
+ fetch zswap.pool_pages
+ fetch zswap.stored_pages
+ End-of-File
++test -f zswap.log && cat zswap.log >> $seq.full
+ 
+ status=0
+ exit
+diff -Naurp pcp-3.10.2.orig/qa/972.out pcp-3.10.2/qa/972.out
+--- pcp-3.10.2.orig/qa/972.out	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/qa/972.out	2015-02-23 21:24:36.658658338 +1100
+@@ -1,7 +1,7 @@
+ QA output created by 972
+ == Testing zswap metrics
+-dbpmda> open pipe /usr/bin/python $PCP_PMDAS_DIR/zswap/pmdazswap.python
+-Start python PMDA: /usr/bin/python $PCP_PMDAS_DIR/zswap/pmdazswap.python
++dbpmda> open pipe $PCP_PYTHON_PROG $PCP_PMDAS_DIR/zswap/pmdazswap.python
++Start python PMDA: $PCP_PYTHON_PROG $PCP_PMDAS_DIR/zswap/pmdazswap.python
+ dbpmda> getdesc on
+ dbpmda> desc zswap.pool_limit_hit
+ PMID: 125.0.0
+diff -Naurp pcp-3.10.2.orig/qa/985 pcp-3.10.2/qa/985
+--- pcp-3.10.2.orig/qa/985	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/qa/985	2015-02-23 21:24:36.659658337 +1100
+@@ -2,28 +2,20 @@
+ # PCP QA Test No. 985
+ # Exercise the dmcache PMDA using dbpmda.
+ #
+-# Copyright (c) 2014 Red Hat.
++# Copyright (c) 2014-2015 Red Hat.
+ #
+ 
+ seq=`basename $0`
+ echo "QA output created by $seq"
+ 
+-# get standard environment, filters and checks
+-. ./common.product
+-. ./common.filter
+-. ./common.check
++. ./common.python
+ 
++python_path=`which $python`
+ pmda_path="$PCP_PMDAS_DIR/dmcache"
+ pmda_script="$pmda_path/pmdadmcache.python"
+ test -f "$pmda_script" || _notrun "pmdadmcache not supported"
+-python -c "from pcp import pmda" >/dev/null 2>&1
++$python -c "from pcp import pmda" >/dev/null 2>&1
+ [ $? -eq 0 ] || _notrun "python pcp pmda module not installed"
+-case `python -V 2>&1 | sed -e 's/Python //'`
+-in
+-    0.*.*|1.*.*|2.0.*|2.1.*|2.3.*|2.4.*)
+-	_notrun "need python 2.5 or later"
+-	;;
+-esac
+ 
+ status=1	# failure is the default!
+ $sudo rm -rf $tmp.* $seq.full
+@@ -36,7 +28,9 @@ _filter()
+ 	-e "s;$PCP_PMDAS_DIR;\$PCP_PMDAS_DIR;" \
+ 	-e '/pmResult/s/ .* numpmid/ ... numpmid/' \
+ 	-e '/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/s/[^ ]*/TIMESTAMP/' \
+-
++	-e "s;$python_path;\$PCP_PYTHON_PROG;" \
++	-e "s;$python;python;" \
++    #end
+     test -f dmcache.log && cat dmcache.log >> $seq.full
+ }
+ 
+@@ -53,11 +47,11 @@ export DM_STATUS=$tmp.dmcache.sh
+ 
+ # real QA test starts here
+ echo "== Finding dmcache metrics" | tee -a $seq.full
+-PCP_PYTHON_PMNS=root python "$pmda_script" 2>/dev/null > $tmp.root
++PCP_PYTHON_PMNS=root $python "$pmda_script" 2>/dev/null > $tmp.root
+ 
+ echo "== Testing dmcache metrics" | tee -a $seq.full
+ $sudo dbpmda -n $tmp.root -ie <<End-of-File 2>&1 | _filter
+-open pipe /usr/bin/python $pmda_script
++open pipe $python_path $pmda_script
+ getdesc on
+ instance $domain.0
+ desc dmcache.size
+diff -Naurp pcp-3.10.2.orig/qa/985.out pcp-3.10.2/qa/985.out
+--- pcp-3.10.2.orig/qa/985.out	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/qa/985.out	2015-02-23 21:24:36.659658337 +1100
+@@ -1,8 +1,8 @@
+ QA output created by 985
+ == Finding dmcache metrics
+ == Testing dmcache metrics
+-dbpmda> open pipe /usr/bin/python $PCP_PMDAS_DIR/dmcache/pmdadmcache.python
+-Start python PMDA: /usr/bin/python $PCP_PMDAS_DIR/dmcache/pmdadmcache.python
++dbpmda> open pipe $PCP_PYTHON_PROG $PCP_PMDAS_DIR/dmcache/pmdadmcache.python
++Start python PMDA: $PCP_PYTHON_PROG $PCP_PMDAS_DIR/dmcache/pmdadmcache.python
+ dbpmda> getdesc on
+ dbpmda> instance 129.0
+ pmInDom: 129.0
+diff -Naurp pcp-3.10.2.orig/qa/986 pcp-3.10.2/qa/986
+--- pcp-3.10.2.orig/qa/986	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/qa/986	2015-02-23 21:24:36.659658337 +1100
+@@ -2,24 +2,21 @@
+ # PCP QA Test No. 986
+ # Exercise the dmcache PMDA using the running kernel.
+ #
+-# Copyright (c) 2014 Red Hat.
++# Copyright (c) 2014-2015 Red Hat.
+ #
+ 
+ seq=`basename $0`
+ echo "QA output created by $seq"
+ 
+-# get standard environment, filters and checks
+-. ./common.product
+-. ./common.filter
+-. ./common.check
++. ./common.python
+ 
+ status=1	# failure is the default!
+ $sudo rm -f $tmp.* $seq.full
+ 
+ which dmsetup >/dev/null 2>&1
+ test $? -eq 0 || _notrun "Device Mapper 'dmsetup' binary not found"
+-python -c 'from pcp import pmda' 2>/dev/null
+-test $? -eq 0 || _notrun 'Python pcp pmda module is not installed'
++$python -c 'from pcp import pmda' 2>/dev/null
++test $? -eq 0 || _notrun "$python pcp pmda module is not installed"
+ 
+ _filter_dmcache()
+ {
+diff -Naurp pcp-3.10.2.orig/qa/common.python pcp-3.10.2/qa/common.python
+--- pcp-3.10.2.orig/qa/common.python	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/qa/common.python	2015-02-23 21:24:36.660658336 +1100
+@@ -8,8 +8,8 @@
+ . ./common.filter
+ . ./common.check
+ 
+-# allow alternate versions of python to be used
+-python=${PYTHON:-/usr/bin/python}
++python=${PCP_PYTHON_PROG:-python}
++eval $python -c exit 2>/dev/null || _notrun "$python unavailable"
+ 
+ # verify output from unittest indicates successful testing
+ _check_unittest()
+diff -Naurp pcp-3.10.2.orig/qa/pmdas/memory_python/pmdamemory_python.python pcp-3.10.2/qa/pmdas/memory_python/pmdamemory_python.python
+--- pcp-3.10.2.orig/qa/pmdas/memory_python/pmdamemory_python.python	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/qa/pmdas/memory_python/pmdamemory_python.python	2015-02-23 21:24:36.660658336 +1100
+@@ -42,7 +42,7 @@ class MemoryPMDA(PMDA):
+         # At this point if all goes well, the PMDA internal
+         # _metric_names dictionary will contain the metric we just
+         # added. If not, memory has become corrupted.
+-        if not self._metric_names.has_key(self.metric_pmid):
++        if not self.metric_pmid in self._metric_names:
+             self.memory_valid = 0
+             msg = '_metric_names has no matching pmid'
+             self.log(msg)
+@@ -66,14 +66,14 @@ class MemoryPMDA(PMDA):
+         self.memory_valid = 1
+         self.metric_name = name + '.memory_valid'
+         self.metric_pmid = self.pmid(0, 0)
+-	self.metric_obj = pmdaMetric(self.metric_pmid, c_api.PM_TYPE_64,
++        self.metric_obj = pmdaMetric(self.metric_pmid, c_api.PM_TYPE_64,
+                                      c_api.PM_INDOM_NULL, c_api.PM_SEM_COUNTER,
+                                      pmUnits(0, 0, 0, 0, 0, 0))
+         self.metric_oneline = "test metric"
+         self.add_metric(self.metric_name, self.metric_obj, self.metric_oneline)
+ 
+         # Make sure the PMDA's internal dictionary is in a good state.
+-        if not self._metric_names.has_key(self.metric_pmid):
++        if not self.metric_pmid in self._metric_names:
+             self.memory_valid = 0
+             msg = '_metric_names has no matching pmid'
+             self.log(msg)
+diff -Naurp pcp-3.10.2.orig/qa/pmdas/slow_python/pmdaslow_python.python pcp-3.10.2/qa/pmdas/slow_python/pmdaslow_python.python
+--- pcp-3.10.2.orig/qa/pmdas/slow_python/pmdaslow_python.python	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/qa/pmdas/slow_python/pmdaslow_python.python	2015-02-23 21:24:36.660658336 +1100
+@@ -32,33 +32,33 @@ class SlowPMDA(PMDA):
+     '''
+ 
+     def slow_fetch_callback(self, cluster, item, inst):
+-	global fetch_delay
++        global fetch_delay
+ 
+-	if int(fetch_delay) < 0:
+-	    time.sleep(-1*int(fetch_delay))
++        if int(fetch_delay) < 0:
++            time.sleep(-1*int(fetch_delay))
+ 
+-	if int(fetch_delay) > 0:
+-	    time.sleep(int(fetch_delay))
++        if int(fetch_delay) > 0:
++            time.sleep(int(fetch_delay))
+ 
+         if cluster == 0 and item == 0:
+             return [13, 1]
+         return [c_api.PM_ERR_PMID, 0]
+ 
+     def __init__(self, name, domain):
+-	global start_delay
++        global start_delay
+ 
+         PMDA.__init__(self, name, domain)
+ 
+         self.configfile = PCP.pmGetConfig('PCP_PMDAS_DIR')
+         self.configfile += '/' + name + '/' + name + '.conf'
+ 
+-	if int(start_delay) > 0:
+-	    self.connect_pmcd()
++        if int(start_delay) > 0:
++            self.connect_pmcd()
+ 
+-	if int(start_delay) < 0:
+-	    time.sleep(-1*int(start_delay))
+-	if int(start_delay) > 0:
+-	    time.sleep(int(start_delay))
++        if int(start_delay) < 0:
++            time.sleep(-1*int(start_delay))
++        if int(start_delay) > 0:
++            time.sleep(int(start_delay))
+ 
+         self.add_metric(name + '.thirteen', pmdaMetric(self.pmid(0, 0),
+                 c_api.PM_TYPE_32, c_api.PM_INDOM_NULL, c_api.PM_SEM_INSTANT,
+diff -Naurp pcp-3.10.2.orig/qa/src/test_pcp.python pcp-3.10.2/qa/src/test_pcp.python
+--- pcp-3.10.2.orig/qa/src/test_pcp.python	2015-01-24 07:23:07.000000000 +1100
++++ pcp-3.10.2/qa/src/test_pcp.python	2015-02-23 21:24:36.661658335 +1100
+@@ -30,7 +30,7 @@ def dump_seq(name_p, seq_p):
+ 
+ def dump_array_ptrs(name_p, arr_p):
+     print(name_p)
+-    for i in xrange(len(arr_p)):
++    for i in range(len(arr_p)):
+         if (i > 0):
+             print(" ", arr_p[i].contents)
+         else:
+@@ -38,7 +38,7 @@ def dump_array_ptrs(name_p, arr_p):
+ 
+ def dump_array(name_p, arr_p):
+     print(name_p)
+-    for i in xrange(len(arr_p)):
++    for i in range(len(arr_p)):
+         if (i > 0):
+             print(" ", hex(arr_p[i]))
+         else:
+@@ -72,8 +72,9 @@ def test_pcp(self):
+     source = 'localhost'
+     try:
+         (rsltp, errmsg) = ctx.pmParseMetricSpec("kernel.all.load", 0, source)
+-        print("pmParseMetricSpec:", rsltp.contents.source)
+-        self.assertTrue(rsltp.contents.source == source)
++        result = rsltp.contents.source.decode()
++        print("pmParseMetricSpec:", result)
++        self.assertTrue(result == source)
+     except pmapi.pmErr as error:
+         print("pmParseMetricSpec error: ", error)
+ 
+@@ -124,7 +125,7 @@ def test_pcp(self):
+                               api.PM_TYPE_STRING)
+     machine_vp = atom.vp
+     self.assertTrue(machine_u32 != machine_vp)
+-    self.assertTrue(type(atom.cp) == type(''))
++    self.assertTrue(type(atom.cp) == type('') or type(atom.cp) == type(b''))
+ 
+     # pmGetChildren
+     if not self.archive_type:
+@@ -179,16 +180,27 @@ def test_pcp(self):
+     dump_array("pmLookupName", self.metric_ids)
+     self.assertTrue(len(self.metric_ids) == 4)
+ 
+-    for i in xrange(len(metrics)):
++    for i in range(len(metrics)):
+         # pmNameAll
++        # one of the returned names should be the same as metrics[i]
+         nameall = ctx.pmNameAll(self.metric_ids[i])
+-        print("pmNameAll:", nameall[0])
+-        self.assertTrue(nameall[0] == metrics[i])
++        match = 0
++        for j in range(len(nameall)):
++            print("pmNameAll:", nameall[j])
++            if (nameall[j] == metrics[i]):
++                match = 1
++        self.assertTrue(match)
+ 
+         # pmNameID
++        # result will be one of the names from pmNameAll and we've
++        # already established that one of these is the same as metrics[i]
+         name = ctx.pmNameID(self.metric_ids[i])
+-        print("pmNameID:", name)
+-        self.assertTrue(name == metrics[i])
++        print("pmNameID:", name);
++        match = 0
++        for j in range(len(nameall)):
++            if (nameall[j] == name):
++                match = 1
++        self.assertTrue(match)
+ 
+         # pmLookupDesc
+         descs = ctx.pmLookupDescs(self.metric_ids[i])
+@@ -317,7 +329,7 @@ def test_pcp(self):
+         (units,mult) = ctx.pmParseUnitsStr(5) # type-checking non-string
+         print("pmParseUnitsStr:", units, mult)
+         self.assertTrue(False)
+-    except AssertionError as error:
++    except pmapi.pmErr as error:
+         print("pmParseUnitsStr: ", error)
+         self.assertTrue(True)
+ 
+@@ -346,10 +358,10 @@ def test_pcp(self):
+         print("pmStore: ", error)
+         self.assertTrue(True)
+ 
+-    for i in xrange(results.contents.numpmid):
++    for i in range(results.contents.numpmid):
+         if (results.contents.get_pmid(i) != self.metric_ids[1]):
+             continue
+-        for val in xrange(9):
++        for val in range(9):
+             # sample.bin - each instance in turn
+             atom = ctx.pmExtractValue(results.contents.get_valfmt(i),
+                                       results.contents.get_vlist(i, val),
+@@ -359,7 +371,7 @@ def test_pcp(self):
+             self.assertTrue(99*(val+1) <= atom.f and atom.f <= 101*(val+1))
+ 
+     # pmExtractValue 
+-    for i in xrange(results.contents.numpmid):
++    for i in range(results.contents.numpmid):
+         if (results.contents.get_pmid(i) != self.metric_ids[3]):
+             continue
+         # mem.freemem
+@@ -438,7 +450,10 @@ def test_pcp(self):
+     # pmPrintValue
+     if not self.archive_type:
+         print("pmPrintValue:")
+-        ctx.pmPrintValue(sys.__stdout__, results, descs[0], 0, 0, 8)
++        if sys.version >= '3':
++            print('Not yet implemented')
++        else:
++            ctx.pmPrintValue(sys.__stdout__, results, descs[0], 0, 0, 8)
+         print('')
+ 
+     # pmReconnectContext
+diff -Naurp pcp-3.10.2.orig/qa/src/test_pmcc.python pcp-3.10.2/qa/src/test_pmcc.python
+--- pcp-3.10.2.orig/qa/src/test_pmcc.python	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/qa/src/test_pmcc.python	2015-02-23 21:24:36.661658335 +1100
+@@ -1,6 +1,6 @@
+ """ Test metric value extraction/reporting using the pcp.pmcc module """
+ #
+-# Copyright (C) 2013-2014 Red Hat Inc.
++# Copyright (C) 2013-2015 Red Hat Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify it
+ # under the terms of the GNU General Public License as published by the
+@@ -13,9 +13,14 @@
+ # for more details.
+ #
+ 
++import sys
+ import unittest
+ from pcp import pmcc, pmapi
+ 
++if sys.version >= '3':
++    import functools
++    reduce = functools.reduce
++
+ CPU_METRICS = [ "kernel.all.cpu.sys", "kernel.all.cpu.user",
+                 "kernel.all.cpu.nice", "kernel.all.cpu.idle", ]
+ MEM_METRICS = [ "mem.physmem", "mem.freemem", ]
+diff -Naurp pcp-3.10.2.orig/src/include/pcp.conf.in pcp-3.10.2/src/include/pcp.conf.in
+--- pcp-3.10.2.orig/src/include/pcp.conf.in	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/src/include/pcp.conf.in	2015-02-23 21:24:36.662658334 +1100
+@@ -1,5 +1,5 @@
+ #
+-# Copyright (c) 2013-2014 Red Hat.
++# Copyright (c) 2013-2015 Red Hat.
+ # Copyright (c) 2000-2001,2003 Silicon Graphics, Inc.  All Rights Reserved.
+ # 
+ # This program is free software; you can redistribute it and/or modify it
+@@ -176,6 +176,9 @@ PCP_PS_PROG=@pcp_ps_prog@
+ PCP_PS_HAVE_BSD=@pcp_ps_have_bsd@
+ PCP_PS_ALL_FLAGS=@pcp_ps_all_flags@
+ 
++# preferred python executable
++PCP_PYTHON_PROG=@pcp_python_prog@
++
+ # locate executables
+ PCP_WHICH_PROG=@which@
+ 
+diff -Naurp pcp-3.10.2.orig/src/pcp/dmcache/pcp-dmcache.py pcp-3.10.2/src/pcp/dmcache/pcp-dmcache.py
+--- pcp-3.10.2.orig/src/pcp/dmcache/pcp-dmcache.py	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/src/pcp/dmcache/pcp-dmcache.py	2015-02-23 21:24:36.662658334 +1100
+@@ -1,6 +1,6 @@
+ #!/usr/bin/python
+ #
+-# Copyright (C) 2014 Red Hat.
++# Copyright (C) 2014-2015 Red Hat.
+ #
+ # This program is free software; you can redistribute it and/or modify it
+ # under the terms of the GNU General Public License as published by the
+@@ -18,6 +18,9 @@
+ import sys
+ from pcp import pmapi, pmcc
+ 
++if sys.version >= '3':
++    long = int  # python2 to python3 portability (no long() in python3)
++
+ CACHE_METRICS = ['dmcache.cache.used', 'dmcache.cache.total',
+                  'dmcache.metadata.used', 'dmcache.metadata.total',
+                  'dmcache.read_hits', 'dmcache.read_misses',
+diff -Naurp pcp-3.10.2.orig/src/pcp/free/pcp-free.py pcp-3.10.2/src/pcp/free/pcp-free.py
+--- pcp-3.10.2.orig/src/pcp/free/pcp-free.py	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/src/pcp/free/pcp-free.py	2015-02-23 21:24:36.662658334 +1100
+@@ -1,6 +1,6 @@
+ #!/usr/bin/python
+ #
+-# Copyright (C) 2014 Red Hat.
++# Copyright (C) 2014-2015 Red Hat.
+ #
+ # This program is free software; you can redistribute it and/or modify it
+ # under the terms of the GNU General Public License as published by the
+@@ -19,6 +19,9 @@ import sys
+ from pcp import pmapi
+ from cpmapi import PM_TYPE_U64, PM_CONTEXT_ARCHIVE, PM_SPACE_KBYTE
+ 
++if sys.version >= '3':
++    long = int  # python2 to python3 portability (no long() in python3)
++
+ class Free(object):
+     """ Gives a short summary of kernel virtual memory information,
+         in a variety of formats, possibly sampling in a loop.
+diff -Naurp pcp-3.10.2.orig/src/pcp/numastat/pcp-numastat.py pcp-3.10.2/src/pcp/numastat/pcp-numastat.py
+--- pcp-3.10.2.orig/src/pcp/numastat/pcp-numastat.py	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/src/pcp/numastat/pcp-numastat.py	2015-02-23 21:24:36.663658333 +1100
+@@ -1,6 +1,6 @@
+ #!/usr/bin/python
+ #
+-# Copyright (C) 2014 Red Hat.
++# Copyright (C) 2014-2015 Red Hat.
+ #
+ # This program is free software; you can redistribute it and/or modify it
+ # under the terms of the GNU General Public License as published by the
+@@ -20,6 +20,9 @@ import sys
+ from pcp import pmapi
+ from cpmapi import PM_TYPE_U64
+ 
++if sys.version >= '3':
++    long = int  # python2 to python3 portability (no long() in python3)
++
+ class NUMAStat(object):
+     """ Gives a short summary of per-node NUMA memory information.
+ 
+@@ -103,7 +106,7 @@ class NUMAStat(object):
+             print("No NUMA nodes found, exiting")
+             sys.exit(1)
+         self.resize()
+-        maxnodes = (self.width - 16) / 16
++        maxnodes = int((self.width - 16) / 16)
+         if maxnodes > len(nodes):        # just an initial header suffices
+             header = '%-16s' % ''
+             for node in nodes:
+diff -Naurp pcp-3.10.2.orig/src/pmatop/pmatop.py pcp-3.10.2/src/pmatop/pmatop.py
+--- pcp-3.10.2.orig/src/pmatop/pmatop.py	2015-01-24 07:23:07.000000000 +1100
++++ pcp-3.10.2/src/pmatop/pmatop.py	2015-02-23 21:21:18.201838488 +1100
+@@ -1,9 +1,6 @@
+ #!/usr/bin/python
+-
+-#
+-# pmatop.py
+ #
+-# Copyright (C) 2013, 2014 Red Hat Inc.
++# Copyright (C) 2013-2015 Red Hat.
+ #
+ # This program is free software; you can redistribute it and/or modify it
+ # under the terms of the GNU General Public License as published by the
+@@ -445,25 +442,19 @@ class _DiskPrint(_AtopPrint):
+     replay_archive = property(None, replay_archive_write, None, None)
+ 
+     def disk(self, context):
++        desc = self.ss.metric_descs[self.ss.metrics_dict['disk.partitions.read']]
+         try:
+-            (inst, iname) = context.pmGetInDom(self.ss.metric_descs[self.ss.metrics_dict['disk.partitions.read']])
++            (inst, iname) = context.pmGetInDom(desc)
+         except pmapi.pmErr as e:
+             iname = iname = "X"
+ 
+-# Missing: LVM avq (average queue depth)
+-
+-        lvms = dict(map(lambda x: (os.path.realpath("/dev/mapper/" + x)[5:], x),
+-                         (os.listdir("/dev/mapper"))))
++        # Missing: LVM avq (average queue depth)
++        # TODO: switch to using disk.dm metrics?
+ 
+         for j in xrange(self.ss.get_len(self.ss.get_metric_value('disk.partitions.read'))):
+-            if self._replay_archive == True:
+-                if iname[j][:2] != "dm":
+-                    continue
+-                lvm = iname[j]
+-            else:
+-                if iname[j] not in lvms:
+-                    continue
+-                lvm = lvms[iname[j]]
++            if iname[j][:2] != "dm":
++                continue
++            lvm = iname[j]
+             partitions_read = self.ss.get_scalar_value('disk.partitions.read', j)
+             partitions_write = self.ss.get_scalar_value('disk.partitions.write', j)
+             if partitions_read == 0 and partitions_write == 0:
+@@ -701,10 +692,8 @@ class _ProcPrint(_AtopPrint):
+ 
+ class _Options(object):
+     def __init__(self):
+-        self.input_file = ""
+         self.output_file = ""
+         self.output_type = "g"
+-        self.host = "local:"
+         self.create_archive = False
+         self.replay_archive = False
+         self.have_interval_arg = False
+@@ -719,16 +708,28 @@ class _Options(object):
+         opts.pmSetOptionCallback(self.option_callback)
+         opts.pmSetOverrideCallback(self.override)
+         # leading - returns args that are not options with leading ^A
+-        opts.pmSetShortOptions("-gmw:r:L:h:V?")
+-        opts.pmSetLongOptionHeader("Options")
++        opts.pmSetShortOptions("-gmw:r:L:h:a:V?")
++        opts.pmSetLongOptionText("Interactive: [-g|-m] [-L linelen] [-h host | -a archive] [ interval [ samples ]]")
++        opts.pmSetLongOptionText("Write folio: pmatop -w folio [ interval [ samples ]]")
++        opts.pmSetLongOptionText("Read folio: pmatop -r folio [-g|-m] [-L linelen] [-h host]")
++        opts.pmSetLongOptionHeader("Reporting Options")
+         opts.pmSetLongOption("generic", 0, 'g', '', "Display generic metrics")
+         opts.pmSetLongOption("memory", 0, 'm', '', "Display memory metrics")
+-        opts.pmSetLongOption("write", 1, 'w', 'FILENAME', "Write metric data to file")
+-        opts.pmSetLongOption("read", 1, 'r', 'FILENAME', "Read metric data from file")
+         opts.pmSetLongOption("width", 1, 'L', 'WIDTH', "Width of the output")
+-        opts.pmSetShortUsage("[options]\nInteractive: [-g|-m] [-L linelen] [-h host] [ interval [ samples ]]\nWrite raw logfile: pmatop -w rawfile [ interval [ samples ]]\nRead raw logfile: pmatop -r [ rawfile ] [-g|-m] [-L linelen] [-h host]")
++        opts.pmSetLongOptionHeader("Folio Options")
++        opts.pmSetLongOption("write", 1, 'w', 'FILENAME', "Write metric data to PCP archive folio")
++        opts.pmSetLongOption("read", 1, 'r', 'FILENAME', "Read metric data from PCP archive folio")
++        opts.pmSetLongOptionHeader("General Options")
++        opts.pmSetLongOptionAlign()
++        opts.pmSetLongOptionArchive()
++        opts.pmSetLongOptionDebug()
+         opts.pmSetLongOptionHost()
++        opts.pmSetLongOptionOrigin()
++        opts.pmSetLongOptionStart()
++        opts.pmSetLongOptionFinish()
+         opts.pmSetLongOptionVersion()
++        opts.pmSetLongOptionTimeZone()
++        opts.pmSetLongOptionHostZone()
+         opts.pmSetLongOptionHelp()
+         return opts
+ 
+@@ -738,6 +739,8 @@ class _Options(object):
+         # pylint: disable=R0201
+         if opt == 'g':
+             return 1
++        elif opt == "a":
++            self.replay_archive = True
+         elif opt == 'L':
+             return 1
+         return 0
+@@ -755,12 +758,9 @@ class _Options(object):
+             self.create_archive = True
+         elif opt == "r":
+             self.opts.pmSetOptionArchiveFolio(optarg)
+-            self.input_file = optarg
+             self.replay_archive = True
+         elif opt == "L":
+             self.width = int(optarg)
+-        elif opt == 'h':
+-            self.host = optarg
+         elif opt == "":
+             if self.have_interval_arg == False:
+                 self.interval_arg = optarg
+@@ -796,14 +796,12 @@ def main(stdscr_p):
+     stdscr.width = opts.width
+ 
+     pmc = pmapi.pmContext.fromOptions(opts.opts, sys.argv)
++    (delta, errmsg) = pmc.pmParseInterval(str(opts.interval_arg) + " seconds")
+     if pmc.type == c_api.PM_CONTEXT_ARCHIVE:
+-        pmc.pmSetMode(c_api.PM_MODE_FORW, pmapi.timeval(0, 0), 0)
+-
++        pmc.pmSetMode(c_api.PM_MODE_FORW, delta, 0)
+ 
+     host = pmc.pmGetContextHostName()
+ 
+-    (delta, errmsg) = pmc.pmParseInterval(str(opts.interval_arg) + " seconds")
+-
+     ss.setup_metrics(pmc)
+ 
+     if opts.create_archive:
+@@ -831,10 +829,10 @@ def main(stdscr_p):
+         elapsed = ss.get_metric_value('kernel.all.uptime')
+         while (i_samples < opts.n_samples) or (opts.n_samples == 0):
+             ss.get_stats(pmc)
++            stamp = pmc.pmCtime(ss.timestamp)
+             stdscr.move(0, 0)
+             stdscr.addstr('ATOP - %s                %s elapsed\n\n' % (
+-                    time.strftime("%c"),
+-                    datetime.timedelta(0, elapsed)))
++                    stamp.rstrip(), datetime.timedelta(0, elapsed)))
+             elapsed = delta.tv_sec
+             stdscr.move(2, 0)
+ 
+diff -Naurp pcp-3.10.2.orig/src/pmcd/pmdaproc.sh pcp-3.10.2/src/pmcd/pmdaproc.sh
+--- pcp-3.10.2.orig/src/pmcd/pmdaproc.sh	2015-01-24 07:23:07.000000000 +1100
++++ pcp-3.10.2/src/pmcd/pmdaproc.sh	2015-02-23 21:24:36.664658332 +1100
+@@ -3,7 +3,7 @@
+ #
+ # Copyright (c) 1995-2001,2003 Silicon Graphics, Inc.  All Rights Reserved.
+ # Portions Copyright (c) 2008 Aconex.  All Rights Reserved.
+-# Portions Copyright (c) 2013-2014 Red Hat.
++# Portions Copyright (c) 2013-2015 Red Hat.
+ # 
+ # This program is free software; you can redistribute it and/or modify it
+ # under the terms of the GNU General Public License as published by the
+@@ -891,17 +891,18 @@ _setup()
+     #
+     if $python_opt
+     then
++	python=${PCP_PYTHON_PROG:-python}
+ 	python_name="${pmda_dir}/pmda${iam}.python"
+ 	[ -f "$python_name" ] || python_name="${pmda_dir}/pmda${iam}.py"
+ 	if [ -f "$python_name" ]
+ 	then
+ 	    python_pmns="${pmda_dir}/pmns.python"
+ 	    python_dom="${pmda_dir}/domain.h.python"
+-	    python -c 'from pcp import pmda' 2>/dev/null
++	    $python -c 'from pcp import pmda' 2>/dev/null
+ 	    if test $? -eq 0
+ 	    then
+-		eval PCP_PYTHON_DOMAIN=1 python "$python_name" > "$python_dom"
+-		eval PCP_PYTHON_PMNS=1 python "$python_name" > "$python_pmns"
++		eval PCP_PYTHON_DOMAIN=1 $python "$python_name" > "$python_dom"
++		eval PCP_PYTHON_PMNS=1 $python "$python_name" > "$python_pmns"
+ 	    elif $dso_opt || $daemon_opt
+ 	    then
+ 		:	# we have an alternative, so continue on
+@@ -1080,7 +1081,7 @@ _install()
+ 		    fi
+ 		elif [ "X$pmda_type" = Xpython ]
+ 		then
+-		    python -c 'from pcp import pmda' 2>/dev/null
++		    $python -c 'from pcp import pmda' 2>/dev/null
+ 		    if test $? -ne 0
+ 		    then
+ 			echo 'Python pcp pmda module is not installed, install it and try again'
+@@ -1102,7 +1103,7 @@ _install()
+ 	    args=""
+ 	elif [ "$pmda_type" = python ]
+ 	then
+-	    type="pipe	binary		python $python_name $python_args"
++	    type="pipe	binary		$python $python_name $python_args"
+ 	    args=""
+ 	else
+ 	    type="dso	$dso_entry	$dso_name"
+diff -Naurp pcp-3.10.2.orig/src/pmcollectl/pmcollectl.py pcp-3.10.2/src/pmcollectl/pmcollectl.py
+--- pcp-3.10.2.orig/src/pmcollectl/pmcollectl.py	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/src/pmcollectl/pmcollectl.py	2015-02-23 21:24:36.665658331 +1100
+@@ -1,9 +1,6 @@
+ #!/usr/bin/python
+-
+-#
+-# pmcollectl.py
+ #
+-# Copyright (C) 2012-2014 Red Hat Inc.
++# Copyright (C) 2012-2015 Red Hat.
+ #
+ # This program is free software; you can redistribute it and/or modify it
+ # under the terms of the GNU General Public License as published by the
+@@ -58,7 +55,7 @@ def scale(value, magnitude):
+ 
+ def record(context, config, duration, path, host):
+     if os.path.exists(path):
+-        print ME + "archive %s already exists\n" % path
++        print(ME + "archive %s already exists\n" % path)
+         sys.exit(1)
+     # Non-graphical application using libpcp_gui services - never want
+     # to see popup dialogs from pmlogger(1) here, so force the issue.
+@@ -99,7 +96,7 @@ class _CollectPrint(object):
+             self.print_header1_detail()
+         elif self.verbosity == "verbose":
+             self.print_header1_verbose()
+-	sys.stdout.flush()
++        sys.stdout.flush()
+     def print_header2(self):
+         if self.verbosity == "brief":
+             self.print_header2_brief()
+@@ -107,7 +104,7 @@ class _CollectPrint(object):
+             self.print_header2_detail()
+         elif self.verbosity == "verbose":
+             self.print_header2_verbose()
+-	sys.stdout.flush()
++        sys.stdout.flush()
+     def print_header1_brief(self):
+         True                        # pylint: disable-msg=W0104
+     def print_header2_brief(self):
+@@ -149,37 +146,38 @@ class _cpuCollectPrint(_CollectPrint):
+     def print_header1_brief(self):
+         sys.stdout.write('#<--------CPU-------->')
+     def print_header1_detail(self):
+-        print '# SINGLE CPU STATISTICS'
++        print('# SINGLE CPU STATISTICS')
+     def print_header1_verbose(self):
+-        print '# CPU SUMMARY (INTR, CTXSW & PROC /sec)'
++        print('# CPU SUMMARY (INTR, CTXSW & PROC /sec)')
+ 
+     def print_header2_brief(self):
+         sys.stdout.write('#cpu sys inter  ctxsw')
+     def print_header2_detail(self):
+-        print '#   Cpu  User Nice  Sys Wait IRQ  Soft Steal Idle'
++        print('#   Cpu  User Nice  Sys Wait IRQ  Soft Steal Idle')
+     def print_header2_verbose(self):
+-        print '#User  Nice   Sys  Wait   IRQ  Soft Steal  Idle  CPUs  Intr  Ctxsw  Proc  RunQ   Run   Avg1  Avg5 Avg15 RunT BlkT'
++        print('#User  Nice   Sys  Wait   IRQ  Soft Steal  Idle  CPUs  Intr  Ctxsw  Proc  RunQ   Run   Avg1  Avg5 Avg15 RunT BlkT')
+ 
+     def print_brief(self):
+-        print "%4d" % (100 * (self.ss.get_metric_value('kernel.all.cpu.nice') +
+-                              self.ss.get_metric_value('kernel.all.cpu.user') +
+-                              self.ss.get_metric_value('kernel.all.cpu.intr') +
+-                              self.ss.get_metric_value('kernel.all.cpu.sys') +
+-                              self.ss.get_metric_value('kernel.all.cpu.steal') +
+-                              self.ss.get_metric_value('kernel.all.cpu.irq.hard') +
+-                              self.ss.get_metric_value('kernel.all.cpu.irq.soft')) /
+-                       ss.cpu_total),
+-        print "%3d" % (100 * (self.ss.get_metric_value('kernel.all.cpu.intr') +
+-                              self.ss.get_metric_value('kernel.all.cpu.sys') +
+-                              self.ss.get_metric_value('kernel.all.cpu.steal') +
+-                              self.ss.get_metric_value('kernel.all.cpu.irq.hard') +
+-                              self.ss.get_metric_value('kernel.all.cpu.irq.soft')) /
+-                       ss.cpu_total),
+-        print "%5d %6d" % (self.ss.get_metric_value('kernel.all.intr'),
+-                           self.ss.get_metric_value('kernel.all.pswitch')),
++        sys.stdout.write("%4d %3d %5d %6d" % (
++            100 * (self.ss.get_metric_value('kernel.all.cpu.nice') +
++                   self.ss.get_metric_value('kernel.all.cpu.user') +
++                   self.ss.get_metric_value('kernel.all.cpu.intr') +
++                   self.ss.get_metric_value('kernel.all.cpu.sys') +
++                   self.ss.get_metric_value('kernel.all.cpu.steal') +
++                   self.ss.get_metric_value('kernel.all.cpu.irq.hard') +
++                   self.ss.get_metric_value('kernel.all.cpu.irq.soft')) /
++                   ss.cpu_total,
++            100 * (self.ss.get_metric_value('kernel.all.cpu.intr') +
++                   self.ss.get_metric_value('kernel.all.cpu.sys') +
++                   self.ss.get_metric_value('kernel.all.cpu.steal') +
++                   self.ss.get_metric_value('kernel.all.cpu.irq.hard') +
++                   self.ss.get_metric_value('kernel.all.cpu.irq.soft')) /
++                   ss.cpu_total,
++            self.ss.get_metric_value('kernel.all.intr'),
++            self.ss.get_metric_value('kernel.all.pswitch')))
+     def print_detail(self):
+         for k in range(self.ss.get_len(self.ss.get_metric_value('kernel.percpu.cpu.user'))):
+-            print "    %3d  %4d %4d  %3d %4d %3d  %4d %5d %4d" % (
++            print("    %3d  %4d %4d  %3d %4d %3d  %4d %5d %4d" % (
+                 k,
+                 (100 * (self.ss.get_scalar_value('kernel.percpu.cpu.nice', k) +
+                         self.ss.get_scalar_value('kernel.percpu.cpu.user', k) +
+@@ -200,10 +198,10 @@ class _cpuCollectPrint(_CollectPrint):
+             self.ss.get_scalar_value('kernel.percpu.cpu.irq.hard', k),
+             self.ss.get_scalar_value('kernel.percpu.cpu.irq.soft', k),
+             self.ss.get_scalar_value('kernel.percpu.cpu.steal', k),
+-                self.ss.get_scalar_value('kernel.percpu.cpu.idle', k) / 10)
++                self.ss.get_scalar_value('kernel.percpu.cpu.idle', k) / 10))
+     def print_verbose(self):
+         ncpu = self.ss.get_metric_value('hinv.ncpu')
+-        print "%4d %6d %5d %4d %4d %5d " % (
++        print("%4d %6d %5d %4d %4d %5d %6d %6d %5d %5d %6d %5d %5d %5d %5.2f %5.2f %5.2f %4d %4d" % (
+             (100 * (self.ss.get_metric_value('kernel.all.cpu.nice') +
+                     self.ss.get_metric_value('kernel.all.cpu.user') +
+                     self.ss.get_metric_value('kernel.all.cpu.intr') +
+@@ -221,16 +219,12 @@ class _cpuCollectPrint(_CollectPrint):
+              ss.cpu_total),
+             self.ss.get_metric_value('kernel.all.cpu.wait.total'),
+             self.ss.get_metric_value('kernel.all.cpu.irq.hard'),
+-            self.ss.get_metric_value('kernel.all.cpu.irq.soft')
+-            ),
+-        print "%6d %6d %5d %5d %6d" % (
++            self.ss.get_metric_value('kernel.all.cpu.irq.soft'),
+             self.ss.get_metric_value('kernel.all.cpu.steal'),
+             self.ss.get_metric_value('kernel.all.cpu.idle') / (10 * ncpu),
+             ncpu,
+             self.ss.get_metric_value('kernel.all.intr'),
+-            self.ss.get_metric_value('kernel.all.pswitch')
+-            ),
+-        print "%5d %5d %5d %5.2f %5.2f %5.2f %4d %4d" % (
++            self.ss.get_metric_value('kernel.all.pswitch'),
+             self.ss.get_metric_value('kernel.all.nprocs'),
+             self.ss.get_metric_value('kernel.all.runnable'),
+             self.ss.get_metric_value('proc.runq.runnable'),
+@@ -238,7 +232,7 @@ class _cpuCollectPrint(_CollectPrint):
+             self.ss.get_metric_value('kernel.all.load')[1],
+             self.ss.get_metric_value('kernel.all.load')[2],
+             self.ss.get_metric_value('kernel.all.runnable'),
+-            self.ss.get_metric_value('proc.runq.blocked'))
++            self.ss.get_metric_value('proc.runq.blocked')))
+ 
+ 
+ # _interruptCollectPrint ---------------------------------------------
+@@ -254,26 +248,26 @@ class _interruptCollectPrint(_CollectPri
+         for k in range(ndashes):
+             hdr += "-"
+         hdr += ">"
+-        print hdr,
++        sys.stdout.write(hdr)
+     def print_header1_detail(self):
+-        print '# INTERRUPT DETAILS'
+-        print '# Int    ',
++        print('# INTERRUPT DETAILS')
++        sys.stdout.write('# Int    ')
+         for k in range(self.ss.get_len(self.ss.get_metric_value('kernel.percpu.interrupts.THR'))):
+-            print 'Cpu%d ' % k,
+-        print 'Type            Device(s)'
++            sys.stdout.write('Cpu%d ' % k)
++        print('Type            Device(s)')
+     def print_header1_verbose(self):
+-        print '# INTERRUPT SUMMARY'
++        print('# INTERRUPT SUMMARY')
+     def print_header2_brief(self):
+         for k in range(self.ss.get_len(self.ss.get_metric_value('kernel.percpu.interrupts.THR'))):
+             if k == 0:
+-                print '#Cpu%d ' % k,
++                sys.stdout.write('#Cpu%d ' % k)
+             else:
+-                print 'Cpu%d ' % k,
++                sys.stdout.write('Cpu%d ' % k)
+     def print_header2_verbose(self):
+-        print '#    ',
++        sys.stdout.write('#    ')
+         for k in range(self.ss.get_len(self.ss.get_metric_value('kernel.percpu.interrupts.THR'))):
+-            print 'Cpu%d ' % k,
+-        print
++            sys.stdout.write('Cpu%d ' % k)
++        print('')
+     def print_brief(self):
+         int_count = []
+         for k in range(self.ss.get_len(self.ss.get_metric_value('kernel.percpu.interrupts.THR'))):
+@@ -283,7 +277,7 @@ class _interruptCollectPrint(_CollectPri
+                     int_count[k] += self.ss.get_scalar_value(self.ss.metrics_dict[j], k)
+ 
+         for k in range(self.ss.get_len(self.ss.get_metric_value('kernel.percpu.interrupts.THR'))):
+-            print "%4d " % (int_count[k]),
++            sys.stdout.write("%4d " % (int_count[k]))
+     def print_detail(self):
+         for j in ss.metrics:
+             if j[0:24] != 'kernel.percpu.interrupts':
+@@ -297,16 +291,16 @@ class _interruptCollectPrint(_CollectPri
+                     continue
+             if have_nonzero_value:
+                 # pcp does not give the interrupt # so print spaces
+-                print "%-8s" % self.ss.metrics[j_i].split(".")[3],
++                sys.stdout.write("%-8s" % self.ss.metrics[j_i].split(".")[3])
+                 for i in range(self.ss.get_len(self.ss.get_metric_value('kernel.percpu.interrupts.THR'))):
+-                    print "%4d " % (self.ss.get_scalar_value(j_i, i)),
++                    sys.stdout.write("%4d " % (self.ss.get_scalar_value(j_i, i)))
+                 text = (pm.pmLookupText(self.ss.metric_pmids[j_i], c_api.PM_TEXT_ONELINE))
+-                print "%-18s %s" % (text[:(str.index(text, " "))],
+-                                 text[(str.index(text, " ")):])
++                print("%-18s %s" % (text[:(str.index(text, " "))],
++                                 text[(str.index(text, " ")):]))
+     def print_verbose(self):
+-        print "     ",
++        sys.stdout.write("     ")
+         self.print_brief()
+-        print
++        print('')
+ 
+ 
+ # _diskCollectPrint --------------------------------------------------
+@@ -316,14 +310,14 @@ class _diskCollectPrint(_CollectPrint):
+     def print_header1_brief(self):
+         sys.stdout.write('<----------Disks----------->')
+     def print_header1_detail(self):
+-        print '# DISK STATISTICS (/sec)'
++        print('# DISK STATISTICS (/sec)')
+     def print_header1_verbose(self):
+-        print '\n\n# DISK SUMMARY (/sec)'
++        print('\n\n# DISK SUMMARY (/sec)')
+     def print_header2_brief(self):
+         sys.stdout.write(' KBRead  Reads KBWrit Writes')
+     def print_header2_detail(self):
+-        print '#          <---------reads---------><---------writes---------><--------averages--------> Pct'
+-        print '#Name       KBytes Merged  IOs Size  KBytes Merged  IOs Size  RWSize  QLen  Wait SvcTim Util'
++        print('#          <---------reads---------><---------writes---------><--------averages--------> Pct')
++        print('#Name       KBytes Merged  IOs Size  KBytes Merged  IOs Size  RWSize  QLen  Wait SvcTim Util')
+     def print_header2_verbose(self):
+         sys.stdout.write('#KBRead RMerged  Reads SizeKB  KBWrite WMerged Writes SizeKB\n')
+     def print_brief(self):
+@@ -333,17 +327,17 @@ class _diskCollectPrint(_CollectPrint):
+             self.ss.get_metric_value('disk.all.write_bytes'),
+             self.ss.get_metric_value('disk.all.write')))
+     def print_detail(self):
+-        for j in xrange(len(self.ss.metric_pmids)):
++        for j in range(len(self.ss.metric_pmids)):
+             try:
+-		if self.ss.metrics[j] == 'disk.dev.read':
+-		    (inst, iname) = pm.pmGetInDom(self.ss.metric_descs[j])
+-		    break
+-            except pmapi.pmErr, e:
++                if self.ss.metrics[j] == 'disk.dev.read':
++                    (inst, iname) = pm.pmGetInDom(self.ss.metric_descs[j])
++                    break
++            except pmapi.pmErr as e:
+                 iname = "X"
+ 
+         # metric values may be scalars or arrays depending on # of disks
+-        for j in xrange(len(iname)):
+-            print "%-10s %6d %6d %4d %4d  %6d %6d %4d %4d  %6d %6d %4d %6d %4d" % (
++        for j in range(len(iname)):
++            print("%-10s %6d %6d %4d %4d  %6d %6d %4d %4d  %6d %6d %4d %6d %4d" % (
+                 iname[j],
+                 self.ss.get_scalar_value('disk.dev.read_bytes', j),
+                 self.ss.get_scalar_value('disk.dev.read_merge', j),
+@@ -353,7 +347,7 @@ class _diskCollectPrint(_CollectPrint):
+                 self.ss.get_scalar_value('disk.dev.write_merge', j),
+                 self.ss.get_scalar_value('disk.dev.write', j),
+                 self.ss.get_scalar_value('disk.dev.blkwrite', j),
+-                0, 0, 0, 0, 0)
++                0, 0, 0, 0, 0))
+ # ??? replace 0 with required fields
+ 
+     def print_verbose(self):
+@@ -365,7 +359,7 @@ class _diskCollectPrint(_CollectPrint):
+             avgwrsz = self.ss.get_metric_value('disk.all.write_bytes')
+             avgwrsz /= self.ss.get_metric_value('disk.all.write')
+ 
+-        print '%6d %6d %6d %6d %7d %8d %6d %6d' % (
++        print('%6d %6d %6d %6d %7d %8d %6d %6d' % (
+             avgrdsz,
+             self.ss.get_metric_value('disk.all.read_merge'),
+             self.ss.get_metric_value('disk.all.read'),
+@@ -373,7 +367,7 @@ class _diskCollectPrint(_CollectPrint):
+             avgwrsz,
+             self.ss.get_metric_value('disk.all.write_merge'),
+             self.ss.get_metric_value('disk.all.write'),
+-            0)
++            0))
+ 
+ 
+ # _memoryCollectPrint ------------------------------------------------
+@@ -383,22 +377,22 @@ class _memoryCollectPrint(_CollectPrint)
+     def print_header1_brief(self):
+         sys.stdout.write('#<-----------Memory----------->')
+     def print_header1_verbose(self):
+-        print '# MEMORY SUMMARY'
++        print('# MEMORY SUMMARY')
+     def print_header2_brief(self):
+-        print '#Free Buff Cach Inac Slab  Map'
++        print('#Free Buff Cach Inac Slab  Map')
+     def print_header2_verbose(self):
+-        print '#<-------------------------------Physical Memory--------------------------------------><-----------Swap------------><-------Paging------>'
+-        print '#   Total    Used    Free    Buff  Cached    Slab  Mapped    Anon  Commit  Locked Inact Total  Used  Free   In  Out Fault MajFt   In  Out'
++        print('#<-------------------------------Physical Memory--------------------------------------><-----------Swap------------><-------Paging------>')
++        print('#   Total    Used    Free    Buff  Cached    Slab  Mapped    Anon  Commit  Locked Inact Total  Used  Free   In  Out Fault MajFt   In  Out')
+     def print_brief(self):
+-        print "%4dM %3dM %3dM %3dM %3dM %3dM " % (
++        sys.stdout.write("%4dM %3dM %3dM %3dM %3dM %3dM " % (
+             scale(self.ss.get_metric_value('mem.freemem'), 1000),
+             scale(self.ss.get_metric_value('mem.util.bufmem'), 1000),
+             scale(self.ss.get_metric_value('mem.util.cached'), 1000),
+             scale(self.ss.get_metric_value('mem.util.inactive'), 1000),
+             scale(self.ss.get_metric_value('mem.util.slab'), 1000),
+-            scale(self.ss.get_metric_value('mem.util.mapped'), 1000)),
++            scale(self.ss.get_metric_value('mem.util.mapped'), 1000)))
+     def print_verbose(self):
+-        print "%8dM %6dM %6dM %6dM %6dM %6dM %6dM %6dM %6dM %6dM %5dM %5dM %5dM %5dM %6d %6d %6d %6d %6d %6d " % (
++        print("%8dM %6dM %6dM %6dM %6dM %6dM %6dM %6dM %6dM %6dM %5dM %5dM %5dM %5dM %6d %6d %6d %6d %6d %6d " % (
+             scale(self.ss.get_metric_value('mem.physmem'), 1000),
+             scale(self.ss.get_metric_value('mem.util.used'), 1000),
+             scale(self.ss.get_metric_value('mem.freemem'), 1000),
+@@ -419,7 +413,7 @@ class _memoryCollectPrint(_CollectPrint)
+                   self.ss.get_metric_value('mem.vmstat.pgmajfault'), 1000),
+             scale(self.ss.get_metric_value('mem.vmstat.pgmajfault'), 1000),
+             scale(self.ss.get_metric_value('mem.vmstat.pgpgin'), 1000),
+-            scale(self.ss.get_metric_value('mem.vmstat.pgpgout'), 1000))
++            scale(self.ss.get_metric_value('mem.vmstat.pgpgout'), 1000)))
+ 
+ 
+ # _netCollectPrint --------------------------------------------------
+@@ -429,21 +423,21 @@ class _netCollectPrint(_CollectPrint):
+     def print_header1_brief(self):
+         sys.stdout.write('<----------Network---------->')
+     def print_header1_detail(self):
+-        print '# NETWORK STATISTICS (/sec)'
++        print('# NETWORK STATISTICS (/sec)')
+     def print_header1_verbose(self):
+-        print '\n\n# NETWORK SUMMARY (/sec)'
++        print('\n\n# NETWORK SUMMARY (/sec)')
+     def print_header2_brief(self):
+         sys.stdout.write(' KBIn  PktIn  KBOut  PktOut')
+     def print_header2_detail(self):
+-        print '#Num    Name   KBIn  PktIn SizeIn  MultI   CmpI  ErrsI  KBOut PktOut  SizeO   CmpO ErrsO'
++        print('#Num    Name   KBIn  PktIn SizeIn  MultI   CmpI  ErrsI  KBOut PktOut  SizeO   CmpO ErrsO')
+     def print_header2_verbose(self):
+-        print '# KBIn  PktIn SizeIn  MultI   CmpI  ErrsI  KBOut PktOut  SizeO   CmpO  ErrsO'
++        print('# KBIn  PktIn SizeIn  MultI   CmpI  ErrsI  KBOut PktOut  SizeO   CmpO  ErrsO')
+     def print_brief(self):
+-        print "%5d %6d %6d %6d" % (
++        sys.stdout.write("%5d %6d %6d %6d" % (
+             sum(self.ss.get_metric_value('network.interface.in.bytes')) / 1024,
+             sum(self.ss.get_metric_value('network.interface.in.packets')),
+             sum(self.ss.get_metric_value('network.interface.out.bytes')) / 1024,
+-            sum(self.ss.get_metric_value('network.interface.out.packets'))),
++            sum(self.ss.get_metric_value('network.interface.out.packets'))))
+     def average_packet_size(self, bytes, packets):
+         # calculate mean packet size safely (note that divisor may be zero)
+         result = 0
+@@ -456,7 +450,7 @@ class _netCollectPrint(_CollectPrint):
+         # don't include loopback; TODO: pmDelProfile would be more appropriate
+         self.ss.get_metric_value('network.interface.in.bytes')[0] = 0
+         self.ss.get_metric_value('network.interface.out.bytes')[0] = 0
+-        print '%6d %5d %6d %6d %6d %6d %6d %6d %6d %6d %7d' % (
++        print('%6d %5d %6d %6d %6d %6d %6d %6d %6d %6d %7d' % (
+             sum(self.ss.get_metric_value('network.interface.in.bytes')) / 1024,
+             sum(self.ss.get_metric_value('network.interface.in.packets')),
+             self.average_packet_size('in.bytes', 'in.packets'),
+@@ -467,18 +461,18 @@ class _netCollectPrint(_CollectPrint):
+             sum(self.ss.get_metric_value('network.interface.out.packets')),
+             self.average_packet_size('out.bytes', 'out.packets'),
+             sum(self.ss.get_metric_value('network.interface.total.mcasts')),
+-            sum(self.ss.get_metric_value('network.interface.out.errors')))
++            sum(self.ss.get_metric_value('network.interface.out.errors'))))
+     def print_detail(self):
+-        for j in xrange(len(self.ss.metric_pmids)):
++        for j in range(len(self.ss.metric_pmids)):
+             try:
+-		if self.ss.metrics[j] == 'network.interface.in.bytes':
+-		    (inst, iname) = pm.pmGetInDom(self.ss.metric_descs[j])
+-		    break
+-            except pmapi.pmErr, e: # pylint: disable-msg=C0103
++                if self.ss.metrics[j] == 'network.interface.in.bytes':
++                    (inst, iname) = pm.pmGetInDom(self.ss.metric_descs[j])
++                    break
++            except pmapi.pmErr as e: # pylint: disable-msg=C0103
+                 iname = "X"
+ 
+-        for j in xrange(len(iname)):
+-            print '%4d %-7s %6d %5d %6d %6d %6d %6d %6d %6d %6d %6d %7d' % (
++        for j in range(len(iname)):
++            print('%4d %-7s %6d %5d %6d %6d %6d %6d %6d %6d %6d %6d %7d' % (
+                 j, iname[j],
+                 self.ss.get_metric_value('network.interface.in.bytes')[j] / 1024,
+                 self.ss.get_metric_value('network.interface.in.packets')[j],
+@@ -493,7 +487,7 @@ class _netCollectPrint(_CollectPrint):
+                 self.ss.get_metric_value('network.interface.out.packets')[j]) / 1024,
+                     self.ss.get_metric_value('network.interface.total.mcasts')[j],
+                     self.ss.get_metric_value(
+-                    'network.interface.out.compressed')[j])
++                    'network.interface.out.compressed')[j]))
+ 
+ class _Options(object):
+     def __init__(self):
+@@ -532,11 +526,11 @@ class _Options(object):
+ 
+ 
+     def override(self, opt):
+-	""" Override a few standard PCP options to match free(1) """
+-	# pylint: disable=R0201
+-	if opt == 's' or opt == 'i' or opt == 'h' or opt == "p":
+-	    return 1
+-	return 0
++        """ Override a few standard PCP options to match free(1) """
++        # pylint: disable=R0201
++        if opt == 's' or opt == 'i' or opt == 'h' or opt == "p":
++            return 1
++        return 0
+ 
+     def option_callback(self, opt, optarg, index):
+         """ Perform setup for an individual command line option """
+@@ -550,13 +544,13 @@ class _Options(object):
+ 
+         # pylint: disable=W0613
+         if opt == 's':
+-            for ssx in xrange(len(optarg)):
++            for ssx in range(len(optarg)):
+                 self.subsys_arg = optarg[ssx:ssx+1]
+                 try:
+                     subsys.append(s_options[self.subsys_arg][0])
+                 except KeyError:
+-                    print sys.argv[0] + \
+-                    ": Unimplemented subsystem -s" + self.subsys_arg
++                    print(sys.argv[0] + \
++                    ": Unimplemented subsystem -s" + self.subsys_arg)
+                     sys.exit(1)
+                 if self.subsys_arg.isupper():
+                     self.verbosity = s_options[self.subsys_arg][1]
+@@ -651,14 +645,14 @@ if __name__ == '__main__':
+     try:
+         ss.setup_metrics(pm)
+         ss.get_stats(pm)
+-    except pmapi.pmErr, e:
++    except pmapi.pmErr as e:
+         if opts.replay_archive:
+             import textwrap
+-            print "One of the following metrics is required " + \
++            print("One of the following metrics is required " + \
+                   "but absent in " + input_file + "\n" + \
+-                  textwrap.fill(str(ss.metrics))
++                  textwrap.fill(str(ss.metrics)))
+         else:
+-            print "unable to setup metrics"
++            print("unable to setup metrics")
+             sys.exit(1)
+ 
+     for ssx in subsys:
+@@ -670,20 +664,20 @@ if __name__ == '__main__':
+             if ssx == 0:
+                 continue
+             ssx.print_header1()
+-        print
++        print('')
+         for ssx in subsys:
+             if ssx == 0:
+                 continue
+             ssx.print_header2()
+-        print
++        print('')
+ 
+     try:
+         i_samples = 0
+         while (i_samples < opts.n_samples) or (opts.n_samples == 0):
+             pm.pmtimevalSleep(delta)
+             if opts.verbosity != "brief" and len(subsys) > 1:
+-                print "\n### RECORD %d >>> %s <<< %s ###" % \
+-                      (i_samples+1, host, time.strftime("%a %b %d %H:%M:%S %Y"))
++                print("\n### RECORD %d >>> %s <<< %s ###" % \
++                     (i_samples+1, host, time.strftime("%a %b %d %H:%M:%S %Y")))
+ 
+             try:
+                 ss.get_stats(pm)
+@@ -698,9 +692,9 @@ if __name__ == '__main__':
+                     ssx.print_line()
+                 if opts.verbosity == "brief":
+                     print
+-            except pmapi.pmErr, e:
++            except pmapi.pmErr as e:
+                 if str(e).find("PM_ERR_EOL") != -1:
+-                    print str(e)
++                    print(str(e))
+                 break
+ 
+             i_samples += 1
+diff -Naurp pcp-3.10.2.orig/src/pmdas/dmcache/pmdadmcache.python pcp-3.10.2/src/pmdas/dmcache/pmdadmcache.python
+--- pcp-3.10.2.orig/src/pmdas/dmcache/pmdadmcache.python	2015-01-24 07:23:07.000000000 +1100
++++ pcp-3.10.2/src/pmdas/dmcache/pmdadmcache.python	2015-02-23 21:24:36.665658331 +1100
+@@ -2,7 +2,7 @@
+ Performance Metrics Domain Agent exporting Device Mapper Cache metrics.
+ '''
+ #
+-# Copyright (c) 2014 Red Hat.
++# Copyright (c) 2014-2015 Red Hat.
+ # 
+ # This program is free software; you can redistribute it and/or modify it
+ # under the terms of the GNU General Public License as published by the
+@@ -23,6 +23,10 @@ from cpmapi import (PM_SEM_DISCRETE, PM_
+ from subprocess import PIPE, Popen
+ from os import getenv
+ 
++import sys
++if sys.version >= '3':
++    long = int	# python2 to python3 portability (no long() in python3)
++
+ IOMODES = { 'writeback': 1, 'writethrough': 2, 'passthrough': 3 }
+ 
+ class DmCacheStats(Structure):
+@@ -65,18 +69,18 @@ class DmCacheStats(Structure):
+ 
+         self.size = long(data[2]) - long(data[1])
+         self.metadata_block_size = mbsize
+-        self.metadata_used  = long(data[5]) * mbsize / 1024
+-        self.metadata_total = long(data[6]) * mbsize / 1024
++        self.metadata_used  = long(data[5]) * int(mbsize / 1024)
++        self.metadata_total = long(data[6]) * int(mbsize / 1024)
+         self.cache_block_size = cbsize
+-        self.cache_used = long(data[8]) * cbsize / 1024
+-        self.cache_total = long(data[9]) * cbsize / 1024
++        self.cache_used = long(data[8]) * int(cbsize / 1024)
++        self.cache_total = long(data[9]) * int(cbsize / 1024)
+         self.read_hits = long(data[10])
+         self.read_misses = long(data[11])
+         self.write_hits = long(data[12])
+         self.write_misses = long(data[13])
+         self.demotions = long(data[14])
+         self.promotions = long(data[15])
+-        self.dirty = long(data[16]) * cbsize / 1024
++        self.dirty = long(data[16]) * int(cbsize / 1024)
+         self.iomode = IOMODES[data[18]]
+ 
+     def io_mode(self):
+@@ -206,7 +210,7 @@ class DmCachePMDA(PMDA):
+             output, errors = pipe.communicate()
+             if errors:
+                 self.err("refresh: %s error: %s" % (self.dmstatus, errors))
+-            for line in output.splitlines():
++            for line in output.decode().splitlines():
+                 if 'No devices found' in line:
+                     continue
+                 name = line[:line.find(':')]            # extract cache name
+diff -Naurp pcp-3.10.2.orig/src/pmdas/gluster/pmdagluster.python pcp-3.10.2/src/pmdas/gluster/pmdagluster.python
+--- pcp-3.10.2.orig/src/pmdas/gluster/pmdagluster.python	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/src/pmdas/gluster/pmdagluster.python	2015-02-23 21:24:36.666658330 +1100
+@@ -2,7 +2,7 @@
+ Performance Metrics Domain Agent exporting Gluster filesystem metrics.
+ '''
+ #
+-# Copyright (c) 2013-2014 Red Hat.
++# Copyright (c) 2013-2015 Red Hat.
+ # 
+ # This program is free software; you can redistribute it and/or modify it
+ # under the terms of the GNU General Public License as published by the
+@@ -30,6 +30,10 @@ import subprocess
+ 
+ import threading
+ 
++import sys
++if sys.version >= '3':
++    long = int	# python2 to python3 portability (no long() in python3)
++
+ VOL_INFO_COMMAND = 'gluster --xml volume info'
+ VOL_STOP_COMMAND = 'gluster --xml volume profile %s stop'
+ VOL_START_COMMAND = 'gluster --xml volume profile %s start'
+@@ -233,8 +237,8 @@ class GlusterPMDA(PMDA):
+             return [c_api.PM_ERR_INST, 0]
+         cache = cast(voidp, POINTER(GlusterBrick))
+         brick = cache.contents
+-        fileop = item / 4
+-        index = item % 4
++        fileop = int(item / 4)
++        index = int(item % 4)
+         if (index == 0):
+             return [brick.mintime[fileop], 1]
+         elif (index == 1):
+diff -Naurp pcp-3.10.2.orig/src/pmdas/simple/pmdasimple.python pcp-3.10.2/src/pmdas/simple/pmdasimple.python
+--- pcp-3.10.2.orig/src/pmdas/simple/pmdasimple.python	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/src/pmdas/simple/pmdasimple.python	2015-02-23 21:24:36.666658330 +1100
+@@ -2,7 +2,7 @@
+ Python implementation of the "simple" Performance Metrics Domain Agent.
+ '''
+ #
+-# Copyright (c) 2013 Red Hat.
++# Copyright (c) 2013,2015 Red Hat.
+ # 
+ # This program is free software; you can redistribute it and/or modify it
+ # under the terms of the GNU General Public License as published by the
+@@ -206,7 +206,7 @@ class SimplePMDA(PMDA):
+         self.configfile = PCP.pmGetConfig('PCP_PMDAS_DIR')
+         self.configfile += '/' + name + '/' + name + '.conf'
+ 
+-	self.connect_pmcd();
++        self.connect_pmcd()
+ 
+         self.color_indom = self.indom(0)
+         self.add_indom(pmdaIndom(self.color_indom, self.colors))
+diff -Naurp pcp-3.10.2.orig/src/pmdas/unbound/pmdaunbound.python pcp-3.10.2/src/pmdas/unbound/pmdaunbound.python
+--- pcp-3.10.2.orig/src/pmdas/unbound/pmdaunbound.python	2015-01-24 07:23:07.000000000 +1100
++++ pcp-3.10.2/src/pmdas/unbound/pmdaunbound.python	2015-02-23 21:24:36.667658329 +1100
+@@ -20,7 +20,10 @@ from pcp.pmapi import pmUnits
+ from pcp.pmda import PMDA, pmdaMetric, pmdaIndom
+ from subprocess import Popen, PIPE
+ from os import getenv
+-import string, shlex
++import shlex
++import sys
++if sys.version >= '3':
++    long = int	# python2 to python3 portability (no long() in python3)
+ 
+ class UnboundPMDA(PMDA):
+     '''
+@@ -40,9 +43,9 @@ class UnboundPMDA(PMDA):
+         p.wait()
+         try:
+             stdout, stderr = p.communicate()
+-            stdoutlines = string.split(stdout.strip(), '\n')
+-            for line in stdoutlines:
+-                keyval = string.split(line, '=')
++            stdoutlines = stdout.decode().strip()
++            for line in stdoutlines.split('\n'):
++                keyval = line.split('=')
+                 if keyval[0].startswith( 'histogram' ):
+                     # Replace "." with "_" to avoid splitting metric name in multiple sub sections
+                     keyval[0] = "histogram." + "_".join(str(v) for v in keyval[0].split(".")[1:])
+diff -Naurp pcp-3.10.2.orig/src/pmdas/zswap/pmdazswap.python pcp-3.10.2/src/pmdas/zswap/pmdazswap.python
+--- pcp-3.10.2.orig/src/pmdas/zswap/pmdazswap.python	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/src/pmdas/zswap/pmdazswap.python	2015-02-23 21:24:36.667658329 +1100
+@@ -2,7 +2,7 @@
+ Performance Metrics Domain Agent exporting Linux compressed swap metrics.
+ '''
+ #
+-# Copyright (c) 2014 Red Hat.
++# Copyright (c) 2014-2015 Red Hat.
+ # 
+ # This program is free software; you can redistribute it and/or modify it
+ # under the terms of the GNU General Public License as published by the
+@@ -20,6 +20,9 @@ from pcp.pmapi import pmUnits
+ from pcp.pmda import PMDA, pmdaMetric, pmdaIndom
+ from resource import getpagesize
+ from os import getenv, listdir
++import sys
++if sys.version >= '3':
++    long = int	# python2 to python3 portability (no long() in python3)
+ 
+ ZSWAP_PAGESIZE = getpagesize()
+ ZSWAP_STATS_PATH = '/sys/kernel/debug/zswap'
+diff -Naurp pcp-3.10.2.orig/src/pmiostat/pmiostat.py pcp-3.10.2/src/pmiostat/pmiostat.py
+--- pcp-3.10.2.orig/src/pmiostat/pmiostat.py	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/src/pmiostat/pmiostat.py	2015-02-23 21:24:36.667658329 +1100
+@@ -1,6 +1,6 @@
+ #!/usr/bin/python
+ #
+-# Copyright (C) 2014 Red Hat.
++# Copyright (C) 2014-2015 Red Hat.
+ #
+ # This program is free software; you can redistribute it and/or modify it
+ # under the terms of the GNU General Public License as published by the
+@@ -19,19 +19,19 @@ import sys
+ from pcp import pmapi, pmcc
+ from cpmapi import PM_TYPE_U64, PM_CONTEXT_ARCHIVE, PM_SPACE_KBYTE
+ 
+-IOSTAT_SD_METRICS = [ b'disk.dev.read', b'disk.dev.read_bytes',
+-                 b'disk.dev.write', b'disk.dev.write_bytes',
+-                 b'disk.dev.read_merge', b'disk.dev.write_merge',
+-                 b'disk.dev.blkread', b'disk.dev.blkwrite',
+-                 b'disk.dev.read_rawactive', b'disk.dev.write_rawactive',
+-                 b'disk.dev.avactive']
+-
+-IOSTAT_DM_METRICS = [ b'disk.dm.read', b'disk.dm.read_bytes',
+-                 b'disk.dm.write', b'disk.dm.write_bytes',
+-                 b'disk.dm.read_merge', b'disk.dm.write_merge',
+-                 b'disk.dm.blkread', b'disk.dm.blkwrite',
+-                 b'disk.dm.read_rawactive', b'disk.dm.write_rawactive',
+-                 b'disk.dm.avactive']
++IOSTAT_SD_METRICS = [ 'disk.dev.read', 'disk.dev.read_bytes',
++                 'disk.dev.write', 'disk.dev.write_bytes',
++                 'disk.dev.read_merge', 'disk.dev.write_merge',
++                 'disk.dev.blkread', 'disk.dev.blkwrite',
++                 'disk.dev.read_rawactive', 'disk.dev.write_rawactive',
++                 'disk.dev.avactive']
++
++IOSTAT_DM_METRICS = [ 'disk.dm.read', 'disk.dm.read_bytes',
++                 'disk.dm.write', 'disk.dm.write_bytes',
++                 'disk.dm.read_merge', 'disk.dm.write_merge',
++                 'disk.dm.blkread', 'disk.dm.blkwrite',
++                 'disk.dm.read_rawactive', 'disk.dm.write_rawactive',
++                 'disk.dm.avactive']
+ 
+ class IostatReport(pmcc.MetricGroupPrinter):
+     Hcount = 0
+@@ -51,45 +51,45 @@ class IostatReport(pmcc.MetricGroupPrint
+ 
+     def report(self, manager):
+         if 'dm' in IostatOptions.xflag:
+-            subtree = b'disk.dm'
++            subtree = 'disk.dm'
+         else:
+-            subtree = b'disk.dev'
++            subtree = 'disk.dev'
+         group = manager["iostat"]
+ 
+-        if group[subtree + b'.read_merge'].netPrevValues == None:
++        if group[subtree + '.read_merge'].netPrevValues == None:
+             # need two fetches to report rate converted counter metrics
+             return
+ 
+-        instlist = self.instlist(group, subtree + b'.read')
++        instlist = self.instlist(group, subtree + '.read')
+         dt = self.timeStampDelta(group)
+         timestamp = group.contextCache.pmCtime(int(group.timestamp)).rstrip()
+ 
+-        c_rrqm = self.curVals(group, subtree + b'.read_merge')
+-        p_rrqm = self.prevVals(group, subtree + b'.read_merge')
++        c_rrqm = self.curVals(group, subtree + '.read_merge')
++        p_rrqm = self.prevVals(group, subtree + '.read_merge')
+ 
+-        c_wrqm = self.curVals(group, subtree + b'.write_merge')
+-        p_wrqm = self.prevVals(group, subtree + b'.write_merge')
++        c_wrqm = self.curVals(group, subtree + '.write_merge')
++        p_wrqm = self.prevVals(group, subtree + '.write_merge')
+ 
+-        c_r = self.curVals(group, subtree + b'.read')
+-        p_r = self.prevVals(group, subtree + b'.read')
++        c_r = self.curVals(group, subtree + '.read')
++        p_r = self.prevVals(group, subtree + '.read')
+ 
+-        c_w = self.curVals(group, subtree + b'.write')
+-        p_w = self.prevVals(group, subtree + b'.write')
++        c_w = self.curVals(group, subtree + '.write')
++        p_w = self.prevVals(group, subtree + '.write')
+ 
+-        c_rkb = self.curVals(group, subtree + b'.read_bytes')
+-        p_rkb = self.prevVals(group, subtree + b'.read_bytes')
++        c_rkb = self.curVals(group, subtree + '.read_bytes')
++        p_rkb = self.prevVals(group, subtree + '.read_bytes')
+ 
+-        c_wkb = self.curVals(group, subtree + b'.write_bytes')
+-        p_wkb = self.prevVals(group, subtree + b'.write_bytes')
++        c_wkb = self.curVals(group, subtree + '.write_bytes')
++        p_wkb = self.prevVals(group, subtree + '.write_bytes')
+ 
+-        c_ractive = self.curVals(group, subtree + b'.read_rawactive')
+-        p_ractive = self.prevVals(group, subtree + b'.read_rawactive')
++        c_ractive = self.curVals(group, subtree + '.read_rawactive')
++        p_ractive = self.prevVals(group, subtree + '.read_rawactive')
+ 
+-        c_wactive = self.curVals(group, subtree + b'.write_rawactive')
+-        p_wactive = self.prevVals(group, subtree + b'.write_rawactive')
++        c_wactive = self.curVals(group, subtree + '.write_rawactive')
++        p_wactive = self.prevVals(group, subtree + '.write_rawactive')
+ 
+-        c_avactive = self.curVals(group, subtree + b'.avactive')
+-        p_avactive = self.prevVals(group, subtree + b'.avactive')
++        c_avactive = self.curVals(group, subtree + '.avactive')
++        p_avactive = self.prevVals(group, subtree + '.avactive')
+ 
+         # check availability
+         if p_rrqm == {} or p_wrqm == {} or p_r == {} or p_w == {} or p_rkb == {} \
+@@ -151,7 +151,7 @@ class IostatReport(pmcc.MetricGroupPrint
+             if tot_active:
+                     util = 100.0 * tot_active / dt
+ 
+-            device = inst.decode('utf-8')	# prepare name for printing
++            device = inst	# prepare name for printing
+             if "t" in IostatOptions.xflag:
+                 print("%-24s %-12s %7.1f %7.1f %6.1f %6.1f %8.1f %8.1f %8.2f %8.2f %7.1f %7.1f %7.1f %5.1f" \
+                 % (timestamp, device, rrqm, wrqm, r, w, rkb, wkb, avgrqsz, avgqsz, await, r_await, w_await, util))
+diff -Naurp pcp-3.10.2.orig/src/python/pcp/mmv.py pcp-3.10.2/src/python/pcp/mmv.py
+--- pcp-3.10.2.orig/src/python/pcp/mmv.py	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/src/python/pcp/mmv.py	2015-02-23 21:24:36.668658329 +1100
+@@ -1,7 +1,7 @@
+ # pylint: disable=C0103
+ """Wrapper module for libpcp_mmv - PCP Memory Mapped Values library
+ #
+-# Copyright (C) 2013 Red Hat.
++# Copyright (C) 2013,2015 Red Hat.
+ #
+ # This file is part of the "pcp" module, the python interfaces for the
+ # Performance Co-Pilot toolkit.
+@@ -85,6 +85,13 @@ class mmv_instance(Structure):
+     _fields_ = [("internal", c_int),
+                 ("external", c_char * MMV_NAMEMAX)]
+ 
++    def __init__(self, inst, name):
++        Structure.__init__(self)
++        if type(name) != type(b''):
++            name = name.encode('utf-8')
++        self.external = name
++        self.internal = inst
++
+ class mmv_indom(Structure):
+     """ Represents an instance domain (for set valued metrics)
+         Instance domains have associated instances - integer/string pairs.
+@@ -96,6 +103,16 @@ class mmv_indom(Structure):
+                 ("shorttext", c_char_p),
+                 ("helptext", c_char_p)]
+ 
++    def __init__(self, serial, shorttext = '', helptext = ''):
++        Structure.__init__(self)
++        if type(helptext) != type(b''):
++            helptext = helptext.encode('utf-8')
++        if type(shorttext) != type(b''):
++            shorttext = shorttext.encode('utf-8')
++        self.shorttext = shorttext
++        self.helptext = shorttext
++        self.serial = serial
++
+     def set_instances(self, instances):
+         """ Update the instances and counts fields for this indom """
+         self.count = len(instances)
+@@ -118,6 +135,20 @@ class mmv_metric(Structure):
+                 ("shorttext", c_char_p),
+                 ("helptext", c_char_p)]
+ 
++    def __init__(self, name, item, typeof, semantics, dimension, indom = 0, shorttext = '', helptext = ''):
++        Structure.__init__(self)
++        if type(name) != type(b''):
++            name = name.encode('utf-8')
++        if type(helptext) != type(b''):
++            helptext = helptext.encode('utf-8')
++        if type(shorttext) != type(b''):
++            shorttext = shorttext.encode('utf-8')
++        self.shorttext = shorttext
++        self.helptext = shorttext
++        self.typeof = typeof
++        self.indom = indom
++        self.item = item
++
+ ##
+ # PCP Memory Mapped Value Services
+ 
+@@ -185,6 +216,8 @@ class MemoryMappedValues(object):
+     """
+ 
+     def __init__(self, name, flags = 0, cluster = 42):
++        if type(name) != type(b''):
++            name = name.encode('utf-8')
+         self._name = name
+         self._cluster = cluster  # PMID cluster number (domain is MMV)
+         self._flags = flags      # MMV_FLAGS_* flags
+@@ -263,6 +296,10 @@ class MemoryMappedValues(object):
+             a convenience only for situations where performance will not
+             be affected by repeated (linear) name/inst lookups.
+         """
++        if type(name) != type(b''):
++            name = name.encode('utf-8')
++        if type(inst) != type(b''):
++            inst = inst.encode('utf-8')
+         return LIBPCP_MMV.mmv_lookup_value_desc(self._handle, name, inst)
+ 
+     def add(self, mapping, value):
+@@ -279,6 +316,8 @@ class MemoryMappedValues(object):
+ 
+     def set_string(self, mapping, value):
+         """ Set the string mapped metric to a given value """
++        if type(value) != type(b''):
++            value = value.encode('utf-8')
+         LIBPCP_MMV.mmv_set_string(self._handle, mapping, value, len(value))
+ 
+     def interval_start(self, mapping):
+@@ -294,25 +333,47 @@ class MemoryMappedValues(object):
+ 
+     def lookup_add(self, name, inst, value):
+         """ Lookup the named metric[instance] and add a value to it """
++        if type(name) != type(b''):
++            name = name.encode('utf-8')
++        if type(inst) != type(b''):
++            inst = inst.encode('utf-8')
+         LIBPCP_MMV.mmv_stats_add(self._handle, name, inst, value)
+ 
+     def lookup_inc(self, name, inst):
+         """ Lookup the named metric[instance] and add one to it """
++        if type(name) != type(b''):
++            name = name.encode('utf-8')
++        if type(inst) != type(b''):
++            inst = inst.encode('utf-8')
+         LIBPCP_MMV.mmv_stats_inc(self._handle, name, inst)
+ 
+     def lookup_set(self, name, inst, value):
+         """ Lookup the named metric[instance] and set its value """
++        if type(name) != type(b''):
++            name = name.encode('utf-8')
++        if type(inst) != type(b''):
++            inst = inst.encode('utf-8')
+         LIBPCP_MMV.mmv_stats_set(self._handle, name, inst, value)
+ 
+     def lookup_interval_start(self, name, inst):
+         """ Lookup the named metric[instance] and start an interval
+             The opaque handle returned is passed to interval_end().
+         """
++        if type(name) != type(b''):
++            name = name.encode('utf-8')
++        if type(inst) != type(b''):
++            inst = inst.encode('utf-8')
+         return LIBPCP_MMV.mmv_stats_interval_start(self._handle,
+                                                    None, name, inst)
+ 
+     def lookup_set_string(self, name, inst, s):
+         """ Lookup the named metric[instance] and set its string value """
++        if type(name) != type(b''):
++            name = name.encode('utf-8')
++        if type(inst) != type(b''):
++            inst = inst.encode('utf-8')
++        if type(s) != type(b''):
++            s = s.encode('utf-8')
+         LIBPCP_MMV.mmv_stats_set_strlen(self._handle, name, inst, s, len(s))
+ 
+     def lookup_add_fallback(self, name, inst, fall, value):
+@@ -321,6 +382,10 @@ class MemoryMappedValues(object):
+             One example use is: add value to bucketN else use a catch-all
+                                 bucket such as "other"
+         """
++        if type(name) != type(b''):
++            name = name.encode('utf-8')
++        if type(inst) != type(b''):
++            inst = inst.encode('utf-8')
+         LIBPCP_MMV.mmv_stats_add_fallback(self._handle, name, inst, fall, value)
+ 
+     def lookup_inc_fallback(self, name, inst, fallback):
+@@ -328,5 +393,9 @@ class MemoryMappedValues(object):
+             If instance is not found, fallback to using a second instance
+             One sample use is: inc value of BucketA, else inc a catch-all
+         """
++        if type(name) != type(b''):
++            name = name.encode('utf-8')
++        if type(inst) != type(b''):
++            inst = inst.encode('utf-8')
+         LIBPCP_MMV.mmv_stats_inc_fallback(self._handle, name, inst, fallback)
+ 
+diff -Naurp pcp-3.10.2.orig/src/python/pcp/pmapi.py pcp-3.10.2/src/python/pcp/pmapi.py
+--- pcp-3.10.2.orig/src/python/pcp/pmapi.py	2015-01-24 07:23:07.000000000 +1100
++++ pcp-3.10.2/src/python/pcp/pmapi.py	2015-02-23 21:24:36.669658327 +1100
+@@ -100,18 +100,18 @@ LIBC = CDLL(find_library("c"))
+ #
+ import sys
+ 
+-if sys.version > '3':
++if sys.version >= '3':
+     integer_types = (int,)
+     long = int
+ else:
+     integer_types = (int, long,)
+ 
+ def pyFileToCFile(fileObj):
+-    if sys.version > '3':
++    if sys.version >= '3':
+         from os import fdopen
+         ctypes.pythonapi.PyObject_AsFileDescriptor.restype = ctypes.c_int
+         ctypes.pythonapi.PyObject_AsFileDescriptor.argtypes = [ctypes.py_object]
+-        return fdopen(ctypes.pythonapi.PyObject_AsFileDescriptor(pyfile), "r")
++        return fdopen(ctypes.pythonapi.PyObject_AsFileDescriptor(fileObj), "r", closefd=False)
+     else:
+         ctypes.pythonapi.PyFile_AsFile.restype = ctypes.c_void_p
+         ctypes.pythonapi.PyFile_AsFile.argtypes = [ctypes.py_object]
+@@ -138,8 +138,8 @@ class pmErr(Exception):
+         errStr = create_string_buffer(c_api.PM_MAXERRMSGLEN)
+         errStr = LIBPCP.pmErrStr_r(self.args[0], errStr, c_api.PM_MAXERRMSGLEN)
+         for index in range(1, len(self.args)):
+-            errStr += " " + str(self.args[index])
+-        return errStr
++            errStr += b" " + str(self.args[index]).encode('utf-8')
++        return str(errStr.decode())
+ 
+     def progname(self):
+         return c_char_p.in_dll(LIBPCP, "pmProgname").value
+@@ -177,6 +177,8 @@ class timeval(Structure):
+         """ Construct timeval from a string using pmParseInterval """
+         tvp = builder()
+         errmsg = c_char_p()
++        if type(interval) != type(b''):
++            interval = interval.encode('utf-8')
+         status = LIBPCP.pmParseInterval(interval, byref(tvp), byref(errmsg))
+         if status < 0:
+             raise pmErr(status, errmsg)
+@@ -288,7 +290,8 @@ class pmUnits(Structure):
+ 
+     def __str__(self):
+         unitstr = ctypes.create_string_buffer(64)
+-        return str(LIBPCP.pmUnitsStr_r(self, unitstr, 64))
++        result = LIBPCP.pmUnitsStr_r(self, unitstr, 64)
++        return str(result.decode())
+ 
+ class pmValueBlock(Structure):
+     """Value block bitfields for different compilers
+@@ -454,7 +457,7 @@ class pmMetricSpec(Structure):
+                  ("ninst", c_int),
+                  ("inst",  POINTER(c_char_p)) ]
+     def __str__(self):
+-        insts = map(lambda x: str(self.inst[x]), range(self.ninst))
++        insts = list(map(lambda x: str(self.inst[x]), range(self.ninst)))
+         fields = (addressof(self), self.isarch, self.source, insts)
+         return "pmMetricSpec@%#lx src=%s metric=%s insts=" % fields
+ 
+@@ -464,6 +467,8 @@ class pmMetricSpec(Structure):
+         errmsg = c_char_p()
+         if type(source) != type(b''):
+             source = source.encode('utf-8')
++        if type(string) != type(b''):
++            string = string.encode('utf-8')
+         status = LIBPCP.pmParseMetricSpec(string, isarch, source,
+                                         byref(result), byref(errmsg))
+         if status < 0:
+@@ -1094,11 +1099,13 @@ class pmContext(object):
+         status = LIBPCP.pmUseContext(self.ctx)
+         if status < 0:
+             raise pmErr(status)
++        if type(name) != type(b''):
++            name = name.encode('utf-8')
+         status = LIBPCP.pmGetChildren(name, byref(offspring))
+         if status < 0:
+             raise pmErr(status)
+         if status > 0:
+-            childL = map(lambda x: str(offspring[x]), range(status))
++            childL = list(map(lambda x: str(offspring[x]), range(status)))
+             LIBC.free(offspring)
+         else:
+             return None
+@@ -1113,13 +1120,15 @@ class pmContext(object):
+         status = LIBPCP.pmUseContext(self.ctx)
+         if status < 0:
+             raise pmErr(status)
++        if type(name) != type(b''):
++            name = name.encode('utf-8')
+         status = LIBPCP.pmGetChildrenStatus(name,
+                         byref(offspring), byref(childstat))
+         if status < 0:
+             raise pmErr(status)
+         if status > 0:
+-            childL = map(lambda x: str(offspring[x]), range(status))
+-            statL = map(lambda x: int(childstat[x]), range(status))
++            childL = list(map(lambda x: str(offspring[x]), range(status)))
++            statL = list(map(lambda x: int(childstat[x]), range(status)))
+             LIBC.free(offspring)
+             LIBC.free(childstat)
+         else:
+@@ -1145,6 +1154,8 @@ class pmContext(object):
+         status = LIBPCP.pmUseContext(self.ctx)
+         if status < 0:
+             raise pmErr(status)
++        if type(filename) != type(b''):
++            filename = filename.encode('utf-8')
+         status = LIBPCP.pmLoadNameSpace(filename)
+         if status < 0:
+             raise pmErr(status)
+@@ -1156,21 +1167,25 @@ class pmContext(object):
+         c_uint pmid [] = pmLookupName("MetricName")
+         c_uint pmid [] = pmLookupName(("MetricName1", "MetricName2", ...))
+         """
+-        if type(nameA) == type(""):
++        status = LIBPCP.pmUseContext(self.ctx)
++        if status < 0:
++            raise pmErr(status)
++        if type(nameA) == type('') or type(nameA) == type(b''):
+             n = 1
+         else:
+             n = len(nameA)
+         names = (c_char_p * n)()
+-        if type(nameA) == type(""):
++        if type(nameA) == type(''):
++            names[0] = c_char_p(nameA.encode('utf-8'))
++        elif type(nameA) == type(b''):
+             names[0] = c_char_p(nameA)
+         else:
+             for i in range(len(nameA)):
+-                names[i] = c_char_p(nameA[i])
+-
++                if type(nameA[i]) == type(b''):
++                    names[i] = c_char_p(nameA[i])
++                else:
++                    names[i] = c_char_p(nameA[i].encode('utf-8'))
+         pmidA = (c_uint * n)()
+-        status = LIBPCP.pmUseContext(self.ctx)
+-        if status < 0:
+-            raise pmErr(status)
+         LIBPCP.pmLookupName.argtypes = [c_int, (c_char_p * n), POINTER(c_uint)]
+         status = LIBPCP.pmLookupName(n, names, pmidA)
+         if status < 0:
+@@ -1185,31 +1200,31 @@ class pmContext(object):
+         """PMAPI - Return list of all metric names having this identical PMID
+         tuple names = pmNameAll(metric_id)
+         """
+-        nameA_p = POINTER(c_char_p)()
+         status = LIBPCP.pmUseContext(self.ctx)
+         if status < 0:
+             raise pmErr(status)
++        nameA_p = POINTER(c_char_p)()
+         status = LIBPCP.pmNameAll(pmid, byref(nameA_p))
+         if status < 0:
+             raise pmErr(status)
+-        nameL = map(lambda x: str(nameA_p[x]), range(status))
+-        LIBC.free( nameA_p )
++        nameL = list(map(lambda x: str(nameA_p[x].decode()), range(status)))
++        LIBC.free(nameA_p)
+         return nameL
+ 
+     def pmNameID(self, pmid):
+         """PMAPI - Return a metric name from a PMID
+         name = pmNameID(self.metric_id)
+         """
+-        k = c_char_p()
++        name = c_char_p()
+         status = LIBPCP.pmUseContext(self.ctx)
+         if status < 0:
+             raise pmErr(status)
+-        status = LIBPCP.pmNameID(pmid, byref(k))
++        status = LIBPCP.pmNameID(pmid, byref(name))
+         if status < 0:
+             raise pmErr(status)
+-        name = k.value
+-        LIBC.free( k )
+-        return name
++        result = name.value
++        LIBC.free(name)
++        return str(result.decode())
+ 
+     def pmTraversePMNS(self, name, callback):
+         """PMAPI - Scan namespace, depth first, run CALLBACK at each node
+@@ -1219,6 +1234,8 @@ class pmContext(object):
+         if status < 0:
+             raise pmErr(status)
+         cb = traverseCB_type(callback)
++        if type(name) != type(b''):
++            name = name.encode('utf-8')
+         status = LIBPCP.pmTraversePMNS(name, cb)
+         if status < 0:
+             raise pmErr(status)
+@@ -1238,6 +1255,10 @@ class pmContext(object):
+         """PMAPI - Register a derived metric name and definition
+         pm.pmRegisterDerived("MetricName", "MetricName Expression")
+         """
++        if type(name) != type(b''):
++            name = name.encode('utf-8')
++        if type(expr) != type(b''):
++            expr = expr.encode('utf-8')
+         status = LIBPCP.pmRegisterDerived(name, expr)
+         if status != 0:
+             raise pmErr(status)
+@@ -1245,11 +1266,13 @@ class pmContext(object):
+         if status < 0:
+             raise pmErr(status)
+         
+-    def pmLoadDerivedConfig(self, f):
++    def pmLoadDerivedConfig(self, fname):
+         """PMAPI - Register derived metric names and definitions from a file
+         pm.pmLoadDerivedConfig("FileName")
+         """
+-        status = LIBPCP.pmLoadDerivedConfig(f)
++        if type(fname) != type(b''):
++            fname = fname.encode('utf-8')
++        status = LIBPCP.pmLoadDerivedConfig(fname)
+         if status < 0:
+             raise pmErr(status)
+         status = LIBPCP.pmReconnectContext(self.ctx)
+@@ -1262,7 +1285,8 @@ class pmContext(object):
+         definition cannot be parsed
+         pm.pmRegisterDerived()
+         """
+-        return str(LIBPCP.pmDerivedErrStr())
++        result = LIBPCP.pmDerivedErrStr()
++        return str(result.decode())
+ 
+     ##
+     # PMAPI Metrics Description Services
+@@ -1329,9 +1353,9 @@ class pmContext(object):
+         status = LIBPCP.pmLookupInDomText(get_indom(pmdesc), kind, byref(buf))
+         if status < 0:
+             raise pmErr(status)
+-        text = str(buf.value)
++        result = buf.value
+         LIBC.free(buf)
+-        return text
++        return str(result.decode())
+ 
+     def pmLookupText(self, pmid, kind = c_api.PM_TEXT_ONELINE):
+         """PMAPI - Lookup the description of a metric from its pmID
+@@ -1366,8 +1390,8 @@ class pmContext(object):
+         if status < 0:
+             raise pmErr(status)
+         if status > 0:
+-            nameL = map(lambda x: str(nameA_p[x]), range(status))
+-            instL = map(lambda x: int(instA_p[x]), range(status))
++            nameL = list(map(lambda x: str(nameA_p[x].decode()), range(status)))
++            instL = list(map(lambda x: int(instA_p[x]), range(status)))
+             LIBC.free(instA_p)
+             LIBC.free(nameA_p)
+         else:
+@@ -1383,6 +1407,8 @@ class pmContext(object):
+         status = LIBPCP.pmUseContext(self.ctx)
+         if status < 0:
+             raise pmErr(status)
++        if type(name) != type(b''):
++            name = name.encode('utf-8')
+         status = LIBPCP.pmLookupInDom(get_indom(pmdesc), name)
+         if status < 0:
+             raise pmErr(status)
+@@ -1402,9 +1428,9 @@ class pmContext(object):
+         status = LIBPCP.pmNameInDom(get_indom(pmdesc), instval, byref(name_p))
+         if status < 0:
+             raise pmErr(status)
+-        outName = str(name_p.value)
++        result = name_p.value
+         LIBC.free(name_p)
+-        return outName
++        return str(result.decode())
+ 
+     ##
+     # PMAPI Context Services
+@@ -1537,7 +1563,8 @@ class pmContext(object):
+         """
+         buflen = c_api.PM_LOG_MAXHOSTLEN
+         buffer = ctypes.create_string_buffer(buflen)
+-        return str(LIBPCP.pmGetContextHostName_r(self.ctx, buffer, buflen))
++        result = LIBPCP.pmGetContextHostName_r(self.ctx, buffer, buflen)
++        return str(result.decode())
+ 
+     ##
+     # PMAPI Timezone Services
+@@ -1555,6 +1582,8 @@ class pmContext(object):
+     @staticmethod
+     def pmNewZone(tz):
+         """PMAPI - Create new zone handle and set reporting timezone """
++        if type(tz) != type(b''):
++            tz = tz.encode('utf-8')
+         status = LIBPCP.pmNewZone(tz)
+         if status < 0:
+             raise pmErr(status)
+@@ -1575,9 +1604,9 @@ class pmContext(object):
+         status = LIBPCP.pmWhichZone(byref(tz_p))
+         if status < 0:
+             raise pmErr(status)
+-        tz = str(tz_p.value)
++        tz = tz_p.value
+         LIBC.free(tz_p)
+-        return tz
++        return str(tz.decode())
+ 
+     def pmLocaltime(self, seconds):
+         """PMAPI - convert the date and time for a reporting timezone """
+@@ -1597,7 +1626,7 @@ class pmContext(object):
+         result = ctypes.create_string_buffer(32)
+         timetp = c_long(long(seconds))
+         LIBPCP.pmCtime(byref(timetp), result)
+-        return str(result.value)
++        return str(result.value.decode())
+ 
+     ##
+     # PMAPI Metrics Services
+@@ -1680,8 +1709,8 @@ class pmContext(object):
+         if status < 0:
+             raise pmErr(status)
+         if status > 0:
+-            nameL = map(lambda x: str(nameA_p[x]), range(status))
+-            instL = map(lambda x: int(instA_p[x]), range(status))
++            nameL = list(map(lambda x: str(nameA_p[x].decode()), range(status)))
++            instL = list(map(lambda x: int(instA_p[x]), range(status)))
+             LIBC.free(instA_p)
+             LIBC.free(nameA_p)
+         else:
+@@ -1697,6 +1726,8 @@ class pmContext(object):
+         status = LIBPCP.pmUseContext(self.ctx)
+         if status < 0:
+             raise pmErr(status)
++        if type(name) != type(b''):
++            name = name.encode('utf-8')
+         status = LIBPCP.pmLookupInDomArchive(get_indom(pmdesc), name)
+         if status < 0:
+             raise pmErr(status)
+@@ -1715,9 +1746,9 @@ class pmContext(object):
+         status = LIBPCP.pmNameInDomArchive(indom, inst, byref(name_p))
+         if status < 0:
+             raise pmErr(status)
+-        outName = str(name_p.value)
++        result = name_p.value
+         LIBC.free(name_p)
+-        return outName
++        return str(result.decode())
+ 
+     def pmFetchArchive(self):
+         """PMAPI - Fetch measurements from the target source
+@@ -1740,13 +1771,17 @@ class pmContext(object):
+     @staticmethod
+     def pmGetConfig(variable):
+         """PMAPI - Return value from environment or pcp config file """
+-        return str(LIBPCP.pmGetConfig(variable))
++        if type(variable) != type(b''):
++            variable = variable.encode('utf-8')
++        result = LIBPCP.pmGetConfig(variable)
++        return str(result.decode())
+ 
+     @staticmethod
+     def pmErrStr(code):
+         """PMAPI - Return value from environment or pcp config file """
+         errstr = ctypes.create_string_buffer(c_api.PM_MAXERRMSGLEN)
+-        return str(LIBPCP.pmErrStr_r(code, errstr, c_api.PM_MAXERRMSGLEN))
++        result = LIBPCP.pmErrStr_r(code, errstr, c_api.PM_MAXERRMSGLEN)
++        return str(result.decode())
+ 
+     @staticmethod
+     def pmExtractValue(valfmt, vlist, intype, outtype):
+@@ -1799,19 +1834,22 @@ class pmContext(object):
+     def pmUnitsStr(units):
+         """PMAPI - Convert units struct to a readable string """
+         unitstr = ctypes.create_string_buffer(64)
+-        return str(LIBPCP.pmUnitsStr_r(units, unitstr, 64))
++        result = LIBPCP.pmUnitsStr_r(units, unitstr, 64)
++        return str(result.decode())
+ 
+     @staticmethod
+     def pmNumberStr(value):
+         """PMAPI - Convert double value to fixed-width string """
+         numstr = ctypes.create_string_buffer(8)
+-        return str(LIBPCP.pmNumberStr_r(value, numstr, 8))
++        result = LIBPCP.pmNumberStr_r(value, numstr, 8)
++        return str(result.decode())
+ 
+     @staticmethod
+     def pmIDStr(pmid):
+         """PMAPI - Convert a pmID to a readable string """
+         pmidstr = ctypes.create_string_buffer(32)
+-        return str(LIBPCP.pmIDStr_r(pmid, pmidstr, 32))
++        result = LIBPCP.pmIDStr_r(pmid, pmidstr, 32)
++        return str(result.decode())
+ 
+     @staticmethod
+     def pmInDomStr(pmdescp):
+@@ -1819,7 +1857,8 @@ class pmContext(object):
+         "indom" = pmGetInDom(pmDesc pmdesc)
+         """
+         indomstr = ctypes.create_string_buffer(32)
+-        return str(LIBPCP.pmInDomStr_r(get_indom(pmdescp), indomstr, 32))
++        result = LIBPCP.pmInDomStr_r(get_indom(pmdescp), indomstr, 32)
++        return str(result.decode())
+ 
+     @staticmethod
+     def pmTypeStr(typed):
+@@ -1827,7 +1866,8 @@ class pmContext(object):
+         "type" = pmTypeStr(c_api.PM_TYPE_FLOAT)
+         """
+         typestr = ctypes.create_string_buffer(32)
+-        return str(LIBPCP.pmTypeStr_r(typed, typestr, 32))
++        result = LIBPCP.pmTypeStr_r(typed, typestr, 32)
++        return str(result.decode())
+ 
+     @staticmethod
+     def pmAtomStr(atom, typed):
+@@ -1835,7 +1875,8 @@ class pmContext(object):
+         "value" = pmAtomStr(atom, c_api.PM_TYPE_U32)
+         """
+         atomstr = ctypes.create_string_buffer(96)
+-        return str(LIBPCP.pmAtomStr(byref(atom), typed, atomstr, 96))
++        result = LIBPCP.pmAtomStr_r(byref(atom), typed, atomstr, 96)
++        return str(result.decode())
+ 
+     @staticmethod
+     def pmPrintValue(fileObj, result, ptype, vset_idx, vlist_idx, min_width):
+@@ -1885,13 +1926,16 @@ class pmContext(object):
+ 
+     @staticmethod
+     def pmParseUnitsStr(string):
+-        assert isinstance(string, basestring)
++        if type(string) != type('') and type(string) != type(b''):
++            raise pmErr(c_api.PM_ERR_CONV, str(string))
++        if type(string) != type(b''):
++            string = string.encode('utf-8')
+         result = pmUnits()
+         errmsg = c_char_p()
+         multiplier = c_double()
+         status = LIBPCP.pmParseUnitsStr(string, byref(result), byref(multiplier), byref(errmsg))
+         if status < 0:
+-            text = str(errmsg.value)
++            text = str(errmsg.value.decode())
+             LIBC.free(errmsg)
+             raise pmErr(status, text)
+         return (result, multiplier.value)
+diff -Naurp pcp-3.10.2.orig/src/python/pcp/pmcc.py pcp-3.10.2/src/python/pcp/pmcc.py
+--- pcp-3.10.2.orig/src/python/pcp/pmcc.py	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/src/python/pcp/pmcc.py	2015-02-23 21:24:36.670658327 +1100
+@@ -1,8 +1,6 @@
+ """ Convenience Classes building on the base PMAPI extension module """
+ #
+-# pmcc.py
+-#
+-# Copyright (C) 2013-2014 Red Hat
++# Copyright (C) 2013-2015 Red Hat
+ # Copyright (C) 2009-2012 Michael T. Werner
+ #
+ # This file is part of the "pcp" module, the python interfaces for the
+@@ -33,11 +31,15 @@ class MetricCore(object):
+     PMAPI metrics are unique by name, and MetricCores should be also
+     rarely, some PMAPI metrics with different names might have identical PMIDs
+     PMAPI metrics are unique by (name) and by (name,pmid) - _usually_ by (pmid)
+-    too.
++    too.  Note that names here (and only here) are stored as byte strings for
++    direct PMAPI access.  All dictionaries/caching strategies built using the
++    core structure use native strings (i.e., not byte strings in python3).
+     """
+ 
+     def __init__(self, ctx, name, pmid):
+         self.ctx = ctx
++        if type(name) != type(b''):
++            name = name.encode('utf-8')
+         self.name = name
+         self.pmid = pmid
+         self.desc = None
+@@ -73,7 +75,7 @@ class Metric(object):
+     def _R_ctx(self):
+         return self._core.ctx
+     def _R_name(self):
+-        return self._core.name
++        return self._core.name.decode()
+     def _R_pmid(self):
+         return self._core.pmid
+     def _R_desc(self):
+@@ -105,7 +107,7 @@ class Metric(object):
+             try:
+                 name = instD[instval.inst]
+             except KeyError:
+-                name = b''
++                name = ''
+             outAtom = self.ctx.pmExtractValue(
+                     vset.valfmt, instval, self.desc.type, self._convType)
+             if self._convUnits:
+@@ -151,7 +153,7 @@ class Metric(object):
+             try:
+                 name = instD[instval.inst]
+             except KeyError:
+-                name = b''
++                name = ''
+             outAtom = self.ctx.pmExtractValue(vset.valfmt,
+                     instval, self.desc.type, PM_TYPE_DOUBLE)
+             poutAtom = self.ctx.pmExtractValue(pvset.valfmt,
+@@ -281,7 +283,7 @@ class MetricCache(pmContext):
+                     instmap = {}
+             self._mcIndomD.update({indom: instmap})
+ 
+-        self._mcByNameD.update({core.name: core})
++        self._mcByNameD.update({core.name.decode(): core})
+         self._mcByPmidD.update({core.pmid: core})
+ 
+     def mcGetCoresByName(self, nameL):
+@@ -291,8 +293,8 @@ class MetricCache(pmContext):
+         errL = None
+         # lookup names in cache
+         for index, name in enumerate(nameL):
+-            if type(name) != type(b''):
+-                name = name.encode('utf-8')
++            if type(name) == type(b''):
++                name = name.decode()
+             # lookup metric core in cache
+             core = self._mcByNameD.get(name)
+             if not core:
+@@ -306,8 +308,6 @@ class MetricCache(pmContext):
+         if missD:
+             idL, errL = self.mcFetchPmids(missD.keys())
+             for name, pmid in idL:
+-                if type(name) != type(b''):
+-                    name = name.encode('utf-8')
+                 if pmid == PM_ID_NULL:
+                     # fetch failed for the given metric name
+                     if not errL:
+@@ -354,7 +354,7 @@ class MetricCache(pmContext):
+             print >> stderr, fail
+             raise SystemExit(1)
+ 
+-        return zip(nameA, pmidArray), errL
++        return zip(nameL, pmidArray), errL
+ 
+ 
+ class MetricGroup(dict):
+@@ -412,6 +412,12 @@ class MetricGroup(dict):
+         self._altD = {}
+         self.mgAdd(inL)
+ 
++    def __setitem__(self, attr, value = []):
++        if attr in self:
++            raise KeyError("metric group with that key already exists")
++        else:
++            dict.__setitem__(self, attr, MetricGroup(self, inL = value))
++
+     ##
+     # methods
+ 
+diff -Naurp pcp-3.10.2.orig/src/python/pcp/pmda.py pcp-3.10.2/src/python/pcp/pmda.py
+--- pcp-3.10.2.orig/src/python/pcp/pmda.py	2015-01-24 07:23:07.000000000 +1100
++++ pcp-3.10.2/src/python/pcp/pmda.py	2015-02-23 21:24:36.670658327 +1100
+@@ -1,7 +1,7 @@
+ # pylint: disable=C0103
+ """Wrapper module for libpcp_pmda - Performace Co-Pilot Domain Agent API
+ #
+-# Copyright (C) 2013-2014 Red Hat.
++# Copyright (C) 2013-2015 Red Hat.
+ #
+ # This file is part of the "pcp" module, the python interfaces for the
+ # Performance Co-Pilot toolkit.
+@@ -86,7 +86,7 @@ class pmdaInstid(Structure):
+     def __init__(self, instid, name):
+         Structure.__init__(self)
+         self.i_inst = instid
+-        self.i_name = name
++        self.i_name = name.encode('utf-8')
+ 
+     def __str__(self):
+         return "pmdaInstid@%#lx index=%d name=%s" % (addressof(self), self.i_inst, self.i_name)
+@@ -117,7 +117,8 @@ class pmdaIndom(Structure):
+     def set_dict_instances(self, indom, insts):
+         LIBPCP_PMDA.pmdaCacheOp(indom, cpmda.PMDA_CACHE_INACTIVE)
+         for key in insts.keys():
+-            LIBPCP_PMDA.pmdaCacheStore(indom, cpmda.PMDA_CACHE_ADD, key, byref(insts[key]))
++            key8 = key.encode('utf-8')
++            LIBPCP_PMDA.pmdaCacheStore(indom, cpmda.PMDA_CACHE_ADD, key8, byref(insts[key]))
+         LIBPCP_PMDA.pmdaCacheOp(indom, cpmda.PMDA_CACHE_SAVE)
+ 
+     def set_instances(self, indom, insts):
+@@ -271,11 +272,11 @@ class MetricDispatch(object):
+             name = (c_char_p)()
+             sts = LIBPCP_PMDA.pmdaCacheLookup(indom, instance, byref(name), None)
+             if (sts == cpmda.PMDA_CACHE_ACTIVE):
+-                return name.value
++                return str(name.value.decode())
+         elif (entry.it_numinst > 0 and entry.it_indom == indom):
+             for inst in entry.it_set:
+                 if (inst.i_inst == instance):
+-                    return inst.i_name
++                    return str(inst.i_name.decode())
+         return None
+ 
+ 
+diff -Naurp pcp-3.10.2.orig/src/python/pcp/pmi.py pcp-3.10.2/src/python/pcp/pmi.py
+--- pcp-3.10.2.orig/src/python/pcp/pmi.py	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/src/python/pcp/pmi.py	2015-02-23 21:24:36.671658326 +1100
+@@ -1,7 +1,7 @@
+ # pylint: disable=C0103
+ """Wrapper module for libpcp_import - Performace Co-Pilot Log Import API
+ #
+-# Copyright (C) 2012-2013 Red Hat.
++# Copyright (C) 2012-2015 Red Hat.
+ #
+ # This file is part of the "pcp" module, the python interfaces for the
+ # Performance Co-Pilot toolkit.
+@@ -168,6 +168,8 @@ class pmiLogImport(object):
+     # overloads
+ 
+     def __init__(self, path, inherit = 0):
++        if type(path) != type(b''):
++            path = path.encode('utf-8')
+         self._path = path        # the archive path (file name)
+         self._ctx = LIBPCP_IMPORT.pmiStart(c_char_p(path), inherit)
+         if self._ctx < 0:
+@@ -187,6 +189,8 @@ class pmiLogImport(object):
+         status = LIBPCP_IMPORT.pmiUseContext(self._ctx)
+         if status < 0:
+             raise pmiErr(status)
++        if type(hostname) != type(b''):
++            hostname = hostname.encode('utf-8')
+         status = LIBPCP_IMPORT.pmiSetHostname(c_char_p(hostname))
+         if status < 0:
+             raise pmiErr(status)
+@@ -198,6 +202,8 @@ class pmiLogImport(object):
+         status = LIBPCP_IMPORT.pmiUseContext(self._ctx)
+         if status < 0:
+             raise pmiErr(status)
++        if type(timezone) != type(b''):
++            timezone = timezone.encode('utf-8')
+         status = LIBPCP_IMPORT.pmiSetTimezone(c_char_p(timezone))
+         if status < 0:
+             raise pmiErr(status)
+@@ -227,6 +233,8 @@ class pmiLogImport(object):
+         status = LIBPCP_IMPORT.pmiUseContext(self._ctx)
+         if status < 0:
+             raise pmiErr(status)
++        if type(name) != type(b''):
++            name = name.encode('utf-8')
+         status = LIBPCP_IMPORT.pmiAddMetric(c_char_p(name),
+                                         pmid, typed, indom, sem, units)
+         if status < 0:
+@@ -238,6 +246,8 @@ class pmiLogImport(object):
+         status = LIBPCP_IMPORT.pmiUseContext(self._ctx)
+         if status < 0:
+             raise pmiErr(status)
++        if type(instance) != type(b''):
++            instance = instance.encode('utf-8')
+         status = LIBPCP_IMPORT.pmiAddInstance(indom, c_char_p(instance), instid)
+         if status < 0:
+             raise pmiErr(status)
+@@ -248,6 +258,12 @@ class pmiLogImport(object):
+         status = LIBPCP_IMPORT.pmiUseContext(self._ctx)
+         if status < 0:
+             raise pmiErr(status)
++        if type(name) != type(b''):
++            name = name.encode('utf-8')
++        if type(inst) != type(b''):
++            inst = inst.encode('utf-8')
++        if type(value) != type(b''):
++            value = value.encode('utf-8')
+         status = LIBPCP_IMPORT.pmiPutValue(c_char_p(name),
+                                         c_char_p(inst), c_char_p(value))
+         if status < 0:
+@@ -259,6 +275,10 @@ class pmiLogImport(object):
+         status = LIBPCP_IMPORT.pmiUseContext(self._ctx)
+         if status < 0:
+             raise pmiErr(status)
++        if type(name) != type(b''):
++            name = name.encode('utf-8')
++        if type(inst) != type(b''):
++            inst = inst.encode('utf-8')
+         status = LIBPCP_IMPORT.pmiGetHandle(c_char_p(name), c_char_p(inst))
+         if status < 0:
+             raise pmiErr(status)
+@@ -269,6 +289,8 @@ class pmiLogImport(object):
+         status = LIBPCP_IMPORT.pmiUseContext(self._ctx)
+         if status < 0:
+             raise pmiErr(status)
++        if type(value) != type(b''):
++            value = value.encode('utf-8')
+         status = LIBPCP_IMPORT.pmiPutValueHandle(handle, c_char_p(value))
+         if status < 0:
+             raise pmiErr(status)
+diff -Naurp pcp-3.10.2.orig/src/python/pcp/pmsubsys.py pcp-3.10.2/src/python/pcp/pmsubsys.py
+--- pcp-3.10.2.orig/src/python/pcp/pmsubsys.py	2015-01-21 02:18:01.000000000 +1100
++++ pcp-3.10.2/src/python/pcp/pmsubsys.py	2015-02-23 21:24:36.671658326 +1100
+@@ -1,7 +1,7 @@
+ #
+ # Performance Co-Pilot subsystem classes
+ #
+-# Copyright (C) 2013 Red Hat Inc.
++# Copyright (C) 2013-2015 Red Hat.
+ #
+ # This program is free software; you can redistribute it and/or modify it
+ # under the terms of the GNU General Public License as published by the
+@@ -31,7 +31,7 @@ http://www.performancecopilot.org
+ 
+ import copy
+ import cpmapi as c_api
+-from pcp.pmapi import pmErr
++from pcp.pmapi import pmErr, timeval
+ from ctypes import c_char_p
+ 
+ # python version information and compatibility
+@@ -48,6 +48,7 @@ else:
+ class Subsystem(object):
+     def __init__(self):
+         self.metrics = []
++        self._timestamp = timeval(0, 0)
+         self.diff_metrics = []
+         self.metric_pmids = []
+         self.metric_descs = []
+@@ -55,6 +56,11 @@ class Subsystem(object):
+         self.metrics_dict = {}
+         self.old_metric_values = []
+ 
++    def _R_timestamp(self):
++        return self._timestamp
++
++    timestamp = property(_R_timestamp, None, None, None)
++
+     def setup_metrics(self, pcp):
+         # remove any unsupported metrics
+         name_pattern = self.metrics[0].split(".")[0] + ".*"
+@@ -162,6 +168,7 @@ class Subsystem(object):
+         list_type = type([])
+ 
+         metric_result = pcp.pmFetch(self.metric_pmids)
++        self._timestamp = metric_result.contents.timestamp
+ 
+         if max(self.old_metric_values) == 0:
+             first = True
