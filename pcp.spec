@@ -3,7 +3,7 @@ Name: pcp
 Version: 3.10.5
 %global buildversion 0
 
-Release: 0.20150601git9478ca0%{?dist}
+Release: 0.20150602git9478ca0%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
@@ -2247,6 +2247,9 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %endif
 
 %changelog
+* Wed Jun 03 2015 Jitka Plesnikova <jplesnik@redhat.com> - 3.10.5-0.20150602git9478ca0
+- Perl 5.22 rebuild
+
 * Mon Jun 01 2015 Lukas Berk <lberk@redhat.com> - 3.10.5-0.20150601git9478ca0
 - Automated weekly rawhide release
 - Applied spec changes from upstream git
