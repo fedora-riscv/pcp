@@ -1,13 +1,13 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
 Version: 3.10.5
-%global buildversion 0
+%global buildversion 1
 
-Release: 0.20150602git9478ca0%{?dist}
+Release: %{buildversion}%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
-Source0: %{name}-%{version}-0.20150601git9478ca0.tar.gz
+Source0: ftp://ftp.pcp.io/projects/pcp/download/%{name}-%{version}.src.tar.gz
 # From: git://sourceware.org/git/pcpfans.git --branch=webjs
 Source1: pcp-webjs.src.tar.gz
 
@@ -170,7 +170,6 @@ Obsoletes: pcp-pmda-nvidia
 %global _with_perfevent --with-perfevent=yes
 %endif
 
-
 %description
 Performance Co-Pilot (PCP) provides a framework and services to support
 system-level performance monitoring and performance management. 
@@ -179,23 +178,11 @@ The PCP open source release provides a unifying abstraction for all of
 the interesting performance data in a system, and allows client
 applications to easily retrieve and process any subset of that data.
 
-
-#
-# pcp-compat
-#
 %if %{with_compat}
 Requires: pcp-compat
 %endif
 Requires: pcp-libs = @package_version@
 Obsoletes: pcp-gui-debuginfo
-
-%description
-Performance Co-Pilot (PCP) provides a framework and services to support
-system-level performance monitoring and performance management. 
-
-The PCP open source release provides a unifying abstraction for all of
-the interesting performance data in a system, and allows client
-applications to easily retrieve and process any subset of that data. 
 
 #
 # pcp-conf
@@ -485,6 +472,27 @@ Requires: perl-PCP-LogImport = %{version}-%{release}
 %description import-ganglia2pcp
 Performance Co-Pilot (PCP) front-end tools for importing ganglia data
 into standard PCP archive logs for replay with any PCP monitoring tool.
+
+%if !%{disable_python2} || !%{disable_python3}
+#
+# pcp-export-pcp2graphite
+#
+%package export-pcp2graphite
+License: GPLv2+
+Group: Applications/System
+Summary: Performance Co-Pilot tools for exporting PCP metrics to Graphite
+URL: http://www.pcp.io
+Requires: pcp-libs >= %{version}-%{release}
+%if !%{disable_python3}
+Requires: python3-pcp = %{version}-%{release}
+%else
+Requires: python-pcp = %{version}-%{release}
+%endif
+
+%description export-pcp2graphite
+Performance Co-Pilot (PCP) front-end tools for exporting metric values
+to graphite (http://graphite.readthedocs.org).
+%endif
 
 #
 # pcp-import-collectl2pcp
@@ -1070,7 +1078,33 @@ collecting metrics about the Unbound DNS Resolver.  The PMDA is written
 in Python.
 # end pcp-pmda-unbound
 
-%endif 
+#
+# pcp-pmda-json
+#
+%package pmda-json
+License: GPLv2+
+Group: Applications/System
+Summary: Performance Co-Pilot (PCP) metrics for JSON data
+URL: http://www.pcp.io
+%if !%{disable_python3}
+Requires: python3-pcp
+Requires: python3-jsonpointer
+Requires: python3-six
+BuildRequires: python3-jsonpointer
+BuildRequires: python3-six
+%else
+Requires: python-pcp
+Requires: python-jsonpointer
+Requires: python-six
+BuildRequires: python-jsonpointer
+BuildRequires: python-six
+%endif
+%description pmda-json
+This package contains the PCP Performance Metrics Domain Agent (PMDA) for
+collecting metrics output in JSON.  The PMDA is written in Python.
+# end pcp-pmda-json
+
+%endif # !%{disable_python2} || !%{disable_python3}
 
 #
 # C pmdas
@@ -1158,6 +1192,21 @@ This package contains the PCP Performance Metrics Domain Agent (PMDA) for
 collecting metrics about the Linux hardware monitoring sensors.  The PMDA
 is written in C.
 # end pcp-pmda-lmsensors
+
+#
+# pcp-pmda-logger
+#
+%package pmda-logger
+License: GPLv2+
+Group: Applications/System
+Summary: Performance Co-Pilot (PCP) metrics from arbitrary log files
+URL: http://www.pcp.io
+Requires: pcp-libs = %{version}-%{release}
+%description pmda-logger
+This package contains the PCP Performance Metrics Domain Agent (PMDA) for
+collecting metrics from a specified set of log files (or pipes).  The PMDA
+is written in C, and supports both sampled and event-style metrics.
+# end pcp-pmda-logger
 
 #
 # pcp-pmda-mailq
@@ -1274,7 +1323,7 @@ This package contains the PCP Performance Metrics Domain Agent (PMDA) for
 collecting metrics about other installed pmdas.  The PMDA is written in C.
 # end pcp-pmda-summary
 
-%if "@pmda_systemd@" == "true"
+### %if "@pmda_systemd@" == "true"
 #
 # pcp-pmda-systemd
 #
@@ -1288,7 +1337,7 @@ Requires: pcp-libs = %{version}-%{release}
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
 collecting metrics about the Systemd shell.  The PMDA is written in C.
 # end pcp-pmda-systemd
-%endif
+### %endif
 
 #
 # pcp-pmda-trace
@@ -1320,7 +1369,9 @@ collecting metrics about web server logs.  The PMDA is written in C.
 # end pcp-pmda-weblog
 # end C pmdas
 
+#
 # pcp-compat
+#
 %if %{with_compat}
 %package compat
 License: GPLv2+
@@ -1333,11 +1384,11 @@ Requires: pcp-pmda-memcache pcp-pmda-mysql pcp-pmda-named pcp-pmda-netfilter pcp
 Requires: pcp-pmda-nginx pcp-pmda-nfsclient pcp-pmda-pdns pcp-pmda-postfix pcp-pmda-postgresql
 Requires: pcp-pmda-dm pcp-pmda-apache
 Requires: pcp-pmda-bash pcp-pmda-cisco pcp-pmda-gfs2 pcp-pmda-lmsensors pcp-pmda-mailq pcp-pmda-mounts
-Requires: pcp-pmda-nvidia-gpu pcp-pmda-roomtemp pcp-pmda-sendmail pcp-pmda-shping
+Requires: pcp-pmda-nvidia-gpu pcp-pmda-roomtemp pcp-pmda-sendmail pcp-pmda-shping pcp-pmda-logger
 Requires: pcp-pmda-lustrecomm
 %if !%{disable_python2} || !%{disable_python3}
-Requires: pcp-pmda-gluster pcp-pmda-zswap pcp-pmda-unbound
-Requires: pcp-system-tools 
+Requires: pcp-pmda-gluster pcp-pmda-zswap pcp-pmda-unbound pcp-pmda-json
+Requires: pcp-system-tools pcp-export-pcp2graphite
 %endif
 Requires: pcp-pmda-rpm
 Requires: pcp-pmda-summary pcp-pmda-trace pcp-pmda-weblog
@@ -1362,9 +1413,9 @@ Requires: pcp-pmda-samba pcp-pmda-snmp pcp-pmda-vmware pcp-pmda-zimbra
 Requires: pcp-pmda-dm pcp-pmda-apache
 Requires: pcp-pmda-bash pcp-pmda-cisco pcp-pmda-gfs2 pcp-pmda-lmsensors pcp-pmda-mailq pcp-pmda-mounts
 Requires: pcp-pmda-nvidia-gpu pcp-pmda-roomtemp pcp-pmda-sendmail pcp-pmda-shping
-Requires: pcp-pmda-lustrecomm
+Requires: pcp-pmda-lustrecomm pcp-pmda-logger
 %if !%{disable_python2} || !%{disable_python3}
-Requires: pcp-pmda-gluster pcp-pmda-zswap pcp-pmda-unbound 
+Requires: pcp-pmda-gluster pcp-pmda-zswap pcp-pmda-unbound pcp-pmda-json
 %endif
 Requires: pcp-pmda-rpm
 Requires: pcp-pmda-summary pcp-pmda-trace pcp-pmda-weblog
@@ -1518,8 +1569,6 @@ rm -f $RPM_BUILD_ROOT/%{_bindir}/sheet2pcp $RPM_BUILD_ROOT/%{_mandir}/man1/sheet
 rm -f $RPM_BUILD_ROOT/%{_includedir}/pcp/configsz.h
 
 %if %{disable_microhttpd}
-rm -f $RPM_BUILD_ROOT/%{_mandir}/man1/pmwebd.*
-rm -f $RPM_BUILD_ROOT/%{_mandir}/man3/PMWEBAPI.*
 rm -fr $RPM_BUILD_ROOT/%{_confdir}/pmwebd
 rm -fr $RPM_BUILD_ROOT/%{_initddir}/pmwebd
 rm -fr $RPM_BUILD_ROOT/%{_unitdir}/pmwebd.service
@@ -1602,6 +1651,7 @@ ls -1 $RPM_BUILD_ROOT/%{_pmdasdir} |\
   grep -E -v 'cisco' |\
   grep -E -v 'gfs2' |\
   grep -E -v 'lmsensors' |\
+  grep -E -v 'logger' |\
   grep -E -v 'mailq' |\
   grep -E -v 'mounts' |\
   grep -E -v 'nvidia' |\
@@ -1617,28 +1667,43 @@ ls -1 $RPM_BUILD_ROOT/%{_pmdasdir} |\
   grep -E -v 'gluster' |\
   grep -E -v 'zswap' |\
   grep -E -v 'unbound' |\
+  grep -E -v 'json' |\
 %endif
 
   sed -e 's#^#'%{_pmdasdir}'\/#' >base_pmdas.list
 
 # all base pcp package files except those split out into sub packages
 ls -1 $RPM_BUILD_ROOT/%{_bindir} |\
+  grep -E -v 'pmiostat|pmatop|pcp2graphite' |\
   sed -e 's#^#'%{_bindir}'\/#' >base_bin.list
-# seperate the pcp-system-tools package files
+#
+# Seperate the pcp-system-tools package files.
+#
+# pmatop and pmiostat (and other python client tools) are symlinks to the
+# pcp-foo variant, and so should also be in pcp-system-tools
+%if !%{disable_python2} || !%{disable_python3}
+ls -1 $RPM_BUILD_ROOT/%{_bindir} |\
+  grep -E 'pmiostat|pmatop' |\
+  sed -e 's#^#'%{_bindir}'\/#' >pcp_system_tools.list
+%endif
+
 %if !%{disable_python2} || !%{disable_python3}
 ls -1 $RPM_BUILD_ROOT/%{_libexecdir}/pcp/bin |\
   grep -E 'atop|collectl|dmcache|free|iostat|numastat|verify|uptime|shping' |\
-  sed -e 's#^#'%{_libexecdir}/pcp/bin'\/#' >pcp_system_tools.list
+  sed -e 's#^#'%{_libexecdir}/pcp/bin'\/#' >>pcp_system_tools.list
 %endif
+
 ls -1 $RPM_BUILD_ROOT/%{_libexecdir}/pcp/bin |\
 %if !%{disable_python2} || !%{disable_python3}
   grep -E -v 'atop|collectl|dmcache|free|iostat|numastat|verify|uptime|shping' |\
 %endif
   sed -e 's#^#'%{_libexecdir}/pcp/bin'\/#' >base_exec.list
-ls -1 $RPM_BUILD_ROOT/%{_mandir}/man1 |\
-  sed -e 's#^#'%{_mandir}'\/man1\/#' >base_man.list
 ls -1 $RPM_BUILD_ROOT/%{_booksdir} |\
   sed -e 's#^#'%{_booksdir}'\/#' > pcp-doc.list
+ls -1 $RPM_BUILD_ROOT/%{_mandir}/man1 |\
+  sed -e 's#^#'%{_mandir}'\/man1\/#' >>pcp-doc.list
+ls -1 $RPM_BUILD_ROOT/%{_mandir}/man5 |\
+  sed -e 's#^#'%{_mandir}'\/man5\/#' >>pcp-doc.list
 ls -1 $RPM_BUILD_ROOT/%{_datadir}/pcp/demos/tutorials |\
   sed -e 's#^#'%{_datadir}/pcp/demos/tutorials'\/#' >>pcp-doc.list
 %if !%{disable_qt}
@@ -1648,13 +1713,13 @@ cat base_bin.list base_exec.list base_man.list |\
   grep -E "$PCP_GUI" >> pcp-gui.list
 %endif
 cat base_pmdas.list base_bin.list base_exec.list base_man.list |\
-  grep -E -v 'pmdaib|pmmgr|pmweb|pmsnap|2pcp' |\
+  grep -E -v 'pmdaib|pmmgr|pmweb|pmsnap|2pcp|pmdas/systemd' |\
   grep -E -v "$PCP_GUI|pixmaps|pcp-doc|tutorials" |\
   grep -E -v %{_confdir} | grep -E -v %{_logsdir} > base.list
 
 # all devel pcp package files except those split out into sub packages
 ls -1 $RPM_BUILD_ROOT/%{_mandir}/man3 |\
-sed -e 's#^#'%{_mandir}'\/man3\/#' | grep -E -v '3pm|PMWEBAPI' >devel.list
+sed -e 's#^#'%{_mandir}'\/man3\/#' | grep -v '3pm' >>pcp-doc.list
 ls -1 $RPM_BUILD_ROOT/%{_datadir}/pcp/demos |\
 sed -e 's#^#'%{_datadir}'\/pcp\/demos\/#' | grep -E -v tutorials >> devel.list
 
@@ -1856,6 +1921,9 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
     /sbin/service pmproxy condrestart
 %endif
 
+cd $PCP_PMNS_DIR && ./Rebuild -s && rm -f .NeedRebuild
+cd
+
 %post libs -p /sbin/ldconfig
 %postun libs -p /sbin/ldconfig
 
@@ -1903,7 +1971,6 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %{_unitdir}/pmie.service
 %{_unitdir}/pmproxy.service
 %endif
-%{_mandir}/man5/*
 %config(noreplace) %{_sysconfdir}/sasl2/pmcd.conf
 %config(noreplace) %{_sysconfdir}/cron.d/pcp-pmlogger
 %config(noreplace) %{_sysconfdir}/cron.d/pcp-pmie
@@ -1940,6 +2007,17 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %{tapsetdir}/pmcd.stp
 %endif				# ppc
 %endif
+
+%if %{with_compat}
+%files compat
+#empty
+%endif
+
+%files monitor
+#empty
+
+%files collector
+#empty
 
 %files conf
 %dir %{_includedir}/pcp
@@ -1989,8 +2067,6 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 # duplicate directories from pcp and pcp-webjs, but rpm copes with that.
 %dir %{_datadir}/pcp
 %dir %{_datadir}/pcp/webapps
-%{_mandir}/man1/pmwebd.1*
-%{_mandir}/man3/PMWEBAPI.3*
 %endif
 
 %files webjs
@@ -2026,48 +2102,37 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %attr(0775,pcp,pcp) %{_logsdir}/pmmgr
 %config(missingok,noreplace) %{_confdir}/pmmgr
 %config(noreplace) %{_confdir}/pmmgr/pmmgr.options
-%{_mandir}/man1/pmmgr.1*
 
 %files import-sar2pcp
 %{_bindir}/sar2pcp
-%{_mandir}/man1/sar2pcp.1*
 
 %files import-iostat2pcp
 %{_bindir}/iostat2pcp
-%{_mandir}/man1/iostat2pcp.1*
 
 %files import-mrtg2pcp
 %{_bindir}/mrtg2pcp
-%{_mandir}/man1/mrtg2pcp.1*
 
 %files import-ganglia2pcp
 %{_bindir}/ganglia2pcp
-%{_mandir}/man1/ganglia2pcp.1*
 
 %files import-collectl2pcp
 %{_bindir}/collectl2pcp
-%{_mandir}/man1/collectl2pcp.1*
 
 %if !%{disable_papi}
 %files pmda-papi
 %{_pmdasdir}/papi
-%{_mandir}/man1/pmdapapi.1*
 %endif
 
 %if !%{disable_perfevent}
 %files pmda-perfevent
 %{_pmdasdir}/perfevent
 %config(noreplace) %{_pmdasdir}/perfevent/perfevent.conf
-%{_mandir}/man1/perfalloc.1*
-%{_mandir}/man1/pmdaperfevent.1*
-%{_mandir}/man5/perfevent.conf.5*
 %endif
 
 %if !%{disable_infiniband}
 %files pmda-infiniband
 %{_pmdasdir}/ib
 %{_pmdasdir}/infiniband
-%{_mandir}/man1/pmdaib.1*
 %endif
 
 %files pmda-activemq
@@ -2160,7 +2225,14 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 
 %files pmda-unbound 
 %{_pmdasdir}/unbound 
-%endif
+
+%files pmda-json
+%{_pmdasdir}/json
+
+%files export-pcp2graphite
+%{_bindir}/pcp2graphite
+
+%endif # !%{disable_python2} || !%{disable_python3}
 
 %files pmda-apache 
 %{_pmdasdir}/apache 
@@ -2179,6 +2251,9 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 
 %files pmda-lmsensors 
 %{_pmdasdir}/lmsensors 
+
+%files pmda-logger 
+%{_pmdasdir}/logger 
 
 %files pmda-mailq 
 %{_pmdasdir}/mailq 
@@ -2204,8 +2279,8 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %files pmda-summary 
 %{_pmdasdir}/summary 
 
-#%files pmda-systemd 
-#%{_pmdasdir}/systemd 
+%files pmda-systemd 
+%{_pmdasdir}/systemd 
 
 %files pmda-trace 
 %{_pmdasdir}/trace 
@@ -2247,12 +2322,13 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %endif
 
 %changelog
-* Wed Jun 03 2015 Jitka Plesnikova <jplesnik@redhat.com> - 3.10.5-0.20150602git9478ca0
-- Perl 5.22 rebuild
-
-* Mon Jun 01 2015 Lukas Berk <lberk@redhat.com> - 3.10.5-0.20150601git9478ca0
-- Automated weekly rawhide release
-- Applied spec changes from upstream git
+* Mon Jun 15 2015 Mark Goodwin <mgoodwin@redhat.com> - 3.10.5-1
+- Provide and use non-exit(1)ing pmGetConfig(3) variant (BZ 1187588)
+- Resolve a pmdaproc.sh pmlogger restart regression (BZ 1229458)
+- Replacement of pmatop/pcp-atop(1) utility (BZ 1160811, BZ 1018575)
+- Reduced installation size for minimal applications (BZ 1182184)
+- Ensure pmlogger start scripts wait on pmcd startup (BZ 1185760)
+- Need to run pmcd at least once before pmval -L will work (BZ 185749)
 
 * Wed Apr 15 2015 Nathan Scott <nathans@redhat.com> - 3.10.4-1
 - Update to latest PCP, pcp-webjs and Vector sources.
