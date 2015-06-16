@@ -1078,6 +1078,7 @@ collecting metrics about the Unbound DNS Resolver.  The PMDA is written
 in Python.
 # end pcp-pmda-unbound
 
+%if 0%{?rhel} == 0 || 0%{?rhel} > 5
 #
 # pcp-pmda-json
 #
@@ -1103,6 +1104,7 @@ BuildRequires: python-six
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
 collecting metrics output in JSON.  The PMDA is written in Python.
 # end pcp-pmda-json
+%endif # 0%{?rhel} == 0 || 0%{?rhel} > 5
 
 %endif # !%{disable_python2} || !%{disable_python3}
 
@@ -1265,6 +1267,7 @@ This package contains the PCP Performance Metrics Domain Agent (PMDA) for
 collecting metrics about the Room temperature metrics.  The PMDA is written in C.
 # end pcp-pmda-roomtemp
 
+%if 0%{?rhel} == 0 || 0%{?rhel} > 5
 #
 # pcp-pmda-rpm
 #
@@ -1278,7 +1281,7 @@ Requires: pcp = %{version}-%{release}
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
 collecting metrics about the rpms.  The PMDA is written in C.
 # end pcp-pmda-rpm
-
+%endif # 0%{?rhel} == 0 || 0%{?rhel} > 5
 
 #
 # pcp-pmda-sendmail
@@ -1323,7 +1326,7 @@ This package contains the PCP Performance Metrics Domain Agent (PMDA) for
 collecting metrics about other installed pmdas.  The PMDA is written in C.
 # end pcp-pmda-summary
 
-### %if "@pmda_systemd@" == "true"
+%if 0%{?fedora} >= 18 || 0%{?rhel} >= 7
 #
 # pcp-pmda-systemd
 #
@@ -1337,7 +1340,7 @@ Requires: pcp-libs = %{version}-%{release}
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
 collecting metrics about the Systemd shell.  The PMDA is written in C.
 # end pcp-pmda-systemd
-### %endif
+%endif # 0%{?fedora} >= 18 || 0%{?rhel} >= 7
 
 #
 # pcp-pmda-trace
@@ -1387,10 +1390,13 @@ Requires: pcp-pmda-bash pcp-pmda-cisco pcp-pmda-gfs2 pcp-pmda-lmsensors pcp-pmda
 Requires: pcp-pmda-nvidia-gpu pcp-pmda-roomtemp pcp-pmda-sendmail pcp-pmda-shping pcp-pmda-logger
 Requires: pcp-pmda-lustrecomm
 %if !%{disable_python2} || !%{disable_python3}
-Requires: pcp-pmda-gluster pcp-pmda-zswap pcp-pmda-unbound pcp-pmda-json
+Requires: pcp-pmda-gluster pcp-pmda-zswap pcp-pmda-unbound
 Requires: pcp-system-tools pcp-export-pcp2graphite
-%endif
+%if 0%{?rhel} == 0 || 0%{?rhel} > 5
+Requires: pcp-pmda-json
 Requires: pcp-pmda-rpm
+%endif # 0%{?rhel} == 0 || 0%{?rhel} > 5
+%endif # !%{disable_python2} || !%{disable_python3}
 Requires: pcp-pmda-summary pcp-pmda-trace pcp-pmda-weblog
 Requires: pcp-doc
 %description compat
@@ -1415,9 +1421,14 @@ Requires: pcp-pmda-bash pcp-pmda-cisco pcp-pmda-gfs2 pcp-pmda-lmsensors pcp-pmda
 Requires: pcp-pmda-nvidia-gpu pcp-pmda-roomtemp pcp-pmda-sendmail pcp-pmda-shping
 Requires: pcp-pmda-lustrecomm pcp-pmda-logger
 %if !%{disable_python2} || !%{disable_python3}
-Requires: pcp-pmda-gluster pcp-pmda-zswap pcp-pmda-unbound pcp-pmda-json
-%endif
+Requires: pcp-pmda-gluster pcp-pmda-zswap pcp-pmda-unbound
+%if 0%{?rhel} == 0 || 0%{?rhel} > 5
+Requires: pcp-pmda-json
+%endif # 0%{?rhel} == 0 || 0%{?rhel} > 5
+%endif # !%{disable_python2} || !%{disable_python3}
+%if 0%{?rhel} == 0 || 0%{?rhel} > 5
 Requires: pcp-pmda-rpm
+%endif # 0%{?rhel} == 0 || 0%{?rhel} > 5
 Requires: pcp-pmda-summary pcp-pmda-trace pcp-pmda-weblog
 %description collector
 This package contains the PCP metric collection dependencies.  This includes
@@ -2226,8 +2237,10 @@ cd
 %files pmda-unbound 
 %{_pmdasdir}/unbound 
 
+%if 0%{?rhel} == 0 || 0%{?rhel} > 5
 %files pmda-json
 %{_pmdasdir}/json
+%endif # 0%{?rhel} == 0 || 0%{?rhel} > 5
 
 %files export-pcp2graphite
 %{_bindir}/pcp2graphite
@@ -2267,8 +2280,10 @@ cd
 %files pmda-roomtemp 
 %{_pmdasdir}/roomtemp 
 
+%if 0%{?rhel} == 0 || 0%{?rhel} > 5
 %files pmda-rpm 
 %{_pmdasdir}/rpm 
+%endif # 0%{?rhel} == 0 || 0%{?rhel} > 5
 
 %files pmda-sendmail 
 %{_pmdasdir}/sendmail 
@@ -2279,8 +2294,10 @@ cd
 %files pmda-summary 
 %{_pmdasdir}/summary 
 
+%if 0%{?fedora} >= 18 || 0%{?rhel} >= 7
 %files pmda-systemd 
 %{_pmdasdir}/systemd 
+%endif # 0%{?fedora} >= 18 || 0%{?rhel} >= 7
 
 %files pmda-trace 
 %{_pmdasdir}/trace 
