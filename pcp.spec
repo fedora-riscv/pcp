@@ -3,7 +3,7 @@ Name: pcp
 Version: 3.10.5
 %global buildversion 1
 
-Release: %{buildversion}%{?dist}
+Release: %{buildversion}%{?dist}.1
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
@@ -2322,6 +2322,9 @@ cd
 %endif
 
 %changelog
+* Thu Jun 18 2015 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.10.5-1.1
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_23_Mass_Rebuild
+
 * Mon Jun 15 2015 Mark Goodwin <mgoodwin@redhat.com> - 3.10.5-1
 - Provide and use non-exit(1)ing pmGetConfig(3) variant (BZ 1187588)
 - Resolve a pmdaproc.sh pmlogger restart regression (BZ 1229458)
