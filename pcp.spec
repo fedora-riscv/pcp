@@ -3,11 +3,11 @@ Name: pcp
 Version: 3.10.6
 %global buildversion 0
 
-Release: 0.20150727gitb37d11d%{?dist}
+Release: 0.20150728gitc3c9838%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
-Source0: %{name}-%{version}-0.20150727gitb37d11d.tar.gz
+Source0: %{name}-%{version}-0.20150728gitc3c9838.tar.gz
 Source1: pcp-webjs.src.tar.gz
 
 # Compat check for distros that already have single install pmda's
@@ -2368,6 +2368,10 @@ cd
 %endif
 
 %changelog
+* Tue Jul 28 2015 Lukas Berk <lberk@redhat.com> - 3.10.6-0.20150728gitc3c9838
+- Automated weekly rawhide release
+- Applied spec changes from upstream git
+
 * Mon Jul 27 2015 Lukas Berk <lberk@redhat.com> - 3.10.6-0.20150727gitb37d11d
 - Automated weekly rawhide release
 - Applied spec changes from upstream git
