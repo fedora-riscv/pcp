@@ -186,6 +186,7 @@ Obsoletes: pcp-gui-debuginfo
 %global _initddir %{_datadir}/pcp/lib
 %else
 %global _initddir %{_sysconfdir}/rc.d/init.d
+%global _with_initd --with-rcdir=%{_initddir}
 %endif
 
 # we never want Infiniband on s390 platforms
