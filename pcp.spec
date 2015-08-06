@@ -1,7 +1,7 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
 Version: 3.10.6
-%global buildversion 1
+%global buildversion 2
 
 Release: %{buildversion}%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
@@ -87,13 +87,13 @@ Source1: pcp-webjs.src.tar.gz
 
 # systemtap static probing, missing before el6 and on some architectures
 %if 0%{?rhel} == 0 || 0%{?rhel} > 5
+%global disable_sdt 0
+%else
 %ifnarch ppc ppc64
 %global disable_sdt 0
 %else
 %global disable_sdt 1
 %endif
-%else
-%global disable_sdt 1
 %endif
 
 # rpm producing "noarch" packages
@@ -2331,6 +2331,9 @@ cd
 %endif
 
 %changelog
+* Thu Aug 06 2015 Lukas Berk <lberk@redhat.com> - 3.10.6-2
+- Fix SDT related build error (BZ 1250894)
+
 * Tue Aug 04 2015 Nathan Scott <nathans@redhat.com> - 3.10.6-1
 - Fix pcp2graphite write method invocation failure (BZ 1243123)
 - Reduce diagnostics in pmdaproc unknown state case (BZ 1224431)
