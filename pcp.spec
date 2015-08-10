@@ -1,13 +1,13 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.10.6
-%global buildversion 1
+Version: 3.10.7
+%global buildversion 0
 
-Release: %{buildversion}%{?dist}
+Release: 0.20150810gitad91613%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
-Source0: pcp-%{version}.src.tar.gz
+Source0: %{name}-%{version}-0.20150810gitad91613.tar.gz
 Source1: pcp-webjs.src.tar.gz
 
 # Compat check for distros that already have single install pmda's
@@ -87,13 +87,13 @@ Source1: pcp-webjs.src.tar.gz
 
 # systemtap static probing, missing before el6 and on some architectures
 %if 0%{?rhel} == 0 || 0%{?rhel} > 5
+%global disable_sdt 0
+%else
 %ifnarch ppc ppc64
 %global disable_sdt 0
 %else
 %global disable_sdt 1
 %endif
-%else
-%global disable_sdt 1
 %endif
 
 # rpm producing "noarch" packages
@@ -186,6 +186,7 @@ Obsoletes: pcp-gui-debuginfo
 %global _initddir %{_datadir}/pcp/lib
 %else
 %global _initddir %{_sysconfdir}/rc.d/init.d
+%global _with_initd --with-rcdir=%{_initddir}
 %endif
 
 # we never want Infiniband on s390 platforms
@@ -2331,6 +2332,10 @@ cd
 %endif
 
 %changelog
+* Mon Aug 10 2015 Lukas Berk <lberk@redhat.com> - 3.10.7-0.20150810gitad91613
+- Automated weekly rawhide release
+- Applied spec changes from upstream git
+
 * Tue Aug 04 2015 Nathan Scott <nathans@redhat.com> - 3.10.6-1
 - Fix pcp2graphite write method invocation failure (BZ 1243123)
 - Reduce diagnostics in pmdaproc unknown state case (BZ 1224431)
