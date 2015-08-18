@@ -2252,6 +2252,9 @@ cd
 
 %files export-pcp2graphite
 %{_bindir}/pcp2graphite
+
+%files pmda-mic
+%{_pmdasdir}/mic
 %endif # !%{disable_python2} || !%{disable_python3}
 
 %if !%{disable_json}
@@ -2354,6 +2357,7 @@ cd
 * Tue Aug 18 2015 Lukas Berk <lberk@redhat.com> - 3.10.7-0.20150818git063cfd3
 - Automated weekly rawhide release
 - Applied spec changes from upstream git
+- Packaged pmda-mic bits in spec file
 
 * Mon Aug 10 2015 Lukas Berk <lberk@redhat.com> - 3.10.7-0.20150810gitad91613
 - Automated weekly rawhide release
