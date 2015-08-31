@@ -3,11 +3,11 @@ Name: pcp
 Version: 3.10.7
 %global buildversion 0
 
-Release: 0.20150824gita4f06ab%{?dist}
+Release: 0.20150831gita27cca8%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
-Source0: %{name}-%{version}-0.20150824gita4f06ab.tar.gz
+Source0: %{name}-%{version}-0.20150831gita27cca8.tar.gz
 Source1: pcp-webjs.src.tar.gz
 
 # Compat check for distros that already have single install pmda's
@@ -1774,7 +1774,7 @@ save_configs_script()
         [ "$_dir" = "$_new" ] && continue
         if [ -d "$_dir" ]
         then
-            ( cd "$_dir" ; find . -type f -print ) | sed -e 's/^\.\///' \
+            ( cd "$_dir" ; find . -maxdepth 1 -type f ) | sed -e 's/^\.\///' \
             | while read _file
             do
                 [ "$_file" = "control" ] && continue
@@ -1802,7 +1802,7 @@ done
 for daemon in pmcd pmproxy
 do
     save_configs_script >> "$PCP_LOG_DIR/configs.sh" "$PCP_SYSCONF_DIR/$daemon"\
-        "$PCP_CONFIG_DIR/$daemon" /etc/$daemon /etc/sysconfig/$daemon
+        "$PCP_CONFIG_DIR/$daemon" /etc/$daemon
 done
 exit 0
 
@@ -2004,6 +2004,9 @@ cd
 %config(noreplace) %{_sysconfdir}/sasl2/pmcd.conf
 %config(noreplace) %{_sysconfdir}/cron.d/pcp-pmlogger
 %config(noreplace) %{_sysconfdir}/cron.d/pcp-pmie
+%config(noreplace) %{_sysconfdir}/sysconfig/pmlogger
+%config(noreplace) %{_sysconfdir}/sysconfig/pmproxy
+%config(noreplace) %{_sysconfdir}/sysconfig/pmcd
 %config %{_sysconfdir}/bash_completion.d/pcp
 %config %{_sysconfdir}/pcp.env
 %config %{_sysconfdir}/pcp.sh
@@ -2014,9 +2017,13 @@ cd
 %dir %{_confdir}/pmproxy
 %config(noreplace) %{_confdir}/pmproxy/pmproxy.options
 %dir %{_confdir}/pmie
+%dir %{_confdir}/pmie/control.d
 %config(noreplace) %{_confdir}/pmie/control
+%config(noreplace) %{_confdir}/pmie/control.d/local
 %dir %{_confdir}/pmlogger
+%dir %{_confdir}/pmlogger/control.d
 %config(noreplace) %{_confdir}/pmlogger/control
+%config(noreplace) %{_confdir}/pmlogger/control.d/local
 
 %{_localstatedir}/lib/pcp/config/pmafm
 %dir %attr(0775,pcp,pcp) %{_localstatedir}/lib/pcp/config/pmie
@@ -2354,6 +2361,10 @@ cd
 %endif
 
 %changelog
+* Mon Aug 31 2015 Lukas Berk <lberk@redhat.com> - 3.10.7-0.20150831gita27cca8
+- Automated weekly rawhide release
+- Applied spec changes from upstream git
+
 * Mon Aug 24 2015 Lukas Berk <lberk@redhat.com> - 3.10.7-0.20150824gita4f06ab
 - Automated weekly rawhide release
 
