@@ -3,7 +3,7 @@ Name: pcp
 Version: 3.10.6
 %global buildversion 2
 
-Release: %{buildversion}%{?dist}
+Release: %{buildversion}%{?dist}.1
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
@@ -2331,6 +2331,9 @@ cd
 %endif
 
 %changelog
+* Sat Sep 05 2015 Kalev Lember <klember@redhat.com> - 3.10.6-2.1
+- Rebuilt for librpm soname bump
+
 * Thu Aug 06 2015 Lukas Berk <lberk@redhat.com> - 3.10.6-2
 - Fix SDT related build error (BZ 1250894)
 
