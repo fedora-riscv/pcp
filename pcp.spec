@@ -3,11 +3,11 @@ Name: pcp
 Version: 3.10.7
 %global buildversion 0
 
-Release: 0.20150831gita27cca8%{?dist}
+Release: 0.20150914git857b343%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
-Source0: %{name}-%{version}-0.20150831gita27cca8.tar.gz
+Source0: %{name}-%{version}-0.20150914git857b343.tar.gz
 Source1: pcp-webjs.src.tar.gz
 
 # Compat check for distros that already have single install pmda's
@@ -688,6 +688,7 @@ Group: Applications/System
 Summary: Performance Co-Pilot (PCP) metrics for Elasticsearch
 URL: http://www.pcp.io
 Requires: perl-PCP-PMDA = %{version}-%{release}
+Requires: perl(LWP::UserAgent)
 
 %description pmda-elasticsearch
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
@@ -794,6 +795,8 @@ Group: Applications/System
 Summary: Performance Co-Pilot (PCP) metrics for MySQL
 URL: http://www.pcp.io
 Requires: perl-PCP-PMDA = %{version}-%{release}
+Requires: perl(DBI)
+Requires: perl(DBD::mysql)
 
 %description pmda-mysql
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
@@ -853,6 +856,7 @@ Group: Applications/System
 Summary: Performance Co-Pilot (PCP) metrics for the Nginx Webserver
 URL: http://www.pcp.io
 Requires: perl-PCP-PMDA = %{version}-%{release}
+Requires: perl(LWP::UserAgent)
 
 %description pmda-nginx
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
@@ -922,6 +926,8 @@ Group: Applications/System
 Summary: Performance Co-Pilot (PCP) metrics for PostgreSQL
 URL: http://www.pcp.io
 Requires: perl-PCP-PMDA = %{version}-%{release}
+Requires: perl(DBI)
+Requires: perl(DBD::Pg)
 
 %description pmda-postgresql
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
@@ -2361,6 +2367,10 @@ cd
 %endif
 
 %changelog
+* Mon Sep 14 2015 Lukas Berk <lberk@redhat.com> - 3.10.7-0.20150914git857b343
+- Automated weekly rawhide release
+- Applied spec changes from upstream git
+
 * Mon Aug 31 2015 Lukas Berk <lberk@redhat.com> - 3.10.7-0.20150831gita27cca8
 - Automated weekly rawhide release
 - Applied spec changes from upstream git
