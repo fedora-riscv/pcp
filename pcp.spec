@@ -3,12 +3,12 @@ Name: pcp
 Version: 3.10.8
 %global buildversion 0
 
-Release: 0.20150921gita7c756e%{?dist}
+Release: 0.20150928gitf8ceed0%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
 # https://bintray.com/artifact/download/pcp/source/pcp-%{version}.src.tar.gz
-Source0: %{name}-%{version}-0.20150921gita7c756e.tar.gz
+Source0: %{name}-%{version}-0.20150928gitf8ceed0.tar.gz
 # https://github.com/performancecopilot/pcp-webjs/archive/master.zip
 Source1: pcp-webjs.src.tar.gz
 # https://bintray.com/artifact/download/netflixoss/downloads/vector.tar.gz
@@ -2395,6 +2395,10 @@ cd
 %endif
 
 %changelog
+* Mon Sep 28 2015 Lukas Berk <lberk@redhat.com> - 3.10.8-0.20150928gitf8ceed0
+- Automated weekly rawhide release
+- Applied spec changes from upstream git
+
 * Mon Sep 21 2015 Lukas Berk <lberk@redhat.com> - 3.10.8-0.20150921gita7c756e
 - Automated weekly rawhide release
 - Applied spec changes from upstream git
