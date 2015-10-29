@@ -1,14 +1,14 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
 Version: 3.10.8
-%global buildversion 0
+%global buildversion 1
 
-Release: 0.20151026git5f56d74%{?dist}
+Release: %{buildversion}%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
 # https://bintray.com/artifact/download/pcp/source/pcp-%{version}.src.tar.gz
-Source0: %{name}-%{version}-0.20151026git5f56d74.tar.gz
+Source0: pcp-%{version}.src.tar.gz
 # https://github.com/performancecopilot/pcp-webjs/archive/master.zip
 Source1: pcp-webjs.src.tar.gz
 # https://bintray.com/artifact/download/netflixoss/downloads/vector.tar.gz
@@ -2012,6 +2012,7 @@ cd
 %{_datadir}/pcp/lib/bashproc.sh
 %{_datadir}/pcp/lib/lockpmns
 %{_datadir}/pcp/lib/pmdaproc.sh
+%{_datadir}/pcp/lib/utilproc.sh
 %{_datadir}/pcp/lib/rc-proc.sh
 %{_datadir}/pcp/lib/rc-proc.sh.minimal
 %{_datadir}/pcp/lib/unlockpmns
@@ -2397,23 +2398,11 @@ cd
 %endif
 
 %changelog
-* Mon Oct 26 2015 Lukas Berk <lberk@redhat.com> - 3.10.8-0.20151026git5f56d74
-- Automated weekly rawhide release
-
-* Mon Oct 19 2015 Lukas Berk <lberk@redhat.com> - 3.10.8-0.20151019git5f56d74
-- Automated weekly rawhide release
-
-* Tue Oct 13 2015 Lukas Berk <lberk@redhat.com> - 3.10.8-0.20151013git2af7d51
-- Automated weekly rawhide release
-- Applied spec changes from upstream git
-
-* Mon Sep 28 2015 Lukas Berk <lberk@redhat.com> - 3.10.8-0.20150928gitf8ceed0
-- Automated weekly rawhide release
-- Applied spec changes from upstream git
-
-* Mon Sep 21 2015 Lukas Berk <lberk@redhat.com> - 3.10.8-0.20150921gita7c756e
-- Automated weekly rawhide release
-- Applied spec changes from upstream git
+* Fri Oct 30 2015 Mark Goodwin <mgoodwin@redhat.com> - 3.10.8-1
+- Update pmlogger to log an immediate sample first (BZ 1269921)
+- Add pmOption host and archive setter python APIs (BZ 1270176)
+- Replace old pmatop(1) man page with pcp-atop(1) (BZ 1270761)
+- Update to latest PCP sources.
 
 * Wed Sep 16 2015 Nathan Scott <nathans@redhat.com> - 3.10.7-1
 - Resolved pmchart sigsegv opening view without context (BZ 1256708)
