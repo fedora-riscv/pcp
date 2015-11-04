@@ -1,14 +1,14 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.10.8
-%global buildversion 1
+Version: 3.10.9
+%global buildversion 0
 
-Release: %{buildversion}%{?dist}
+Release: 0.20151104git7a881e7%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
 # https://bintray.com/artifact/download/pcp/source/pcp-%{version}.src.tar.gz
-Source0: pcp-%{version}.src.tar.gz
+Source0: %{name}-%{version}-0.20151104git7a881e7.tar.gz
 # https://github.com/performancecopilot/pcp-webjs/archive/master.zip
 Source1: pcp-webjs.src.tar.gz
 # https://bintray.com/artifact/download/netflixoss/downloads/vector.tar.gz
@@ -2398,6 +2398,10 @@ cd
 %endif
 
 %changelog
+* Wed Nov 04 2015 Lukas Berk <lberk@redhat.com> - 3.10.9-0.20151104git7a881e7
+- Automated weekly rawhide release
+- Applied spec changes from upstream git
+
 * Fri Oct 30 2015 Mark Goodwin <mgoodwin@redhat.com> - 3.10.8-1
 - Update pmlogger to log an immediate sample first (BZ 1269921)
 - Add pmOption host and archive setter python APIs (BZ 1270176)
