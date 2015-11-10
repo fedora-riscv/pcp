@@ -3,7 +3,7 @@ Name: pcp
 Version: 3.10.9
 %global buildversion 0
 
-Release: 0.20151104git7a881e7%{?dist}
+Release: 0.20151105git7a881e7%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
@@ -2398,6 +2398,9 @@ cd
 %endif
 
 %changelog
+* Tue Nov 10 2015 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.10.9-0.20151105git7a881e7
+- Rebuilt for https://fedoraproject.org/wiki/Changes/python3.5
+
 * Wed Nov 04 2015 Lukas Berk <lberk@redhat.com> - 3.10.9-0.20151104git7a881e7
 - Automated weekly rawhide release
 - Applied spec changes from upstream git
