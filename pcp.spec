@@ -3,16 +3,16 @@ Name: pcp
 Version: 3.10.9
 %global buildversion 0
 
-Release: 0.20151105git7a881e7%{?dist}
+Release: 0.20151111git892d4d7%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
 # https://bintray.com/artifact/download/pcp/source/pcp-%{version}.src.tar.gz
-Source0: %{name}-%{version}-0.20151104git7a881e7.tar.gz
+Source0: %{name}-%{version}-0.20151111git892d4d7.tar.gz
 # https://github.com/performancecopilot/pcp-webjs/archive/master.zip
-Source1: pcp-webjs.src.tar.gz
+Source1: pcp-webjs-20151111git09da29d.src.tar.gz
 # https://bintray.com/artifact/download/netflixoss/downloads/vector.tar.gz
-Source2: vector.tar.gz
+Source2: vector-20151111git6805518.tar.gz
 
 # Compat check for distros that already have single install pmda's
 %if 0%{?fedora} > 22 || 0%{?rhel} > 7
@@ -694,6 +694,7 @@ Summary: Performance Co-Pilot (PCP) metrics for Elasticsearch
 URL: http://www.pcp.io
 Requires: perl-PCP-PMDA = %{version}-%{release}
 Requires: perl(LWP::UserAgent)
+BuildRequires: perl(LWP::UserAgent)
 
 %description pmda-elasticsearch
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
@@ -800,8 +801,8 @@ Group: Applications/System
 Summary: Performance Co-Pilot (PCP) metrics for MySQL
 URL: http://www.pcp.io
 Requires: perl-PCP-PMDA = %{version}-%{release}
-Requires: perl(DBI)
-Requires: perl(DBD::mysql)
+Requires: perl(DBI) perl(DBD::mysql)
+BuildRequires: perl(DBI) perl(DBD::mysql)
 
 %description pmda-mysql
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
@@ -862,6 +863,7 @@ Summary: Performance Co-Pilot (PCP) metrics for the Nginx Webserver
 URL: http://www.pcp.io
 Requires: perl-PCP-PMDA = %{version}-%{release}
 Requires: perl(LWP::UserAgent)
+BuildRequires: perl(LWP::UserAgent)
 
 %description pmda-nginx
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
@@ -909,12 +911,15 @@ URL: http://www.pcp.io
 Requires: perl-PCP-PMDA = %{version}-%{release}
 %if 0%{?fedora} > 16 || 0%{?rhel} > 5
 Requires: postfix-perl-scripts
+BuildRequires: postfix-perl-scripts
 %endif
 %if 0%{?rhel} <= 5
 Requires: postfix
+BuildRequires: postfix
 %endif
 %if "%{_vendor}" == "suse"
 Requires: postfix-doc
+BuildRequires: postfix-doc
 %endif
 
 %description pmda-postfix
@@ -931,8 +936,8 @@ Group: Applications/System
 Summary: Performance Co-Pilot (PCP) metrics for PostgreSQL
 URL: http://www.pcp.io
 Requires: perl-PCP-PMDA = %{version}-%{release}
-Requires: perl(DBI)
-Requires: perl(DBD::Pg)
+Requires: perl(DBI) perl(DBD::Pg)
+BuildRequires: perl(DBI) perl(DBD::Pg)
 
 %description pmda-postgresql
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
@@ -1130,12 +1135,12 @@ Summary: Performance Co-Pilot (PCP) metrics for JSON data
 URL: http://www.pcp.io
 %if !%{disable_python3}
 Requires: python3-pcp
-Requires: python3-jsonpointer
-Requires: python3-six
+Requires: python3-jsonpointer python3-six
+BuildRequires: python3-jsonpointer python3-six
 %else
 Requires: python-pcp
-Requires: python-jsonpointer
-Requires: python-six
+Requires: python-jsonpointer python-six
+BuildRequires: python-jsonpointer python-six
 %endif
 %description pmda-json
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
@@ -2398,6 +2403,10 @@ cd
 %endif
 
 %changelog
+* Wed Nov 11 2015 Lukas Berk <lberk@redhat.com> - 3.10.9-0.20151111git892d4d7
+- Automated weekly rawhide release
+- Applied spec changes from upstream git
+
 * Tue Nov 10 2015 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.10.9-0.20151105git7a881e7
 - Rebuilt for https://fedoraproject.org/wiki/Changes/python3.5
 
