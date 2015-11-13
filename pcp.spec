@@ -3,7 +3,7 @@ Name: pcp
 Version: 3.10.9
 %global buildversion 0
 
-Release: 0.20151111git892d4d7%{?dist}
+Release: 0.20151111git892d4d7.1%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
@@ -2403,6 +2403,9 @@ cd
 %endif
 
 %changelog
+* Fri Nov 13 2015 Lukas Berk <lberk@redhat.com> - 3.10.9-0.20151111git892d4d7.1
+- Rebuild for python3 breakage
+
 * Wed Nov 11 2015 Lukas Berk <lberk@redhat.com> - 3.10.9-0.20151111git892d4d7
 - Automated weekly rawhide release
 - Applied spec changes from upstream git
