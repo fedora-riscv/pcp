@@ -3,16 +3,16 @@ Name: pcp
 Version: 3.10.9
 %global buildversion 0
 
-Release: 0.20151123git587e16f%{?dist}
+Release: 0.20151130gitd63273c%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
 # https://bintray.com/artifact/download/pcp/source/pcp-%{version}.src.tar.gz
-Source0: %{name}-%{version}-0.20151123git587e16f.tar.gz
+Source0: %{name}-%{version}-0.20151130gitd63273c.tar.gz
 # https://github.com/performancecopilot/pcp-webjs/archive/master.zip
-Source1: pcp-webjs-20151123git09da29d.src.tar.gz
+Source1: pcp-webjs-20151130git09da29d.src.tar.gz
 # https://bintray.com/artifact/download/netflixoss/downloads/vector.tar.gz
-Source2: vector-20151123git47fe02d.tar.gz
+Source2: vector-20151130git47fe02d.tar.gz
 
 # Compat check for distros that already have single install pmda's
 %if 0%{?fedora} > 22 || 0%{?rhel} > 7
@@ -519,6 +519,20 @@ Requires: perl-PCP-LogImport = %{version}-%{release}
 %description import-ganglia2pcp
 Performance Co-Pilot (PCP) front-end tools for importing ganglia data
 into standard PCP archive logs for replay with any PCP monitoring tool.
+
+#
+# pcp-export-pcp2zabbix
+#
+%package export-pcp2zabbix
+License: GPLv2+
+Group: Applications/System
+Summary: Performance Co-Pilot tools for exporting PCP metrics to Zabbix
+URL: http://www.pcp.io
+Requires: pcp-libs >= %{version}-%{release}
+
+%description export-pcp2zabbix
+Performance Co-Pilot (PCP) front-end tools for exporting metric values
+to Zabbix (http://www.zabbix.com).
 
 %if !%{disable_python2} || !%{disable_python3}
 #
@@ -1729,7 +1743,7 @@ ls -1 $RPM_BUILD_ROOT/%{_pmdasdir} |\
 
 # all base pcp package files except those split out into sub packages
 ls -1 $RPM_BUILD_ROOT/%{_bindir} |\
-  grep -E -v 'pmiostat|pmcollectl|pmatop|pcp2graphite' |\
+  grep -E -v 'pmiostat|pmcollectl|pmatop|pcp2graphite|zabbix' |\
   sed -e 's#^#'%{_bindir}'\/#' >base_bin.list
 #
 # Separate the pcp-system-tools package files.
@@ -2299,12 +2313,15 @@ cd
 %files pmda-unbound
 %{_pmdasdir}/unbound
 
-%files export-pcp2graphite
-%{_bindir}/pcp2graphite
-
 %files pmda-mic
 %{_pmdasdir}/mic
+
+%files export-pcp2graphite
+%{_bindir}/pcp2graphite
 %endif # !%{disable_python2} || !%{disable_python3}
+
+%files export-pcp2zabbix
+%{_localstatedir}/lib/zabbix
 
 %if !%{disable_json}
 %files pmda-json
@@ -2403,6 +2420,10 @@ cd
 %endif
 
 %changelog
+* Mon Nov 30 2015 Lukas Berk <lberk@redhat.com> - 3.10.9-0.20151130gitd63273c
+- Automated weekly rawhide release
+- Applied spec changes from upstream git
+
 * Mon Nov 23 2015 Lukas Berk <lberk@redhat.com> - 3.10.9-0.20151123git587e16f
 - Automated weekly rawhide release
 
