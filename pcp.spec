@@ -3,16 +3,16 @@ Name: pcp
 Version: 3.10.9
 %global buildversion 0
 
-Release: 0.20151130gitd63273c%{?dist}
+Release: 0.20151207gited763bb%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
 # https://bintray.com/artifact/download/pcp/source/pcp-%{version}.src.tar.gz
-Source0: %{name}-%{version}-0.20151130gitd63273c.tar.gz
+Source0: %{name}-%{version}-0.20151207gited763bb.tar.gz
 # https://github.com/performancecopilot/pcp-webjs/archive/master.zip
-Source1: pcp-webjs-20151130git09da29d.src.tar.gz
+Source1: pcp-webjs-20151207git09da29d.src.tar.gz
 # https://bintray.com/artifact/download/netflixoss/downloads/vector.tar.gz
-Source2: vector-20151130git47fe02d.tar.gz
+Source2: vector-20151207git0ec9197.tar.gz
 
 # Compat check for distros that already have single install pmda's
 %if 0%{?fedora} > 22 || 0%{?rhel} > 7
@@ -521,18 +521,18 @@ Performance Co-Pilot (PCP) front-end tools for importing ganglia data
 into standard PCP archive logs for replay with any PCP monitoring tool.
 
 #
-# pcp-export-pcp2zabbix
+# pcp-export-zabbix-agent
 #
-%package export-pcp2zabbix
+%package export-zabbix-agent
 License: GPLv2+
 Group: Applications/System
-Summary: Performance Co-Pilot tools for exporting PCP metrics to Zabbix
+Summary: Module for exporting from PCP into a Zabbix agent daemon
 URL: http://www.pcp.io
 Requires: pcp-libs >= %{version}-%{release}
 
-%description export-pcp2zabbix
-Performance Co-Pilot (PCP) front-end tools for exporting metric values
-to Zabbix (http://www.zabbix.com).
+%description export-zabbix-agent
+Performance Co-Pilot (PCP) module for exporting data from PCP via a
+designated Zabbix agent daemon - see zbxpcp(3) for further details.
 
 %if !%{disable_python2} || !%{disable_python3}
 #
@@ -1743,7 +1743,7 @@ ls -1 $RPM_BUILD_ROOT/%{_pmdasdir} |\
 
 # all base pcp package files except those split out into sub packages
 ls -1 $RPM_BUILD_ROOT/%{_bindir} |\
-  grep -E -v 'pmiostat|pmcollectl|pmatop|pcp2graphite|zabbix' |\
+  grep -E -v 'pmiostat|pmcollectl|pmatop|pmrep|pcp2graphite|zabbix|zbxpcp' |\
   sed -e 's#^#'%{_bindir}'\/#' >base_bin.list
 #
 # Separate the pcp-system-tools package files.
@@ -1752,7 +1752,7 @@ ls -1 $RPM_BUILD_ROOT/%{_bindir} |\
 # pcp(1) sub-command variants so must also be in pcp-system-tools.
 %if !%{disable_python2} || !%{disable_python3}
 ls -1 $RPM_BUILD_ROOT/%{_bindir} |\
-  grep -E 'pmiostat|pmcollectl|pmatop' |\
+  grep -E 'pmiostat|pmcollectl|pmatop|pmrep' |\
   sed -e 's#^#'%{_bindir}'\/#' >pcp_system_tools.list
 ls -1 $RPM_BUILD_ROOT/%{_libexecdir}/pcp/bin |\
   grep -E 'atop|collectl|dmcache|free|iostat|numastat|verify|uptime|shping' |\
@@ -2320,8 +2320,8 @@ cd
 %{_bindir}/pcp2graphite
 %endif # !%{disable_python2} || !%{disable_python3}
 
-%files export-pcp2zabbix
-%{_localstatedir}/lib/zabbix
+%files export-zabbix-agent
+%{_libdir}/zabbix
 
 %if !%{disable_json}
 %files pmda-json
@@ -2420,6 +2420,10 @@ cd
 %endif
 
 %changelog
+* Mon Dec 07 2015 Lukas Berk <lberk@redhat.com> - 3.10.9-0.20151207gited763bb
+- Automated weekly rawhide release
+- Applied spec changes from upstream git
+
 * Mon Nov 30 2015 Lukas Berk <lberk@redhat.com> - 3.10.9-0.20151130gitd63273c
 - Automated weekly rawhide release
 - Applied spec changes from upstream git
