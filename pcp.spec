@@ -3,16 +3,16 @@ Name: pcp
 Version: 3.10.9
 %global buildversion 0
 
-Release: 0.20151207gited763bb%{?dist}
+Release: 0.20151207git44f18ab%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
 # https://bintray.com/artifact/download/pcp/source/pcp-%{version}.src.tar.gz
-Source0: %{name}-%{version}-0.20151207gited763bb.tar.gz
+Source0: %{name}-%{version}-0.20151207git44f18ab.tar.gz
 # https://github.com/performancecopilot/pcp-webjs/archive/master.zip
-Source1: pcp-webjs-20151207git09da29d.src.tar.gz
+Source1: pcp-webjs-20151207git17704ea.src.tar.gz
 # https://bintray.com/artifact/download/netflixoss/downloads/vector.tar.gz
-Source2: vector-20151207git0ec9197.tar.gz
+Source2: vector-20151207gitv1.0.3.tar.gz
 
 # Compat check for distros that already have single install pmda's
 %if 0%{?fedora} > 22 || 0%{?rhel} > 7
@@ -111,6 +111,8 @@ Source2: vector-20151207git0ec9197.tar.gz
 Conflicts: librapi
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+# https://fedoraproject.org/wiki/Packaging:C_and_C%2B%2B
+BuildRequires: gcc gcc-c++
 BuildRequires: procps autoconf bison flex
 BuildRequires: nss-devel
 BuildRequires: rpm-devel
@@ -2061,7 +2063,6 @@ cd
 %config(noreplace) %{_sysconfdir}/sysconfig/pmcd
 %config %{_sysconfdir}/bash_completion.d/pcp
 %config %{_sysconfdir}/pcp.env
-%config %{_sysconfdir}/pcp.sh
 %dir %{_confdir}/pmcd
 %config(noreplace) %{_confdir}/pmcd/pmcd.conf
 %config(noreplace) %{_confdir}/pmcd/pmcd.options
@@ -2420,6 +2421,10 @@ cd
 %endif
 
 %changelog
+* Mon Dec 07 2015 Lukas Berk <lberk@redhat.com> - 3.10.9-0.20151207git44f18ab
+- Automated weekly rawhide release
+- Applied spec changes from upstream git
+
 * Mon Dec 07 2015 Lukas Berk <lberk@redhat.com> - 3.10.9-0.20151207gited763bb
 - Automated weekly rawhide release
 - Applied spec changes from upstream git
