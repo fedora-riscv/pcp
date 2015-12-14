@@ -3,16 +3,16 @@ Name: pcp
 Version: 3.10.9
 %global buildversion 0
 
-Release: 0.20151207git44f18ab%{?dist}
+Release: 0.20151214git127bd3f%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
 # https://bintray.com/artifact/download/pcp/source/pcp-%{version}.src.tar.gz
-Source0: %{name}-%{version}-0.20151207git44f18ab.tar.gz
+Source0: %{name}-%{version}-0.20151214git127bd3f.tar.gz
 # https://github.com/performancecopilot/pcp-webjs/archive/master.zip
-Source1: pcp-webjs-20151207git17704ea.src.tar.gz
+Source1: pcp-webjs-20151214git17704ea.src.tar.gz
 # https://bintray.com/artifact/download/netflixoss/downloads/vector.tar.gz
-Source2: vector-20151207gitv1.0.3.tar.gz
+Source2: vector-20151214git117404f.tar.gz
 
 # Compat check for distros that already have single install pmda's
 %if 0%{?fedora} > 22 || 0%{?rhel} > 7
@@ -2421,6 +2421,9 @@ cd
 %endif
 
 %changelog
+* Mon Dec 14 2015 Lukas Berk <lberk@redhat.com> - 3.10.9-0.20151214git127bd3f
+- Automated weekly rawhide release
+
 * Mon Dec 07 2015 Lukas Berk <lberk@redhat.com> - 3.10.9-0.20151207git44f18ab
 - Automated weekly rawhide release
 - Applied spec changes from upstream git
