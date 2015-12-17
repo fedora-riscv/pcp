@@ -1,18 +1,18 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
 Version: 3.10.9
-%global buildversion 0
+%global buildversion 1
 
-Release: 0.20151214git127bd3f%{?dist}
+Release: %{buildversion}%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
 # https://bintray.com/artifact/download/pcp/source/pcp-%{version}.src.tar.gz
-Source0: %{name}-%{version}-0.20151214git127bd3f.tar.gz
+Source0: pcp-%{version}.src.tar.gz
 # https://github.com/performancecopilot/pcp-webjs/archive/master.zip
-Source1: pcp-webjs-20151214git17704ea.src.tar.gz
+Source1: pcp-webjs.src.tar.gz
 # https://bintray.com/artifact/download/netflixoss/downloads/vector.tar.gz
-Source2: vector-20151214git117404f.tar.gz
+Source2: vector.tar.gz
 
 # Compat check for distros that already have single install pmda's
 %if 0%{?fedora} > 22 || 0%{?rhel} > 7
@@ -2418,43 +2418,23 @@ cd
 
 %if !%{disable_python2} || !%{disable_python3}
 %files -n pcp-system-tools -f pcp_system_tools.list
+%dir %{_confdir}/pmrep
+%config(noreplace) %{_confdir}/pmrep/pmrep.conf
 %endif
 
 %changelog
-* Mon Dec 14 2015 Lukas Berk <lberk@redhat.com> - 3.10.9-0.20151214git127bd3f
-- Automated weekly rawhide release
-
-* Mon Dec 07 2015 Lukas Berk <lberk@redhat.com> - 3.10.9-0.20151207git44f18ab
-- Automated weekly rawhide release
-- Applied spec changes from upstream git
-
-* Mon Dec 07 2015 Lukas Berk <lberk@redhat.com> - 3.10.9-0.20151207gited763bb
-- Automated weekly rawhide release
-- Applied spec changes from upstream git
-
-* Mon Nov 30 2015 Lukas Berk <lberk@redhat.com> - 3.10.9-0.20151130gitd63273c
-- Automated weekly rawhide release
-- Applied spec changes from upstream git
-
-* Mon Nov 23 2015 Lukas Berk <lberk@redhat.com> - 3.10.9-0.20151123git587e16f
-- Automated weekly rawhide release
-
-* Tue Nov 17 2015 Lukas Berk <lberk@redhat.com> - 3.10.9-0.20151117gitf5f20cb
-- Automated weekly rawhide release
-
-* Fri Nov 13 2015 Lukas Berk <lberk@redhat.com> - 3.10.9-0.20151111git892d4d7.1
-- Rebuild for python3 breakage
-
-* Wed Nov 11 2015 Lukas Berk <lberk@redhat.com> - 3.10.9-0.20151111git892d4d7
-- Automated weekly rawhide release
-- Applied spec changes from upstream git
-
-* Tue Nov 10 2015 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.10.9-0.20151105git7a881e7
-- Rebuilt for https://fedoraproject.org/wiki/Changes/python3.5
-
-* Wed Nov 04 2015 Lukas Berk <lberk@redhat.com> - 3.10.9-0.20151104git7a881e7
-- Automated weekly rawhide release
-- Applied spec changes from upstream git
+* Wed Dec 16 2015 Lukas Berk <lberk@redhat.com> - 3.10.9-1
+- Add -V/--version support to several more commands (BZ 1284411)
+- Resolve a pcp-iostat(1) transient device exception (BZ 1249572)
+- Provides pmdapipe, an output-capturing domain agent (BZ 1163413)
+- Python PMAPI pmSetMode allows None timeval parameter (BZ 1284417)
+- Python PMI pmiPutValue now supports singular metrics (BZ 1285371)
+- Fix python PMAPI pmRegisterDerived wrapper interface (BZ 1286733)
+- Fix pmstat SEGV when run with graphical time control (BZ 1287678)
+- Make pmNonOptionsFromList error message less cryptic (BZ 1287778)
+- Drop unimplemented pmdumptext options from usage, man page (BZ 1289909)
+- Stop creating configuration files in tmp_t locations (BZ 1256125)
+- Update to latest PCP sources.
 
 * Fri Oct 30 2015 Mark Goodwin <mgoodwin@redhat.com> - 3.10.8-1
 - Update pmlogger to log an immediate sample first (BZ 1269921)
@@ -2470,6 +2450,12 @@ cd
 - Added missing RPM dependencies to several PMDA sub-packages.
 - Update to latest stable Vector release for pcp-vector-webapp.
 - Update to latest PCP sources.
+
+* Sat Sep 05 2015 Kalev Lember <klember@redhat.com> - 3.10.6-2.1
+- Rebuilt for librpm soname bump
+
+* Thu Aug 06 2015 Lukas Berk <lberk@redhat.com> - 3.10.6-2
+- Fix SDT related build error (BZ 1250894)
 
 * Tue Aug 04 2015 Nathan Scott <nathans@redhat.com> - 3.10.6-1
 - Fix pcp2graphite write method invocation failure (BZ 1243123)
