@@ -1,14 +1,14 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
 Version: 3.11.0
-%global buildversion 0
+%global buildversion 1
 
-Release: 0.20160128giteb5eb32%{?dist}
+Release: %{buildversion}%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
 # https://bintray.com/artifact/download/pcp/source/pcp-%{version}.src.tar.gz
-Source0: %{name}-%{version}-0.20160128giteb5eb32.tar.gz
+Source0: pcp-%{version}.src.tar.gz
 # https://github.com/performancecopilot/pcp-webjs/archive/master.zip
 Source1: pcp-webjs-20160128gitddff69a.src.tar.gz
 # https://bintray.com/artifact/download/netflixoss/downloads/vector.tar.gz
@@ -2378,9 +2378,12 @@ cd
 %endif
 
 %changelog
-* Thu Jan 28 2016 Lukas Berk <lberk@redhat.com> - 3.11.0-0.20160128giteb5eb32
-- Automated weekly rawhide release
-- Applied spec changes from upstream git
+* Fri Jan 29 2016 Mark Goodwin <mgoodwin@redhat.com> - 3.11.0-1
+- Significant speedups to elapsed time stopping pmcd (BZ 1292027)
+- Fix python derived metric exception handling issues (BZ 1299806)
+- incorrect interpolation across <mark> record in a merged archive (BZ 1296750)
+- pcp requires pcp-compat pulling in a lot of unneeded pcp-pmda-* packages (BZ 1293466)
+- Update to latest PCP sources.
 
 * Wed Dec 16 2015 Lukas Berk <lberk@redhat.com> - 3.10.9-1
 - Add -V/--version support to several more commands (BZ 1284411)
