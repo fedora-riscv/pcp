@@ -1,6 +1,6 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.10.9
+Version: 3.11.0
 %global buildversion 1
 
 Release: %{buildversion}%{?dist}
@@ -10,16 +10,9 @@ Group: Applications/System
 # https://bintray.com/artifact/download/pcp/source/pcp-%{version}.src.tar.gz
 Source0: pcp-%{version}.src.tar.gz
 # https://github.com/performancecopilot/pcp-webjs/archive/master.zip
-Source1: pcp-webjs.src.tar.gz
+Source1: pcp-webjs-20160128gitddff69a.src.tar.gz
 # https://bintray.com/artifact/download/netflixoss/downloads/vector.tar.gz
-Source2: vector.tar.gz
-
-# Compat check for distros that already have single install pmda's
-%if 0%{?fedora} > 22 || 0%{?rhel} > 7
-%global with_compat 0
-%else
-%global with_compat 1
-%endif
+Source2: vector-20160128git117404f.tar.gz
 
 # There are no papi/libpfm devel packages for s390 nor for some rhels, disable
 %ifarch s390 s390x
@@ -117,6 +110,7 @@ BuildRequires: procps autoconf bison flex
 BuildRequires: nss-devel
 BuildRequires: rpm-devel
 BuildRequires: avahi-devel
+BuildRequires: zlib-devel
 %if !%{disable_python2}
 %if 0%{?default_python} != 3
 BuildRequires: python%{?default_python}-devel
@@ -167,9 +161,9 @@ Requires: python-pcp = %{version}-%{release}
 Obsoletes: pcp-gui-debuginfo
 Obsoletes: pcp-pmda-nvidia
 
-%if %{with_compat}
-Requires: pcp-compat
-%endif
+# Obsoletes for distros that already have single install pmda's with compat package
+Obsoletes: pcp-compat
+
 Requires: pcp-libs = %{version}-%{release}
 Obsoletes: pcp-gui-debuginfo
 
@@ -528,13 +522,13 @@ into standard PCP archive logs for replay with any PCP monitoring tool.
 %package export-zabbix-agent
 License: GPLv2+
 Group: Applications/System
-Summary: Module for exporting from PCP into a Zabbix agent daemon
+Summary: Module for exporting PCP metrics to Zabbix agent
 URL: http://www.pcp.io
-Requires: pcp-libs >= %{version}-%{release}
+Requires: pcp-libs = %{version}-%{release}
 
 %description export-zabbix-agent
-Performance Co-Pilot (PCP) module for exporting data from PCP via a
-designated Zabbix agent daemon - see zbxpcp(3) for further details.
+Performance Co-Pilot (PCP) module for exporting metrics from PCP to
+Zabbix via the Zabbix agent - see zbxpcp(3) for further details.
 
 %if !%{disable_python2} || !%{disable_python3}
 #
@@ -1014,6 +1008,7 @@ Group: Applications/System
 Summary: Performance Co-Pilot (PCP) metrics for Simple Network Management Protocol
 URL: http://www.pcp.io
 Requires: perl-PCP-PMDA = %{version}-%{release}
+Requires: perl(Net::SNMP)
 
 %description pmda-snmp
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
@@ -1428,41 +1423,6 @@ This package contains the PCP Performance Metrics Domain Agent (PMDA) for
 collecting metrics about web server logs.
 # end pcp-pmda-weblog
 # end C pmdas
-
-#
-# pcp-compat
-#
-%if %{with_compat}
-%package compat
-License: GPLv2+
-Group: Applications/System
-Summary: Performance Co-Pilot (PCP) compat package for existing systems
-URL: http://www.pcp.io
-Requires: pcp-pmda-activemq pcp-pmda-bonding pcp-pmda-dbping pcp-pmda-ds389 pcp-pmda-ds389log
-Requires: pcp-pmda-elasticsearch pcp-pmda-gpfs pcp-pmda-gpsd pcp-pmda-kvm pcp-pmda-lustre
-Requires: pcp-pmda-memcache pcp-pmda-mysql pcp-pmda-named pcp-pmda-netfilter pcp-pmda-news
-Requires: pcp-pmda-nginx pcp-pmda-nfsclient pcp-pmda-pdns pcp-pmda-postfix pcp-pmda-postgresql
-Requires: pcp-pmda-dm pcp-pmda-apache
-Requires: pcp-pmda-bash pcp-pmda-cisco pcp-pmda-gfs2 pcp-pmda-lmsensors pcp-pmda-mailq pcp-pmda-mounts
-Requires: pcp-pmda-nvidia-gpu pcp-pmda-roomtemp pcp-pmda-sendmail pcp-pmda-shping pcp-pmda-logger
-Requires: pcp-pmda-lustrecomm
-%if !%{disable_python2} || !%{disable_python3}
-Requires: pcp-pmda-gluster pcp-pmda-zswap pcp-pmda-unbound pcp-pmda-mic
-Requires: pcp-system-tools pcp-export-pcp2graphite
-%endif
-%if !%{disable_json}
-Requires: pcp-pmda-json
-%endif
-%if !%{disable_rpm}
-Requires: pcp-pmda-rpm
-%endif
-Requires: pcp-pmda-summary pcp-pmda-trace pcp-pmda-weblog
-Requires: pcp-doc
-%description compat
-This package contains the PCP compatibility dependencies for existing PCP
-installations.  This is not a package that should be depended on, and will
-be removed in future releases.
-%endif #compat
 
 # pcp-collector metapackage
 %package collector
@@ -2092,11 +2052,6 @@ cd
 %{tapsetdir}/pmcd.stp
 %endif
 
-%if %{with_compat}
-%files compat
-#empty
-%endif
-
 %files monitor
 #empty
 
@@ -2423,6 +2378,13 @@ cd
 %endif
 
 %changelog
+* Fri Jan 29 2016 Mark Goodwin <mgoodwin@redhat.com> - 3.11.0-1
+- Significant speedups to elapsed time stopping pmcd (BZ 1292027)
+- Fix python derived metric exception handling issues (BZ 1299806)
+- incorrect interpolation across <mark> record in a merged archive (BZ 1296750)
+- pcp requires pcp-compat pulling in a lot of unneeded pcp-pmda-* packages (BZ 1293466)
+- Update to latest PCP sources.
+
 * Wed Dec 16 2015 Lukas Berk <lberk@redhat.com> - 3.10.9-1
 - Add -V/--version support to several more commands (BZ 1284411)
 - Resolve a pcp-iostat(1) transient device exception (BZ 1249572)
