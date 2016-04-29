@@ -1,6 +1,6 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.10.9
+Version: 3.11.2
 %global buildversion 1
 
 Release: %{buildversion}%{?dist}
@@ -13,13 +13,6 @@ Source0: pcp-%{version}.src.tar.gz
 Source1: pcp-webjs.src.tar.gz
 # https://bintray.com/artifact/download/netflixoss/downloads/vector.tar.gz
 Source2: vector.tar.gz
-
-# Compat check for distros that already have single install pmda's
-%if 0%{?fedora} > 22 || 0%{?rhel} > 7
-%global with_compat 0
-%else
-%global with_compat 1
-%endif
 
 # There are no papi/libpfm devel packages for s390 nor for some rhels, disable
 %ifarch s390 s390x
@@ -117,6 +110,7 @@ BuildRequires: procps autoconf bison flex
 BuildRequires: nss-devel
 BuildRequires: rpm-devel
 BuildRequires: avahi-devel
+BuildRequires: zlib-devel
 %if !%{disable_python2}
 %if 0%{?default_python} != 3
 BuildRequires: python%{?default_python}-devel
@@ -167,9 +161,9 @@ Requires: python-pcp = %{version}-%{release}
 Obsoletes: pcp-gui-debuginfo
 Obsoletes: pcp-pmda-nvidia
 
-%if %{with_compat}
-Requires: pcp-compat
-%endif
+# Obsoletes for distros that already have single install pmda's with compat package
+Obsoletes: pcp-compat
+
 Requires: pcp-libs = %{version}-%{release}
 Obsoletes: pcp-gui-debuginfo
 
@@ -224,6 +218,16 @@ Obsoletes: pcp-gui-debuginfo
 %else
 %global _with_json --with-pmdajson=yes
 %endif
+
+%global pmda_remove() %{expand:
+if [ "%1" -eq 0 ]
+then
+    if [ -f "%{_confdir}/pmcd/pmcd.conf" ] && [ -f "%{_pmdasdir}/%2/domain.h" ]
+    then
+	(cd %{_pmdasdir}/%2/ && ./Remove >/dev/null 2>&1)
+    fi
+fi
+}
 
 %description
 Performance Co-Pilot (PCP) provides a framework and services to support
@@ -471,6 +475,7 @@ URL: http://www.pcp.io
 Requires: pcp-libs = %{version}-%{release}
 Requires: perl-PCP-LogImport = %{version}-%{release}
 Requires: sysstat
+Requires: perl(XML::TokeParser)
 
 %description import-sar2pcp
 Performance Co-Pilot (PCP) front-end tools for importing sar data
@@ -528,13 +533,13 @@ into standard PCP archive logs for replay with any PCP monitoring tool.
 %package export-zabbix-agent
 License: GPLv2+
 Group: Applications/System
-Summary: Module for exporting from PCP into a Zabbix agent daemon
+Summary: Module for exporting PCP metrics to Zabbix agent
 URL: http://www.pcp.io
-Requires: pcp-libs >= %{version}-%{release}
+Requires: pcp-libs = %{version}-%{release}
 
 %description export-zabbix-agent
-Performance Co-Pilot (PCP) module for exporting data from PCP via a
-designated Zabbix agent daemon - see zbxpcp(3) for further details.
+Performance Co-Pilot (PCP) module for exporting metrics from PCP to
+Zabbix via the Zabbix agent - see zbxpcp(3) for further details.
 
 %if !%{disable_python2} || !%{disable_python3}
 #
@@ -902,6 +907,23 @@ collecting metrics for NFS Clients.
 #end pcp-pmda-nfsclient
 
 #
+# pcp-pmda-oracle
+#
+%package pmda-oracle
+License: GPLv2+
+Group: Applications/System
+Summary: Performance Co-Pilot (PCP) metrics for the Oracle database
+URL: http://www.pcp.io
+Requires: perl-PCP-PMDA = %{version}-%{release}
+Requires: perl(DBI)
+BuildRequires: perl(DBI)
+
+%description pmda-oracle
+This package contains the PCP Performance Metrics Domain Agent (PMDA) for
+collecting metrics about the Oracle database.
+#end pcp-pmda-oracle
+
+#
 # pcp-pmda-pdns
 #
 %package pmda-pdns
@@ -1014,6 +1036,8 @@ Group: Applications/System
 Summary: Performance Co-Pilot (PCP) metrics for Simple Network Management Protocol
 URL: http://www.pcp.io
 Requires: perl-PCP-PMDA = %{version}-%{release}
+Requires: perl(Net::SNMP)
+BuildRequires: perl(Net::SNMP)
 
 %description pmda-snmp
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
@@ -1429,41 +1453,6 @@ collecting metrics about web server logs.
 # end pcp-pmda-weblog
 # end C pmdas
 
-#
-# pcp-compat
-#
-%if %{with_compat}
-%package compat
-License: GPLv2+
-Group: Applications/System
-Summary: Performance Co-Pilot (PCP) compat package for existing systems
-URL: http://www.pcp.io
-Requires: pcp-pmda-activemq pcp-pmda-bonding pcp-pmda-dbping pcp-pmda-ds389 pcp-pmda-ds389log
-Requires: pcp-pmda-elasticsearch pcp-pmda-gpfs pcp-pmda-gpsd pcp-pmda-kvm pcp-pmda-lustre
-Requires: pcp-pmda-memcache pcp-pmda-mysql pcp-pmda-named pcp-pmda-netfilter pcp-pmda-news
-Requires: pcp-pmda-nginx pcp-pmda-nfsclient pcp-pmda-pdns pcp-pmda-postfix pcp-pmda-postgresql
-Requires: pcp-pmda-dm pcp-pmda-apache
-Requires: pcp-pmda-bash pcp-pmda-cisco pcp-pmda-gfs2 pcp-pmda-lmsensors pcp-pmda-mailq pcp-pmda-mounts
-Requires: pcp-pmda-nvidia-gpu pcp-pmda-roomtemp pcp-pmda-sendmail pcp-pmda-shping pcp-pmda-logger
-Requires: pcp-pmda-lustrecomm
-%if !%{disable_python2} || !%{disable_python3}
-Requires: pcp-pmda-gluster pcp-pmda-zswap pcp-pmda-unbound pcp-pmda-mic
-Requires: pcp-system-tools pcp-export-pcp2graphite
-%endif
-%if !%{disable_json}
-Requires: pcp-pmda-json
-%endif
-%if !%{disable_rpm}
-Requires: pcp-pmda-rpm
-%endif
-Requires: pcp-pmda-summary pcp-pmda-trace pcp-pmda-weblog
-Requires: pcp-doc
-%description compat
-This package contains the PCP compatibility dependencies for existing PCP
-installations.  This is not a package that should be depended on, and will
-be removed in future releases.
-%endif #compat
-
 # pcp-collector metapackage
 %package collector
 License: GPLv2+
@@ -1473,7 +1462,7 @@ URL: http://www.pcp.io
 Requires: pcp-pmda-activemq pcp-pmda-bonding pcp-pmda-dbping pcp-pmda-ds389 pcp-pmda-ds389log
 Requires: pcp-pmda-elasticsearch pcp-pmda-gpfs pcp-pmda-gpsd pcp-pmda-kvm pcp-pmda-lustre
 Requires: pcp-pmda-memcache pcp-pmda-mysql pcp-pmda-named pcp-pmda-netfilter pcp-pmda-news
-Requires: pcp-pmda-nginx pcp-pmda-nfsclient pcp-pmda-pdns pcp-pmda-postfix pcp-pmda-postgresql
+Requires: pcp-pmda-nginx pcp-pmda-nfsclient pcp-pmda-pdns pcp-pmda-postfix pcp-pmda-postgresql pcp-pmda-oracle
 Requires: pcp-pmda-samba pcp-pmda-slurm pcp-pmda-snmp pcp-pmda-vmware pcp-pmda-zimbra
 Requires: pcp-pmda-dm pcp-pmda-apache
 Requires: pcp-pmda-bash pcp-pmda-cisco pcp-pmda-gfs2 pcp-pmda-lmsensors pcp-pmda-mailq pcp-pmda-mounts
@@ -1709,6 +1698,7 @@ ls -1 $RPM_BUILD_ROOT/%{_pmdasdir} |\
   grep -E -v '^news' |\
   grep -E -v '^nfsclient' |\
   grep -E -v '^nginx' |\
+  grep -E -v '^oracle' |\
   grep -E -v '^pdns' |\
   grep -E -v '^postfix' |\
   grep -E -v '^postgresql' |\
@@ -1884,6 +1874,182 @@ then
     /sbin/chkconfig --del pmmgr >/dev/null 2>&1
 %endif
 fi
+
+%if !%{disable_rpm}
+%preun pmda-rpm
+%{pmda_remove "$1" "rpm"}
+%endif #preun pmda-rpm
+
+%if !%{disable_papi}
+%preun pmda-papi
+%{pmda_remove "$1" "papi"}
+%endif #preun pmda-papi
+
+%if !%{disable_systemd}
+%preun pmda-systemd
+%{pmda_remove "$1" "systemd"}
+%endif #preun pmda-systemd
+
+%if !%{disable_infiniband}
+%preun pmda-infiniband
+%{pmda_remove "$1" "infiniband"}
+%endif #preun pmda-infiniband
+
+%if !%{disable_perfevent}
+%preun pmda-perfevent
+%{pmda_remove "$1" "perfevent"}
+%endif #preun pmda-perfevent
+
+%if !%{disable_json}
+%preun pmda-json
+%{pmda_remove "$1" "json"}
+%endif #preun pmda-json
+
+%preun pmda-nginx
+%{pmda_remove "$1" "nginx"}
+
+%preun pmda-oracle
+%{pmda_remove "$1" "oracle"}
+
+%preun pmda-postgresql
+%{pmda_remove "$1" "postgresql"}
+
+%preun pmda-postfix
+%{pmda_remove "$1" "postfix"}
+
+%preun pmda-elasticsearch
+%{pmda_remove "$1" "elasticsearch"}
+
+%preun pmda-snmp
+%{pmda_remove "$1" "snmp"}
+
+%preun pmda-mysql
+%{pmda_remove "$1" "mysql"}
+
+%preun pmda-activemq
+%{pmda_remove "$1" "activemq"}
+
+%preun pmda-bonding
+%{pmda_remove "$1" "bonding"}
+
+%preun pmda-dbping
+%{pmda_remove "$1" "dbping"}
+
+%preun pmda-ds389
+%{pmda_remove "$1" "ds389"}
+
+%preun pmda-ds389log
+%{pmda_remove "$1" "ds389log"}
+
+%preun pmda-gpfs
+%{pmda_remove "$1" "gpfs"}
+
+%preun pmda-gpsd
+%{pmda_remove "$1" "gpsd"}
+
+%preun pmda-kvm
+%{pmda_remove "$1" "kvm"}
+
+%preun pmda-lustre
+%{pmda_remove "$1" "lustre"}
+
+%preun pmda-lustrecomm
+%{pmda_remove "$1" "lustrecomm"}
+
+%preun pmda-memcache
+%{pmda_remove "$1" "memcache"}
+
+%preun pmda-named
+%{pmda_remove "$1" "named"}
+
+%preun pmda-netfilter
+%{pmda_remove "$1" "netfilter"}
+
+%preun pmda-news
+%{pmda_remove "$1" "news"}
+
+%preun pmda-nfsclient
+%{pmda_remove "$1" "nfsclient"}
+
+%preun pmda-pdns
+%{pmda_remove "$1" "pdns"}
+
+%preun pmda-rsyslog
+%{pmda_remove "$1" "rsyslog"}
+
+%preun pmda-samba
+%{pmda_remove "$1" "samba"}
+
+%preun pmda-vmware
+%{pmda_remove "$1" "vmware"}
+
+%preun pmda-zimbra
+%{pmda_remove "$1" "zimbra"}
+
+%preun pmda-dm
+%{pmda_remove "$1" "dm"}
+
+%if !%{disable_python2} || !%{disable_python3}
+%preun pmda-gluster
+%{pmda_remove "$1" "gluster"}
+
+%preun pmda-zswap
+%{pmda_remove "$1" "zswap"}
+
+%preun pmda-unbound
+%{pmda_remove "$1" "unbound"}
+
+%preun pmda-mic
+%{pmda_remove "$1" "mic"}
+%endif # !%{disable_python[2,3]}
+
+%preun pmda-apache
+%{pmda_remove "$1" "apache"}
+
+%preun pmda-bash
+%{pmda_remove "$1" "bash"}
+
+%preun pmda-cifs
+%{pmda_remove "$1" "cifs"}
+
+%preun pmda-cisco
+%{pmda_remove "$1" "cisco"}
+
+%preun pmda-gfs2
+%{pmda_remove "$1" "gfs2"}
+
+%preun pmda-lmsensors
+%{pmda_remove "$1" "lmsensors"}
+
+%preun pmda-logger
+%{pmda_remove "$1" "logger"}
+
+%preun pmda-mailq
+%{pmda_remove "$1" "mailq"}
+
+%preun pmda-mounts
+%{pmda_remove "$1" "mounts"}
+
+%preun pmda-nvidia-gpu
+%{pmda_remove "$1" "nvidia"}
+
+%preun pmda-roomtemp
+%{pmda_remove "$1" "roomtemp"}
+
+%preun pmda-sendmail
+%{pmda_remove "$1" "sendmail"}
+
+%preun pmda-shping
+%{pmda_remove "$1" "shping"}
+
+%preun pmda-summary
+%{pmda_remove "$1" "summary"}
+
+%preun pmda-trace
+%{pmda_remove "$1" "trace"}
+
+%preun pmda-weblog
+%{pmda_remove "$1" "weblog"}
 
 %preun
 if [ "$1" -eq 0 ]
@@ -2092,11 +2258,6 @@ cd
 %{tapsetdir}/pmcd.stp
 %endif
 
-%if %{with_compat}
-%files compat
-#empty
-%endif
-
 %files monitor
 #empty
 
@@ -2108,6 +2269,8 @@ cd
 %{_includedir}/pcp/builddefs
 %{_includedir}/pcp/buildrules
 %config %{_sysconfdir}/pcp.conf
+%dir %{_localstatedir}/lib/pcp/config/derived
+%config %{_localstatedir}/lib/pcp/config/derived/*
 
 %files libs
 %{_libdir}/libpcp.so.3
@@ -2274,6 +2437,9 @@ cd
 %files pmda-nfsclient
 %{_pmdasdir}/nfsclient
 
+%files pmda-oracle
+%{_pmdasdir}/oracle
+
 %files pmda-pdns
 %{_pmdasdir}/pdns
 
@@ -2423,6 +2589,28 @@ cd
 %endif
 
 %changelog
+* Fri Apr 29 2016 Lukas Berk <lberk@redhat.com> - 3.11.2-1
+- Negative nice values reported incorrectly (BZ 1328432)
+- Multithreaded clients with concurrent pmNewContext improvements (BZ 1325363)
+- PMCD agent auto-restart (BZ 1323521)
+- Segv in libpcp during discovery error processing (BZ 1319288)
+- Update to latest PCP Sources.
+
+* Fri Mar 18 2016 Dave Brolley <brolley@redhat.com> - 3.11.1-1
+- Call Remove script when uninstalling individual PMDAs (BZ 1304722)
+- Restrict pmcd.services to checking known pcp services (BZ 1286361)
+- Support for multi-archive contexts, across all clients (BZ 1262723)
+- Remove the default shotgun approach to stopping daemons (BZ 1210976)
+- Add mechanism for automatic recovery from PMDA timeouts (BZ 1065803)
+- Update to latest PCP sources.
+
+* Fri Jan 29 2016 Mark Goodwin <mgoodwin@redhat.com> - 3.11.0-1
+- Significant speedups to elapsed time stopping pmcd (BZ 1292027)
+- Fix python derived metric exception handling issues (BZ 1299806)
+- incorrect interpolation across <mark> record in a merged archive (BZ 1296750)
+- pcp requires pcp-compat pulling in a lot of unneeded pcp-pmda-* packages (BZ 1293466)
+- Update to latest PCP sources.
+
 * Wed Dec 16 2015 Lukas Berk <lberk@redhat.com> - 3.10.9-1
 - Add -V/--version support to several more commands (BZ 1284411)
 - Resolve a pcp-iostat(1) transient device exception (BZ 1249572)
