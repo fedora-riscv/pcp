@@ -1,7 +1,7 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.11.1
-%global buildversion 1
+Version: 3.11.2
+%global buildversion 2
 
 Release: %{buildversion}%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
@@ -10,9 +10,9 @@ Group: Applications/System
 # https://bintray.com/artifact/download/pcp/source/pcp-%{version}.src.tar.gz
 Source0: pcp-%{version}.src.tar.gz
 # https://github.com/performancecopilot/pcp-webjs/archive/master.zip
-Source1: pcp-webjs-20160128gitddff69a.src.tar.gz
+Source1: pcp-webjs.src.tar.gz
 # https://bintray.com/artifact/download/netflixoss/downloads/vector.tar.gz
-Source2: vector-20160128git117404f.tar.gz
+Source2: vector-1.0.3.tar.gz
 
 # There are no papi/libpfm devel packages for s390 nor for some rhels, disable
 %ifarch s390 s390x
@@ -2269,6 +2269,8 @@ cd
 %{_includedir}/pcp/builddefs
 %{_includedir}/pcp/buildrules
 %config %{_sysconfdir}/pcp.conf
+%dir %{_localstatedir}/lib/pcp/config/derived
+%config %{_localstatedir}/lib/pcp/config/derived/*
 
 %files libs
 %{_libdir}/libpcp.so.3
@@ -2587,6 +2589,13 @@ cd
 %endif
 
 %changelog
+* Fri Apr 29 2016 Lukas Berk <lberk@redhat.com> - 3.11.2-1
+- Negative nice values reported incorrectly (BZ 1328432)
+- Multithreaded clients with concurrent pmNewContext improvements (BZ 1325363)
+- PMCD agent auto-restart (BZ 1323521)
+- Segv in libpcp during discovery error processing (BZ 1319288)
+- Update to latest PCP Sources.
+
 * Fri Mar 18 2016 Dave Brolley <brolley@redhat.com> - 3.11.1-1
 - Call Remove script when uninstalling individual PMDAs (BZ 1304722)
 - Restrict pmcd.services to checking known pcp services (BZ 1286361)
