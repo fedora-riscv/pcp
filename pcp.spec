@@ -3,7 +3,7 @@ Name: pcp
 Version: 3.11.2
 %global buildversion 2
 
-Release: %{buildversion}%{?dist}
+Release: %{buildversion}%{?dist}.1
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
@@ -2589,6 +2589,9 @@ cd
 %endif
 
 %changelog
+* Mon May 16 2016 Jitka Plesnikova <jplesnik@redhat.com> - 3.11.2-2.1
+- Perl 5.24 rebuild
+
 * Fri Apr 29 2016 Lukas Berk <lberk@redhat.com> - 3.11.2-1
 - Negative nice values reported incorrectly (BZ 1328432)
 - Multithreaded clients with concurrent pmNewContext improvements (BZ 1325363)
