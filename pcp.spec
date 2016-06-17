@@ -1,18 +1,18 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
 Version: 3.11.3
-%global buildversion 0
+%global buildversion 1
 
-Release: 0.20160613git62d62f6%{?dist}
+Release: %{buildversion}%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
 # https://bintray.com/artifact/download/pcp/source/pcp-%{version}.src.tar.gz
-Source0: %{name}-%{version}-0.20160613git62d62f6.tar.gz
+Source0: %{name}-%{version}.src.tar.gz
 # https://bintray.com/artifact/download/netflixoss/downloads/vector.tar.gz
-Source1: pcp-webjs-20160613gitpcp-webjs-3.11.2.src.tar.gz
+Source1: vector-1.1.0.tar.gz
 # https://github.com/performancecopilot/pcp-webjs/archive/x.y.z.tar.gz
-Source2: vector-20160613gitc851eac.tar.gz
+Source2: pcp-webjs-3.11.2.tar.gz
 
 %global disable_snmp 0
 
@@ -2219,7 +2219,7 @@ cd
 # C source files that rpmlint complains about. These are not devel files,
 # but rather they are (slightly obscure) PMDA config files.
 #
-%doc CHANGELOG COPYING INSTALL README VERSION.pcp pcp.lsm
+%doc CHANGELOG COPYING INSTALL.md README.md VERSION.pcp pcp.lsm
 
 %dir %{_confdir}
 %dir %{_pmdasdir}
@@ -2632,15 +2632,13 @@ cd
 %endif
 
 %changelog
-* Mon Jun 13 2016 Lukas Berk <lberk@redhat.com> - 3.11.3-0.20160613git62d62f6
-- Automated weekly rawhide release
-
-* Mon Jun 06 2016 Lukas Berk <lberk@redhat.com> - 3.11.3-0.20160606gita7ba4e4
-- Automated weekly rawhide release
-
-* Mon Jun 06 2016 Lukas Berk <lberk@redhat.com> - 3.11.3-0.20160606git566cf74
-- Automated weekly rawhide release
-- Applied spec changes from upstream git
+* Fri Jun 17 2016 Nathan Scott <nathans@redhat.com> - 3.11.3-1
+- Fix memory leak in derived metrics error handling (BZ 1331973)
+- Correctly propogate indom in mixed derived metrics (BZ 1337212, BZ 1336130)
+- Disallow stopping pmie/pmlogger daemons from cron (BZ 1336792)
+- Fail fast for easily detected bad pmcd configuration (BZ 1336210)
+- Implement primary (local) pmie concept in rc pmie (BZ 1323851)
+- Update to latest PCP Sources.
 
 * Mon May 16 2016 Jitka Plesnikova <jplesnik@redhat.com> - 3.11.2-2.1
 - Perl 5.24 rebuild
