@@ -1,6 +1,6 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.11.2
+Version: 3.11.3
 %global buildversion 1
 
 Release: %{buildversion}%{?dist}
@@ -8,11 +8,13 @@ License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
 # https://bintray.com/artifact/download/pcp/source/pcp-%{version}.src.tar.gz
-Source0: pcp-%{version}.src.tar.gz
-# https://github.com/performancecopilot/pcp-webjs/archive/master.zip
-Source1: pcp-webjs.src.tar.gz
+Source0: %{name}-%{version}.src.tar.gz
 # https://bintray.com/artifact/download/netflixoss/downloads/vector.tar.gz
-Source2: vector-1.0.3.tar.gz
+Source1: vector-1.1.0.tar.gz
+# https://github.com/performancecopilot/pcp-webjs/archive/x.y.z.tar.gz
+Source2: pcp-webjs-3.11.2.tar.gz
+
+%global disable_snmp 0
 
 # There are no papi/libpfm devel packages for s390 nor for some rhels, disable
 %ifarch s390 s390x
@@ -139,7 +141,7 @@ BuildRequires: cairo-devel
 %if !%{disable_sdt}
 BuildRequires: systemtap-sdt-devel
 %endif
-BuildRequires: perl(ExtUtils::MakeMaker)
+BuildRequires: perl-devel perl(ExtUtils::MakeMaker)
 BuildRequires: initscripts man
 %if !%{disable_systemd}
 BuildRequires: systemd-devel
@@ -150,14 +152,7 @@ BuildRequires: qt4-devel >= 4.4
 %endif
 
 Requires: bash gawk sed grep fileutils findutils initscripts which
-Requires: python%{?default_python}
 Requires: pcp-libs = %{version}-%{release}
-%if 0%{?default_python} == 3
-Requires: python3-pcp = %{version}-%{release}
-%endif
-%if !%{disable_python2} && 0%{?default_python} != 3
-Requires: python-pcp = %{version}-%{release}
-%endif
 Obsoletes: pcp-gui-debuginfo
 Obsoletes: pcp-pmda-nvidia
 
@@ -219,6 +214,12 @@ Obsoletes: pcp-gui-debuginfo
 %global _with_json --with-pmdajson=yes
 %endif
 
+%if %{disable_snmp}
+%global _with_snmp --with-pmdasnmp=no
+%else
+%global _with_snmp --with-pmdasnmp=yes
+%endif
+
 %global pmda_remove() %{expand:
 if [ "%1" -eq 0 ]
 then
@@ -271,13 +272,28 @@ Performance Co-Pilot (PCP) run-time libraries
 %package libs-devel
 License: GPLv2+ and LGPLv2.1+
 Group: Development/Libraries
-Summary: Performance Co-Pilot (PCP) development headers and documentation
+Summary: Performance Co-Pilot (PCP) development headers
+URL: http://www.pcp.io
+#Requires: pcp = %{version}-%{release}
+#Requires: pcp-libs = %{version}-%{release}
+
+%description libs-devel
+Performance Co-Pilot (PCP) headers, for development
+
+#
+# pcp-devel
+#
+%package devel
+License: GPLv2+ and LGPLv2.1+
+Group: Development/Libraries
+Summary: Performance Co-Pilot (PCP) development tools and documentation
 URL: http://www.pcp.io
 Requires: pcp = %{version}-%{release}
 Requires: pcp-libs = %{version}-%{release}
+Requires: pcp-libs-devel = %{version}-%{release}
 
-%description libs-devel
-Performance Co-Pilot (PCP) headers, documentation and tools for development.
+%description devel
+Performance Co-Pilot (PCP) documentation and tools for development.
 
 #
 # pcp-testsuite
@@ -290,6 +306,7 @@ URL: http://www.pcp.io
 Requires: pcp = %{version}-%{release}
 Requires: pcp-libs = %{version}-%{release}
 Requires: pcp-libs-devel = %{version}-%{release}
+Requires: pcp-devel = %{version}-%{release}
 Obsoletes: pcp-gui-testsuite
 
 %description testsuite
@@ -1027,6 +1044,7 @@ This package contains the PCP Performance Metrics Domain Agent (PMDA) for
 collecting metrics from the SLURM Workload Manager.
 #end pcp-pmda-slurm
 
+%if !%{disable_snmp}
 #
 # pcp-pmda-snmp
 #
@@ -1036,13 +1054,16 @@ Group: Applications/System
 Summary: Performance Co-Pilot (PCP) metrics for Simple Network Management Protocol
 URL: http://www.pcp.io
 Requires: perl-PCP-PMDA = %{version}-%{release}
+# There are no perl-Net-SNMP packages in rhel, disable unless non-rhel or epel5
+%if 0%{?rhel} == 0 || 0%{?rhel} < 6
 Requires: perl(Net::SNMP)
-BuildRequires: perl(Net::SNMP)
+%endif
 
 %description pmda-snmp
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
 collecting metrics about SNMP.
 #end pcp-pmda-snmp
+%endif
 
 #
 # pcp-pmda-vmware
@@ -1463,13 +1484,16 @@ Requires: pcp-pmda-activemq pcp-pmda-bonding pcp-pmda-dbping pcp-pmda-ds389 pcp-
 Requires: pcp-pmda-elasticsearch pcp-pmda-gpfs pcp-pmda-gpsd pcp-pmda-kvm pcp-pmda-lustre
 Requires: pcp-pmda-memcache pcp-pmda-mysql pcp-pmda-named pcp-pmda-netfilter pcp-pmda-news
 Requires: pcp-pmda-nginx pcp-pmda-nfsclient pcp-pmda-pdns pcp-pmda-postfix pcp-pmda-postgresql pcp-pmda-oracle
-Requires: pcp-pmda-samba pcp-pmda-slurm pcp-pmda-snmp pcp-pmda-vmware pcp-pmda-zimbra
+Requires: pcp-pmda-samba pcp-pmda-slurm pcp-pmda-vmware pcp-pmda-zimbra
 Requires: pcp-pmda-dm pcp-pmda-apache
 Requires: pcp-pmda-bash pcp-pmda-cisco pcp-pmda-gfs2 pcp-pmda-lmsensors pcp-pmda-mailq pcp-pmda-mounts
 Requires: pcp-pmda-nvidia-gpu pcp-pmda-roomtemp pcp-pmda-sendmail pcp-pmda-shping
 Requires: pcp-pmda-lustrecomm pcp-pmda-logger
 %if !%{disable_python2} || !%{disable_python3}
 Requires: pcp-pmda-gluster pcp-pmda-zswap pcp-pmda-unbound pcp-pmda-mic
+%endif
+%if !%{disable_snmp}
+Requires: pcp-pmda-snmp
 %endif
 %if !%{disable_json}
 Requires: pcp-pmda-json
@@ -1515,6 +1539,11 @@ Group: Development/Libraries
 Summary: Performance Co-Pilot (PCP) Python bindings and documentation
 URL: http://www.pcp.io
 Requires: pcp = %{version}-%{release} pcp-libs = %{version}-%{release}
+%if 0%{?rhel} == 5
+Requires: python%{default_python}
+%else
+Requires: python
+%endif
 
 %description -n python-pcp
 This python PCP module contains the language bindings for
@@ -1532,6 +1561,7 @@ Group: Development/Libraries
 Summary: Performance Co-Pilot (PCP) Python3 bindings and documentation
 URL: http://www.pcp.io
 Requires: pcp = %{version}-%{release} pcp-libs = %{version}-%{release}
+Requires: python3
 
 %description -n python3-pcp
 This python PCP module contains the language bindings for
@@ -1607,8 +1637,8 @@ PCP utilities and daemons, and the PCP graphical tools.
 
 %prep
 %setup -q
-%setup -q -T -D -a 2 -c -n pcp-%{version}/vector
-%setup -q -T -D -a 1
+%setup -q -T -D -a 1 -c -n pcp-%{version}/vector
+%setup -q -T -D -a 2
 
 %clean
 rm -Rf $RPM_BUILD_ROOT
@@ -1617,7 +1647,7 @@ rm -Rf $RPM_BUILD_ROOT
 %if !%{disable_python2} && 0%{?default_python} != 3
 export PYTHON=python%{?default_python}
 %endif
-%configure %{?_with_initd} %{?_with_doc} %{?_with_ib} %{?_with_papi} %{?_with_perfevent} %{?_with_json}
+%configure %{?_with_initd} %{?_with_doc} %{?_with_ib} %{?_with_papi} %{?_with_perfevent} %{?_with_json} %{?_with_snmp}
 make %{?_smp_mflags} default_pcp
 
 %install
@@ -1633,8 +1663,9 @@ rm -f $RPM_BUILD_ROOT/%{_libdir}/*.a
 # remove sheet2pcp until BZ 830923 and BZ 754678 are resolved.
 rm -f $RPM_BUILD_ROOT/%{_bindir}/sheet2pcp $RPM_BUILD_ROOT/%{_mandir}/man1/sheet2pcp.1*
 
-# remove configsz.h as this is not multilib friendly.
+# remove {config,platform}sz.h as these are not multilib friendly.
 rm -f $RPM_BUILD_ROOT/%{_includedir}/pcp/configsz.h
+rm -f $RPM_BUILD_ROOT/%{_includedir}/pcp/platformsz.h
 
 %if %{disable_microhttpd}
 rm -fr $RPM_BUILD_ROOT/%{_confdir}/pmwebd
@@ -1736,7 +1767,8 @@ ls -1 $RPM_BUILD_ROOT/%{_pmdasdir} |\
 # all base pcp package files except those split out into sub packages
 ls -1 $RPM_BUILD_ROOT/%{_bindir} |\
   grep -E -v 'pmiostat|pmcollectl|pmatop|pmrep|pcp2graphite|zabbix|zbxpcp' |\
-  sed -e 's#^#'%{_bindir}'\/#' >base_bin.list
+  grep -E -v 'pmdbg|pmclient|pmerr|genpmda' |\
+sed -e 's#^#'%{_bindir}'\/#' >base_bin.list
 #
 # Separate the pcp-system-tools package files.
 #
@@ -1780,6 +1812,9 @@ ls -1 $RPM_BUILD_ROOT/%{_mandir}/man3 |\
 sed -e 's#^#'%{_mandir}'\/man3\/#' | grep -v '3pm' >>pcp-doc.list
 ls -1 $RPM_BUILD_ROOT/%{_datadir}/pcp/demos |\
 sed -e 's#^#'%{_datadir}'\/pcp\/demos\/#' | grep -E -v tutorials >> devel.list
+ls -1 $RPM_BUILD_ROOT/%{_bindir} |\
+grep -E 'pmdbg|pmclient|pmerr|genpmda' |\
+sed -e 's#^#'%{_bindir}'\/#' >>devel.list
 
 %pre testsuite
 test -d %{_testsdir} || mkdir -p -m 755 %{_testsdir}
@@ -1920,8 +1955,10 @@ fi
 %preun pmda-elasticsearch
 %{pmda_remove "$1" "elasticsearch"}
 
+%if !%{disable_snmp}
 %preun pmda-snmp
 %{pmda_remove "$1" "snmp"}
+%endif
 
 %preun pmda-mysql
 %{pmda_remove "$1" "mysql"}
@@ -2182,7 +2219,7 @@ cd
 # C source files that rpmlint complains about. These are not devel files,
 # but rather they are (slightly obscure) PMDA config files.
 #
-%doc CHANGELOG COPYING INSTALL README VERSION.pcp pcp.lsm
+%doc CHANGELOG COPYING INSTALL.md README.md VERSION.pcp pcp.lsm
 
 %dir %{_confdir}
 %dir %{_pmdasdir}
@@ -2227,7 +2264,6 @@ cd
 %config(noreplace) %{_sysconfdir}/sysconfig/pmlogger
 %config(noreplace) %{_sysconfdir}/sysconfig/pmproxy
 %config(noreplace) %{_sysconfdir}/sysconfig/pmcd
-%config %{_sysconfdir}/bash_completion.d/pcp
 %config %{_sysconfdir}/pcp.env
 %dir %{_confdir}/pmcd
 %config(noreplace) %{_confdir}/pmcd/pmcd.conf
@@ -2253,6 +2289,9 @@ cd
 %{_localstatedir}/lib/pcp/config/pmlogconf
 %{_localstatedir}/lib/pcp/config/pmlogrewrite
 %dir %attr(0775,pcp,pcp) %{_localstatedir}/lib/pcp/config/pmda
+
+%{_datadir}/bash-completion/completions/pcp
+%{_datadir}/zsh/site-functions/_pcp
 
 %if !%{disable_sdt}
 %{tapsetdir}/pmcd.stp
@@ -2280,7 +2319,7 @@ cd
 %{_libdir}/libpcp_trace.so.2
 %{_libdir}/libpcp_import.so.1
 
-%files libs-devel -f devel.list
+%files libs-devel
 %{_libdir}/libpcp.so
 %{_libdir}/libpcp_gui.so
 %{_libdir}/libpcp_mmv.so
@@ -2288,6 +2327,8 @@ cd
 %{_libdir}/libpcp_trace.so
 %{_libdir}/libpcp_import.so
 %{_includedir}/pcp/*.h
+
+%files devel -f devel.list
 %{_datadir}/pcp/examples
 
 # PMDAs that ship src and are not for production use
@@ -2455,8 +2496,10 @@ cd
 %files pmda-samba 
 %{_pmdasdir}/samba 
 
+%if !%{disable_snmp}
 %files pmda-snmp
 %{_pmdasdir}/snmp
+%endif
 
 %files pmda-slurm
 %{_pmdasdir}/slurm
@@ -2589,6 +2632,17 @@ cd
 %endif
 
 %changelog
+* Fri Jun 17 2016 Nathan Scott <nathans@redhat.com> - 3.11.3-1
+- Fix memory leak in derived metrics error handling (BZ 1331973)
+- Correctly propogate indom in mixed derived metrics (BZ 1337212, BZ 1336130)
+- Disallow stopping pmie/pmlogger daemons from cron (BZ 1336792)
+- Fail fast for easily detected bad pmcd configuration (BZ 1336210)
+- Implement primary (local) pmie concept in rc pmie (BZ 1323851)
+- Update to latest PCP Sources.
+
+* Mon May 16 2016 Jitka Plesnikova <jplesnik@redhat.com> - 3.11.2-2.1
+- Perl 5.24 rebuild
+
 * Fri Apr 29 2016 Lukas Berk <lberk@redhat.com> - 3.11.2-1
 - Negative nice values reported incorrectly (BZ 1328432)
 - Multithreaded clients with concurrent pmNewContext improvements (BZ 1325363)
