@@ -141,7 +141,10 @@ BuildRequires: cairo-devel
 %if !%{disable_sdt}
 BuildRequires: systemtap-sdt-devel
 %endif
-BuildRequires: perl-devel perl(ExtUtils::MakeMaker)
+%if 0%{?rhel} == 0 || 0%{?rhel} > 5
+BuildRequires: perl-devel
+%endif
+BuildRequires: perl(ExtUtils::MakeMaker)
 BuildRequires: initscripts man
 %if !%{disable_systemd}
 BuildRequires: systemd-devel
