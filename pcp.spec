@@ -1,18 +1,18 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.11.3
-%global buildversion 1
+Version: 3.11.4
+%global buildversion 0
 
-Release: %{buildversion}%{?dist}
+Release: 0.20160629git25d9bd6%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
 # https://bintray.com/artifact/download/pcp/source/pcp-%{version}.src.tar.gz
-Source0: %{name}-%{version}.src.tar.gz
+Source0: %{name}-%{version}-0.20160629git25d9bd6.tar.gz
 # https://bintray.com/artifact/download/netflixoss/downloads/vector.tar.gz
-Source1: vector-1.1.0.tar.gz
+Source1: pcp-webjs-20160629gitcce8001.src.tar.gz
 # https://github.com/performancecopilot/pcp-webjs/archive/x.y.z.tar.gz
-Source2: pcp-webjs-3.11.2.tar.gz
+Source2: vector-20160629git6d01399.tar.gz
 
 %global disable_snmp 0
 
@@ -141,7 +141,10 @@ BuildRequires: cairo-devel
 %if !%{disable_sdt}
 BuildRequires: systemtap-sdt-devel
 %endif
-BuildRequires: perl-devel perl-generators perl(ExtUtils::MakeMaker)
+%if 0%{?rhel} == 0 || 0%{?rhel} > 5
+BuildRequires: perl-devel perl-generators
+%endif
+BuildRequires: perl(ExtUtils::MakeMaker)
 BuildRequires: initscripts man
 %if !%{disable_systemd}
 BuildRequires: systemd-devel
@@ -2632,6 +2635,10 @@ cd
 %endif
 
 %changelog
+* Wed Jun 29 2016 Lukas Berk <lberk@redhat.com> - 3.11.4-0.20160629git25d9bd6
+- Automated weekly rawhide release
+- Applied spec changes from upstream git
+
 * Fri Jun 17 2016 Nathan Scott <nathans@redhat.com> - 3.11.3-1
 - Fix memory leak in derived metrics error handling (BZ 1331973)
 - Correctly propogate indom in mixed derived metrics (BZ 1337212, BZ 1336130)
