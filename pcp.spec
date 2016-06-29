@@ -10,9 +10,9 @@ Group: Applications/System
 # https://bintray.com/artifact/download/pcp/source/pcp-%{version}.src.tar.gz
 Source0: %{name}-%{version}-0.20160629git25d9bd6.tar.gz
 # https://bintray.com/artifact/download/netflixoss/downloads/vector.tar.gz
-Source1: pcp-webjs-20160629gitcce8001.src.tar.gz
+Source1: vector-20160629git6d01399.tar.gz
 # https://github.com/performancecopilot/pcp-webjs/archive/x.y.z.tar.gz
-Source2: vector-20160629git6d01399.tar.gz
+Source2: pcp-webjs-20160629gitcce8001.src.tar.gz
 
 %global disable_snmp 0
 
@@ -2635,6 +2635,9 @@ cd
 %endif
 
 %changelog
+* Wed Jun 29 2016 Lukas Berk <lberk@redhat.com> - 3.11.4-0.20160629git25d9bd6
+- Automated weekly rawhide release
+
 * Wed Jun 29 2016 Lukas Berk <lberk@redhat.com> - 3.11.4-0.20160629git25d9bd6
 - Automated weekly rawhide release
 - Applied spec changes from upstream git
