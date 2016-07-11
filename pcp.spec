@@ -3,12 +3,12 @@ Name: pcp
 Version: 3.11.4
 %global buildversion 0
 
-Release: 0.20160711git274b6ca%{?dist}
+Release: 0.20160711git990fea6%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
 # https://bintray.com/artifact/download/pcp/source/pcp-%{version}.src.tar.gz
-Source0: %{name}-%{version}-0.20160711git274b6ca.tar.gz
+Source0: %{name}-%{version}-0.20160711git990fea6.tar.gz
 # https://bintray.com/artifact/download/netflixoss/downloads/vector.tar.gz
 Source1: vector-20160711git6d01399.tar.gz
 # https://github.com/performancecopilot/pcp-webjs/archive/x.y.z.tar.gz
@@ -590,10 +590,10 @@ Summary: Performance Co-Pilot tools for exporting PCP metrics to InfluxDB
 URL: http://www.pcp.io
 Requires: pcp-libs >= %{version}-%{release}
 %if !%{disable_python3}
-Requires: python3-pcp = @package_version@
+Requires: python3-pcp = %{version}-%{release}
 Requires: python3-requests
 %else
-Requires: python-pcp = @package_version@
+Requires: python-pcp = %{version}-%{release}
 Requires: python-requests
 %endif
 
@@ -2661,6 +2661,10 @@ cd
 %endif
 
 %changelog
+* Mon Jul 11 2016 Lukas Berk <lberk@redhat.com> - 3.11.4-0.20160711git990fea6
+- Automated weekly rawhide release
+- Applied spec changes from upstream git
+
 * Mon Jul 11 2016 Lukas Berk <lberk@redhat.com> - 3.11.4-0.20160711git274b6ca
 - Automated weekly rawhide release
 - Applied spec changes from upstream git
