@@ -3,7 +3,7 @@ Name: pcp
 Version: 3.11.4
 %global buildversion 0
 
-Release: 0.20160718git94d63b4%{?dist}
+Release: 0.20160719git94d63b4%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
@@ -2661,6 +2661,9 @@ cd
 %endif
 
 %changelog
+* Tue Jul 19 2016 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.11.4-0.20160719git94d63b4
+- https://fedoraproject.org/wiki/Changes/Automatic_Provides_for_Python_RPM_Packages
+
 * Mon Jul 18 2016 Lukas Berk <lberk@redhat.com> - 3.11.4-0.20160718git94d63b4
 - Automated weekly rawhide release
 
