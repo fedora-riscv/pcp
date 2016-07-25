@@ -3,16 +3,16 @@ Name: pcp
 Version: 3.11.4
 %global buildversion 0
 
-Release: 0.20160719git94d63b4%{?dist}
+Release: 0.20160725gitb2db089%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
 # https://bintray.com/artifact/download/pcp/source/pcp-%{version}.src.tar.gz
-Source0: %{name}-%{version}-0.20160718git94d63b4.tar.gz
+Source0: %{name}-%{version}-0.20160725gitb2db089.tar.gz
 # https://bintray.com/artifact/download/netflixoss/downloads/vector.tar.gz
-Source1: vector-20160718git6d01399.tar.gz
+Source1: vector-20160725git6d01399.tar.gz
 # https://github.com/performancecopilot/pcp-webjs/archive/x.y.z.tar.gz
-Source2: pcp-webjs-20160718gitcce8001.src.tar.gz
+Source2: pcp-webjs-20160725gitcce8001.src.tar.gz
 
 %global disable_snmp 0
 
@@ -2661,6 +2661,9 @@ cd
 %endif
 
 %changelog
+* Mon Jul 25 2016 Lukas Berk <lberk@redhat.com> - 3.11.4-0.20160725gitb2db089
+- Automated weekly rawhide release
+
 * Tue Jul 19 2016 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.11.4-0.20160719git94d63b4
 - https://fedoraproject.org/wiki/Changes/Automatic_Provides_for_Python_RPM_Packages
 
