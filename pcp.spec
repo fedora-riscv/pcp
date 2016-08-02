@@ -3,16 +3,16 @@ Name: pcp
 Version: 3.11.4
 %global buildversion 0
 
-Release: 0.20160725gitb2db089%{?dist}
+Release: 0.20160802git6a52104%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
 # https://bintray.com/artifact/download/pcp/source/pcp-%{version}.src.tar.gz
-Source0: %{name}-%{version}-0.20160725gitb2db089.tar.gz
+Source0: %{name}-%{version}-0.20160802git6a52104.tar.gz
 # https://bintray.com/artifact/download/netflixoss/downloads/vector.tar.gz
-Source1: vector-20160725git6d01399.tar.gz
+Source1: vector-20160802git6d01399.tar.gz
 # https://github.com/performancecopilot/pcp-webjs/archive/x.y.z.tar.gz
-Source2: pcp-webjs-20160725gitcce8001.src.tar.gz
+Source2: pcp-webjs-20160802gitcce8001.src.tar.gz
 
 %global disable_snmp 0
 
@@ -1805,13 +1805,13 @@ ls -1 $RPM_BUILD_ROOT/%{_bindir} |\
   grep -E 'pmiostat|pmcollectl|pmatop|pmrep' |\
   sed -e 's#^#'%{_bindir}'\/#' >pcp_system_tools.list
 ls -1 $RPM_BUILD_ROOT/%{_libexecdir}/pcp/bin |\
-  grep -E 'atop|collectl|dmcache|free|iostat|numastat|pidstat|verify|uptime|shping' |\
+  grep -E 'atop|collectl|dmcache|free|iostat|mpstat|numastat|pidstat|verify|uptime|shping' |\
   sed -e 's#^#'%{_libexecdir}/pcp/bin'\/#' >>pcp_system_tools.list
 %endif
 
 ls -1 $RPM_BUILD_ROOT/%{_libexecdir}/pcp/bin |\
 %if !%{disable_python2} || !%{disable_python3}
-  grep -E -v 'atop|collectl|dmcache|free|iostat|numastat|pidstat|verify|uptime|shping' |\
+  grep -E -v 'atop|collectl|dmcache|free|iostat|mpstat|numastat|pidstat|verify|uptime|shping' |\
 %endif
   sed -e 's#^#'%{_libexecdir}/pcp/bin'\/#' >base_exec.list
 ls -1 $RPM_BUILD_ROOT/%{_booksdir} |\
@@ -2305,6 +2305,7 @@ cd
 %dir %{_confdir}/pmlogger/control.d
 %config(noreplace) %{_confdir}/pmlogger/control
 %config(noreplace) %{_confdir}/pmlogger/control.d/local
+%dir %attr(0775,pcp,pcp) %{_confdir}/nssdb
 
 %{_localstatedir}/lib/pcp/config/pmafm
 %dir %attr(0775,pcp,pcp) %{_localstatedir}/lib/pcp/config/pmie
@@ -2661,6 +2662,10 @@ cd
 %endif
 
 %changelog
+* Tue Aug 02 2016 Lukas Berk <lberk@redhat.com> - 3.11.4-0.20160802git6a52104
+- Automated weekly rawhide release
+- Applied spec changes from upstream git
+
 * Mon Jul 25 2016 Lukas Berk <lberk@redhat.com> - 3.11.4-0.20160725gitb2db089
 - Automated weekly rawhide release
 
