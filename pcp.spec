@@ -1,6 +1,6 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.11.3
+Version: 3.11.4
 %global buildversion 1
 
 Release: %{buildversion}%{?dist}
@@ -142,7 +142,7 @@ BuildRequires: cairo-devel
 BuildRequires: systemtap-sdt-devel
 %endif
 %if 0%{?rhel} == 0 || 0%{?rhel} > 5
-BuildRequires: perl-devel
+BuildRequires: perl-devel perl-generators
 %endif
 BuildRequires: perl(ExtUtils::MakeMaker)
 BuildRequires: initscripts man
@@ -580,6 +580,26 @@ Requires: python-pcp = %{version}-%{release}
 %description export-pcp2graphite
 Performance Co-Pilot (PCP) front-end tools for exporting metric values
 to graphite (http://graphite.readthedocs.org).
+
+# pcp-export-pcp2influxdb
+#
+%package export-pcp2influxdb
+License: GPLv2+
+Group: Applications/System
+Summary: Performance Co-Pilot tools for exporting PCP metrics to InfluxDB
+URL: http://www.pcp.io
+Requires: pcp-libs >= %{version}-%{release}
+%if !%{disable_python3}
+Requires: python3-pcp = %{version}-%{release}
+Requires: python3-requests
+%else
+Requires: python-pcp = %{version}-%{release}
+Requires: python-requests
+%endif
+
+%description export-pcp2influxdb
+Performance Co-Pilot (PCP) front-end tools for exporting metric values
+to InfluxDB (https://influxdata.com/time-series-platform/influxdb).
 %endif
 
 #
@@ -704,6 +724,7 @@ Group: Applications/System
 Summary: Performance Co-Pilot (PCP) metrics for 389 Directory Servers
 URL: http://www.pcp.io
 Requires: perl-PCP-PMDA = %{version}-%{release}
+Requires: perl-LDAP
 
 %description pmda-ds389
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
@@ -719,6 +740,7 @@ Group: Applications/System
 Summary: Performance Co-Pilot (PCP) metrics for 389 Directory Server Loggers
 URL: http://www.pcp.io
 Requires: perl-PCP-PMDA = %{version}-%{release}
+Requires: perl-Date-Manip
 
 %description pmda-ds389log
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
@@ -1769,7 +1791,8 @@ ls -1 $RPM_BUILD_ROOT/%{_pmdasdir} |\
 
 # all base pcp package files except those split out into sub packages
 ls -1 $RPM_BUILD_ROOT/%{_bindir} |\
-  grep -E -v 'pmiostat|pmcollectl|pmatop|pmrep|pcp2graphite|zabbix|zbxpcp' |\
+  grep -E -v 'pmiostat|pmcollectl|pmatop|zabbix|zbxpcp' |\
+  grep -E -v 'pmrep|pcp2graphite|pcp2influxdb' |\
   grep -E -v 'pmdbg|pmclient|pmerr|genpmda' |\
 sed -e 's#^#'%{_bindir}'\/#' >base_bin.list
 #
@@ -1782,13 +1805,13 @@ ls -1 $RPM_BUILD_ROOT/%{_bindir} |\
   grep -E 'pmiostat|pmcollectl|pmatop|pmrep' |\
   sed -e 's#^#'%{_bindir}'\/#' >pcp_system_tools.list
 ls -1 $RPM_BUILD_ROOT/%{_libexecdir}/pcp/bin |\
-  grep -E 'atop|collectl|dmcache|free|iostat|numastat|verify|uptime|shping' |\
+  grep -E 'atop|collectl|dmcache|free|iostat|mpstat|numastat|pidstat|verify|uptime|shping' |\
   sed -e 's#^#'%{_libexecdir}/pcp/bin'\/#' >>pcp_system_tools.list
 %endif
 
 ls -1 $RPM_BUILD_ROOT/%{_libexecdir}/pcp/bin |\
 %if !%{disable_python2} || !%{disable_python3}
-  grep -E -v 'atop|collectl|dmcache|free|iostat|numastat|verify|uptime|shping' |\
+  grep -E -v 'atop|collectl|dmcache|free|iostat|mpstat|numastat|pidstat|verify|uptime|shping' |\
 %endif
   sed -e 's#^#'%{_libexecdir}/pcp/bin'\/#' >base_exec.list
 ls -1 $RPM_BUILD_ROOT/%{_booksdir} |\
@@ -2282,6 +2305,7 @@ cd
 %dir %{_confdir}/pmlogger/control.d
 %config(noreplace) %{_confdir}/pmlogger/control
 %config(noreplace) %{_confdir}/pmlogger/control.d/local
+%dir %attr(0775,pcp,pcp) %{_confdir}/nssdb
 
 %{_localstatedir}/lib/pcp/config/pmafm
 %dir %attr(0775,pcp,pcp) %{_localstatedir}/lib/pcp/config/pmie
@@ -2321,6 +2345,7 @@ cd
 %{_libdir}/libpcp_pmda.so.3
 %{_libdir}/libpcp_trace.so.2
 %{_libdir}/libpcp_import.so.1
+%{_libdir}/libpcp_web.so.1
 
 %files libs-devel
 %{_libdir}/libpcp.so
@@ -2329,6 +2354,7 @@ cd
 %{_libdir}/libpcp_pmda.so
 %{_libdir}/libpcp_trace.so
 %{_libdir}/libpcp_import.so
+%{_libdir}/libpcp_web.so
 %{_includedir}/pcp/*.h
 
 %files devel -f devel.list
@@ -2531,6 +2557,9 @@ cd
 
 %files export-pcp2graphite
 %{_bindir}/pcp2graphite
+
+%files export-pcp2influxdb
+%{_bindir}/pcp2influxdb
 %endif # !%{disable_python2} || !%{disable_python3}
 
 %files export-zabbix-agent
@@ -2635,6 +2664,15 @@ cd
 %endif
 
 %changelog
+* Fri Aug 05 2016 Nathan Scott <nathans@redhat.com> - 3.11.4-1
+- Support inside-container metric values in python (BZ 1333702)
+- Fix pmdaproc handling of commands with whitespace (BZ 1350816)
+- Use persistent DM names for the filesystem metrics (BZ 1349932)
+- Add to the ds389{,log} RPM package dependencies (BZ 1354055)
+- Use "dirsrv" as default pmdads389log user account (BZ 1357607)
+- Make pmie(1) honour SIGINT while parsing rules (BZ 1327226)
+- Add pmlogconf support for pcp-pidstat and pcp-mpstat (BZ 1361943)
+
 * Fri Jun 17 2016 Nathan Scott <nathans@redhat.com> - 3.11.3-1
 - Fix memory leak in derived metrics error handling (BZ 1331973)
 - Correctly propogate indom in mixed derived metrics (BZ 1337212, BZ 1336130)
