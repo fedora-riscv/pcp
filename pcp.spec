@@ -1,18 +1,18 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
 Version: 3.11.4
-%global buildversion 0
+%global buildversion 1
 
-Release: 0.20160802git6a52104%{?dist}
+Release: %{buildversion}%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
 # https://bintray.com/artifact/download/pcp/source/pcp-%{version}.src.tar.gz
-Source0: %{name}-%{version}-0.20160802git6a52104.tar.gz
+Source0: %{name}-%{version}.src.tar.gz
 # https://bintray.com/artifact/download/netflixoss/downloads/vector.tar.gz
-Source1: vector-20160802git6d01399.tar.gz
+Source1: vector-1.1.0.tar.gz
 # https://github.com/performancecopilot/pcp-webjs/archive/x.y.z.tar.gz
-Source2: pcp-webjs-20160802gitcce8001.src.tar.gz
+Source2: pcp-webjs-3.11.2.tar.gz
 
 %global disable_snmp 0
 
@@ -2345,6 +2345,7 @@ cd
 %{_libdir}/libpcp_pmda.so.3
 %{_libdir}/libpcp_trace.so.2
 %{_libdir}/libpcp_import.so.1
+%{_libdir}/libpcp_web.so.1
 
 %files libs-devel
 %{_libdir}/libpcp.so
@@ -2353,6 +2354,7 @@ cd
 %{_libdir}/libpcp_pmda.so
 %{_libdir}/libpcp_trace.so
 %{_libdir}/libpcp_import.so
+%{_libdir}/libpcp_web.so
 %{_includedir}/pcp/*.h
 
 %files devel -f devel.list
@@ -2662,36 +2664,14 @@ cd
 %endif
 
 %changelog
-* Tue Aug 02 2016 Lukas Berk <lberk@redhat.com> - 3.11.4-0.20160802git6a52104
-- Automated weekly rawhide release
-- Applied spec changes from upstream git
-
-* Mon Jul 25 2016 Lukas Berk <lberk@redhat.com> - 3.11.4-0.20160725gitb2db089
-- Automated weekly rawhide release
-
-* Tue Jul 19 2016 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.11.4-0.20160719git94d63b4
-- https://fedoraproject.org/wiki/Changes/Automatic_Provides_for_Python_RPM_Packages
-
-* Mon Jul 18 2016 Lukas Berk <lberk@redhat.com> - 3.11.4-0.20160718git94d63b4
-- Automated weekly rawhide release
-
-* Mon Jul 11 2016 Lukas Berk <lberk@redhat.com> - 3.11.4-0.20160711git990fea6
-- Automated weekly rawhide release
-- Applied spec changes from upstream git
-
-* Mon Jul 11 2016 Lukas Berk <lberk@redhat.com> - 3.11.4-0.20160711git274b6ca
-- Automated weekly rawhide release
-- Applied spec changes from upstream git
-
-* Mon Jul 04 2016 Lukas Berk <lberk@redhat.com> - 3.11.4-0.20160704git3192207
-- Automated weekly rawhide release
-
-* Wed Jun 29 2016 Lukas Berk <lberk@redhat.com> - 3.11.4-0.20160629git25d9bd6
-- Automated weekly rawhide release
-
-* Wed Jun 29 2016 Lukas Berk <lberk@redhat.com> - 3.11.4-0.20160629git25d9bd6
-- Automated weekly rawhide release
-- Applied spec changes from upstream git
+* Fri Aug 05 2016 Nathan Scott <nathans@redhat.com> - 3.11.4-1
+- Support inside-container metric values in python (BZ 1333702)
+- Fix pmdaproc handling of commands with whitespace (BZ 1350816)
+- Use persistent DM names for the filesystem metrics (BZ 1349932)
+- Add to the ds389{,log} RPM package dependencies (BZ 1354055)
+- Use "dirsrv" as default pmdads389log user account (BZ 1357607)
+- Make pmie(1) honour SIGINT while parsing rules (BZ 1327226)
+- Add pmlogconf support for pcp-pidstat and pcp-mpstat (BZ 1361943)
 
 * Fri Jun 17 2016 Nathan Scott <nathans@redhat.com> - 3.11.3-1
 - Fix memory leak in derived metrics error handling (BZ 1331973)
