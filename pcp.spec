@@ -1,18 +1,18 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.11.4
-%global buildversion 1
+Version: 3.11.5
+%global buildversion 0
 
-Release: %{buildversion}%{?dist}
+Release: 0.20160816git27392b1%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
 # https://bintray.com/artifact/download/pcp/source/pcp-%{version}.src.tar.gz
-Source0: %{name}-%{version}.src.tar.gz
+Source0: %{name}-%{version}-0.20160816git27392b1.tar.gz
 # https://bintray.com/artifact/download/netflixoss/downloads/vector.tar.gz
-Source1: vector-1.1.0.tar.gz
+Source1: vector-20160816gita417ef2.tar.gz
 # https://github.com/performancecopilot/pcp-webjs/archive/x.y.z.tar.gz
-Source2: pcp-webjs-3.11.2.tar.gz
+Source2: pcp-webjs-20160816gitcce8001.src.tar.gz
 
 %global disable_snmp 0
 
@@ -2664,6 +2664,9 @@ cd
 %endif
 
 %changelog
+* Tue Aug 16 2016 Lukas Berk <lberk@redhat.com> - 3.11.5-0.20160816git27392b1
+- Automated weekly rawhide release
+
 * Fri Aug 05 2016 Nathan Scott <nathans@redhat.com> - 3.11.4-1
 - Support inside-container metric values in python (BZ 1333702)
 - Fix pmdaproc handling of commands with whitespace (BZ 1350816)
