@@ -3,16 +3,16 @@ Name: pcp
 Version: 3.11.5
 %global buildversion 0
 
-Release: 0.20160816git27392b1%{?dist}
+Release: 0.20160817gita931b56%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
 # https://bintray.com/artifact/download/pcp/source/pcp-%{version}.src.tar.gz
-Source0: %{name}-%{version}-0.20160816git27392b1.tar.gz
+Source0: %{name}-%{version}-0.20160817gita931b56.tar.gz
 # https://bintray.com/artifact/download/netflixoss/downloads/vector.tar.gz
-Source1: vector-20160816gita417ef2.tar.gz
+Source1: vector-20160817gita417ef2.tar.gz
 # https://github.com/performancecopilot/pcp-webjs/archive/x.y.z.tar.gz
-Source2: pcp-webjs-20160816gitcce8001.src.tar.gz
+Source2: pcp-webjs-20160817gitcce8001.src.tar.gz
 
 %global disable_snmp 0
 
@@ -2664,6 +2664,9 @@ cd
 %endif
 
 %changelog
+* Wed Aug 17 2016 Lukas Berk <lberk@redhat.com> - 3.11.5-0.20160817gita931b56
+- Automated weekly rawhide release
+
 * Tue Aug 16 2016 Lukas Berk <lberk@redhat.com> - 3.11.5-0.20160816git27392b1
 - Automated weekly rawhide release
 
