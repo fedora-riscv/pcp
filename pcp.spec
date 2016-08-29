@@ -3,16 +3,16 @@ Name: pcp
 Version: 3.11.5
 %global buildversion 0
 
-Release: 0.20160817gita931b56%{?dist}
+Release: 0.20160829gitdedbe62%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
 # https://bintray.com/artifact/download/pcp/source/pcp-%{version}.src.tar.gz
-Source0: %{name}-%{version}-0.20160817gita931b56.tar.gz
+Source0: %{name}-%{version}-0.20160829gitdedbe62.tar.gz
 # https://bintray.com/artifact/download/netflixoss/downloads/vector.tar.gz
-Source1: vector-20160817gita417ef2.tar.gz
+Source1: vector-20160829gita417ef2.tar.gz
 # https://github.com/performancecopilot/pcp-webjs/archive/x.y.z.tar.gz
-Source2: pcp-webjs-20160817gitcce8001.src.tar.gz
+Source2: pcp-webjs-20160829gitcce8001.src.tar.gz
 
 %global disable_snmp 0
 
@@ -2370,6 +2370,10 @@ cd
 %files testsuite
 %defattr(-,pcpqa,pcpqa)
 %{_testsdir}
+%config(noreplace) %{_sysconfdir}/systemd/system/pmwebd.service.d/pmwebd.conf
+%config(noreplace) %{_sysconfdir}/systemd/system/pmmgr.service.d/pmmgr.conf
+%config(noreplace) %{_sysconfdir}/systemd/system/pmcd.service.d/pmcd.conf
+%config(noreplace) %{_sysconfdir}/systemd/system/pmproxy.service.d/pmproxy.conf
 
 %if !%{disable_microhttpd}
 %files webapi
@@ -2664,6 +2668,10 @@ cd
 %endif
 
 %changelog
+* Mon Aug 29 2016 Lukas Berk <lberk@redhat.com> - 3.11.5-0.20160829gitdedbe62
+- Automated weekly rawhide release
+- Applied spec changes from upstream git
+
 * Wed Aug 17 2016 Lukas Berk <lberk@redhat.com> - 3.11.5-0.20160817gita931b56
 - Automated weekly rawhide release
 
