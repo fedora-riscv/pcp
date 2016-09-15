@@ -3,7 +3,7 @@ Name: pcp
 Version: 3.11.5
 %global buildversion 0
 
-Release: 0.20160912git64f805d%{?dist}
+Release: 0.20160915git64f805d%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
@@ -2668,6 +2668,9 @@ cd
 %endif
 
 %changelog
+* Thu Sep 15 2016 Orion Poplawski <orion@cora.nwra.com> - 3.11.5-0.20160915git64f805d
+- Rebuild for papi 5.5.0
+
 * Mon Sep 12 2016 Lukas Berk <lberk@redhat.com> - 3.11.5-0.20160912git64f805d
 - Automated weekly rawhide release
 
