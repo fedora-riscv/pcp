@@ -1,6 +1,6 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.11.4
+Version: 3.11.5
 %global buildversion 1
 
 Release: %{buildversion}%{?dist}
@@ -10,9 +10,9 @@ Group: Applications/System
 # https://bintray.com/artifact/download/pcp/source/pcp-%{version}.src.tar.gz
 Source0: %{name}-%{version}.src.tar.gz
 # https://bintray.com/artifact/download/netflixoss/downloads/vector.tar.gz
-Source1: vector-1.1.0.tar.gz
+Source1: vector-20160912gitv1.1.1.tar.gz
 # https://github.com/performancecopilot/pcp-webjs/archive/x.y.z.tar.gz
-Source2: pcp-webjs-3.11.2.tar.gz
+Source2: pcp-webjs-20160912gitcce8001.src.tar.gz
 
 %global disable_snmp 0
 
@@ -669,6 +669,7 @@ This package contains the PCP Performance Metrics Domain Agent (PMDA) for
 collecting Infiniband statistics.  By default, it monitors the local HCAs
 but can also be configured to monitor remote GUIDs such as IB switches.
 %endif
+
 #
 # pcp-pmda-activemq
 #
@@ -1208,6 +1209,29 @@ This package contains the PCP Performance Metrics Domain Agent (PMDA) for
 collecting metrics about Intel MIC cards.
 # end pcp-pmda-mic
 
+#
+# pcp-pmda-libvirt
+#
+%package pmda-libvirt
+License: GPLv2+
+Group: Applications/System
+Summary: Performance Co-Pilot (PCP) metrics for virtual machines
+URL: http://www.pcp.io
+%if !%{disable_python3}
+Requires: python3-pcp
+Requires: libvirt-python3 python3-lxml
+BuildRequires: libvirt-python3
+%else
+Requires: python-pcp
+Requires: libvirt-python python-lxml
+BuildRequires: libvirt-python
+%endif
+%description pmda-libvirt
+This package contains the PCP Performance Metrics Domain Agent (PMDA) for
+extracting virtualisation statistics from libvirt about behaviour of guest
+and hypervisor machines.
+# end pcp-pmda-libvirt
+
 %endif # !%{disable_python2} || !%{disable_python3}
 
 %if !%{disable_json}
@@ -1515,7 +1539,7 @@ Requires: pcp-pmda-bash pcp-pmda-cisco pcp-pmda-gfs2 pcp-pmda-lmsensors pcp-pmda
 Requires: pcp-pmda-nvidia-gpu pcp-pmda-roomtemp pcp-pmda-sendmail pcp-pmda-shping
 Requires: pcp-pmda-lustrecomm pcp-pmda-logger
 %if !%{disable_python2} || !%{disable_python3}
-Requires: pcp-pmda-gluster pcp-pmda-zswap pcp-pmda-unbound pcp-pmda-mic
+Requires: pcp-pmda-gluster pcp-pmda-zswap pcp-pmda-unbound pcp-pmda-mic pcp-pmda-libvirt
 %endif
 %if !%{disable_snmp}
 Requires: pcp-pmda-snmp
@@ -1770,6 +1794,7 @@ ls -1 $RPM_BUILD_ROOT/%{_pmdasdir} |\
   grep -E -v '^cifs' |\
   grep -E -v '^cisco' |\
   grep -E -v '^gfs2' |\
+  grep -E -v '^libvirt' |\
   grep -E -v '^lmsensors' |\
   grep -E -v '^logger' |\
   grep -E -v '^mailq' |\
@@ -2064,6 +2089,9 @@ fi
 
 %preun pmda-mic
 %{pmda_remove "$1" "mic"}
+
+%preun pmda-libvirt
+%{pmda_remove "$1" "libvirt"}
 %endif # !%{disable_python[2,3]}
 
 %preun pmda-apache
@@ -2370,6 +2398,10 @@ cd
 %files testsuite
 %defattr(-,pcpqa,pcpqa)
 %{_testsdir}
+%config(noreplace) %{_sysconfdir}/systemd/system/pmwebd.service.d/pmwebd.conf
+%config(noreplace) %{_sysconfdir}/systemd/system/pmmgr.service.d/pmmgr.conf
+%config(noreplace) %{_sysconfdir}/systemd/system/pmcd.service.d/pmcd.conf
+%config(noreplace) %{_sysconfdir}/systemd/system/pmproxy.service.d/pmproxy.conf
 
 %if !%{disable_microhttpd}
 %files webapi
@@ -2555,6 +2587,9 @@ cd
 %files pmda-mic
 %{_pmdasdir}/mic
 
+%files pmda-libvirt
+%{_pmdasdir}/libvirt
+
 %files export-pcp2graphite
 %{_bindir}/pcp2graphite
 
@@ -2664,6 +2699,13 @@ cd
 %endif
 
 %changelog
+* Mon Sep 26 2016 Mark Goodwin <mgoodwin@redhat.com> - 3.11.5-1
+- Allow systemd-based auto-restart of all daemons (BZ 1365658)
+- Ensure pmieconf and pmlogconf handle empty files (BZ 1249123)
+- Ignore rpmsave and rpmnew suffixed control files (BZ 1375415)
+- Add new pcp-pmda-libvirt package for virtual machine metrics
+- Update to latest PCP Sources.
+
 * Fri Aug 05 2016 Nathan Scott <nathans@redhat.com> - 3.11.4-1
 - Support inside-container metric values in python (BZ 1333702)
 - Fix pmdaproc handling of commands with whitespace (BZ 1350816)
@@ -2672,6 +2714,7 @@ cd
 - Use "dirsrv" as default pmdads389log user account (BZ 1357607)
 - Make pmie(1) honour SIGINT while parsing rules (BZ 1327226)
 - Add pmlogconf support for pcp-pidstat and pcp-mpstat (BZ 1361943)
+- Update to latest PCP Sources.
 
 * Fri Jun 17 2016 Nathan Scott <nathans@redhat.com> - 3.11.3-1
 - Fix memory leak in derived metrics error handling (BZ 1331973)
