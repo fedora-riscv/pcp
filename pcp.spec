@@ -1,6 +1,6 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.11.5
+Version: 3.11.6
 %global buildversion 1
 
 Release: %{buildversion}%{?dist}
@@ -1224,7 +1224,9 @@ BuildRequires: libvirt-python3
 %else
 Requires: python-pcp
 Requires: libvirt-python python-lxml
-# BuildRequires: libvirt-python
+%if 0%{?rhel} == 0 || 0%{?rhel} > 5
+BuildRequires: libvirt-python
+%endif
 %endif
 %description pmda-libvirt
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
@@ -2335,6 +2337,7 @@ cd
 %config(noreplace) %{_confdir}/pmlogger/control.d/local
 %dir %attr(0775,pcp,pcp) %{_confdir}/nssdb
 
+%ghost %{_localstatedir}/run/pcp
 %{_localstatedir}/lib/pcp/config/pmafm
 %dir %attr(0775,pcp,pcp) %{_localstatedir}/lib/pcp/config/pmie
 %{_localstatedir}/lib/pcp/config/pmie
@@ -2701,6 +2704,12 @@ cd
 %endif
 
 %changelog
+* Fri Nov 11 2016 Mark Goodwin <mgoodwin@redhat.com> - 3.11.6-1
+- Optimize DSO lookups for local context mode startup (BZ 1275293)
+- Correct return code for derive metric help text (BZ 1336208)
+- Improve pmrep metrics collection via extend_indom (BZ 1377464)
+- Fix network.interface.speed value extraction (BZ 1379431)
+
 * Mon Sep 26 2016 Mark Goodwin <mgoodwin@redhat.com> - 3.11.5-1
 - Allow systemd-based auto-restart of all daemons (BZ 1365658)
 - Ensure pmieconf and pmlogconf handle empty files (BZ 1249123)
