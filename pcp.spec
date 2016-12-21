@@ -1,6 +1,6 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
-Version: 3.11.6
+Version: 3.11.7
 %global buildversion 1
 
 Release: %{buildversion}%{?dist}
@@ -10,9 +10,9 @@ Group: Applications/System
 # https://bintray.com/artifact/download/pcp/source/pcp-%{version}.src.tar.gz
 Source0: %{name}-%{version}.src.tar.gz
 # https://bintray.com/artifact/download/netflixoss/downloads/vector.tar.gz
-Source1: vector-20160912gitv1.1.1.tar.gz
+Source1: vector-1.1.0.tar.gz
 # https://github.com/performancecopilot/pcp-webjs/archive/x.y.z.tar.gz
-Source2: pcp-webjs-20160912gitcce8001.src.tar.gz
+Source2: pcp-webjs-3.11.2.tar.gz
 
 %global disable_snmp 0
 
@@ -2401,12 +2401,6 @@ cd
 %files testsuite
 %defattr(-,pcpqa,pcpqa)
 %{_testsdir}
-%if !%{disable_systemd}
-%config(noreplace) %{_sysconfdir}/systemd/system/pmwebd.service.d/pmwebd.conf
-%config(noreplace) %{_sysconfdir}/systemd/system/pmmgr.service.d/pmmgr.conf
-%config(noreplace) %{_sysconfdir}/systemd/system/pmcd.service.d/pmcd.conf
-%config(noreplace) %{_sysconfdir}/systemd/system/pmproxy.service.d/pmproxy.conf
-%endif
 
 %if !%{disable_microhttpd}
 %files webapi
@@ -2704,6 +2698,9 @@ cd
 %endif
 
 %changelog
+* Wed Dec 21 2016 Dave Brolley <brolley@redhat.com> - 3.11.7-1
+- pmchart run-away mem leak replaying multi-archive when rewinding (BZ 1359975)
+
 * Fri Nov 11 2016 Mark Goodwin <mgoodwin@redhat.com> - 3.11.6-1
 - Optimize DSO lookups for local context mode startup (BZ 1275293)
 - Correct return code for derive metric help text (BZ 1336208)
