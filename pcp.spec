@@ -3,7 +3,7 @@ Name: pcp
 Version: 3.11.7
 %global buildversion 1
 
-Release: %{buildversion}%{?dist}
+Release: %{buildversion}%{?dist}.1
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
@@ -2698,6 +2698,9 @@ cd
 %endif
 
 %changelog
+* Thu Jan 12 2017 Igor Gnatenko <ignatenko@redhat.com> - 3.11.7-1.1
+- Rebuild for readline 7.x
+
 * Wed Dec 21 2016 Dave Brolley <brolley@redhat.com> - 3.11.7-1
 - pmchart run-away mem leak replaying multi-archive when rewinding (BZ 1359975)
 
