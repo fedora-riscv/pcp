@@ -3,7 +3,7 @@ Name: pcp
 Version: 3.11.7
 %global buildversion 1
 
-Release: %{buildversion}%{?dist}.1
+Release: %{buildversion}%{?dist}.2
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL: http://www.pcp.io
 Group: Applications/System
@@ -2698,6 +2698,9 @@ cd
 %endif
 
 %changelog
+* Sat Feb 11 2017 Fedora Release Engineering <releng@fedoraproject.org> - 3.11.7-1.2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_26_Mass_Rebuild
+
 * Thu Jan 12 2017 Igor Gnatenko <ignatenko@redhat.com> - 3.11.7-1.1
 - Rebuild for readline 7.x
 
