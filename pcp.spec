@@ -2882,7 +2882,7 @@ cd
 %endif
 
 %changelog
-* Fri Jan 17 2017 Lukas Berk <lberk@redhat.com> - 3.11.8-1
+* Fri Feb 17 2017 Lukas Berk <lberk@redhat.com> - 3.11.8-1
 - Support newer kernels /proc/vmstat file contents (BZ 1396148)
 - Added pcp-selinux policy (BZs 1214090, 1381127, 1337968, 1398147)
 
