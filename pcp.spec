@@ -1,7 +1,7 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
 Version: 3.11.8
-%global buildversion 1
+%global buildversion 2
 
 Release: %{buildversion}%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
@@ -15,7 +15,7 @@ Source1: vector-1.1.0.tar.gz
 Source2: pcp-webjs-3.11.8.src.tar.gz
 
 
-%if 0%{?fedora} || 0%{?rhel}
+%if 0%{?fedora} || 0%{?rhel} > 5
 %global disable_selinux 0
 %else
 %global disable_selinux 1
@@ -2365,9 +2365,9 @@ chown -R pcp:pcp %{_logsdir}/pmmgr 2>/dev/null
 %if !%{disable_selinux}
 %post selinux
 %if 0%{?fedora} >= 24 || 0%{?rhel} > 6
-    semodule -X 400 -i %{localstatedir}/lib/pcp/selinux/pcpupstream.pp
+    semodule -X 400 -i %{_selinuxdir}/pcpupstream.pp
 %else
-    semodule -i %{localstatedir}/lib/pcp/selinux/pcpupstream.pp
+    semodule -i %{_selinuxdir}/pcpupstream.pp
 %endif #distro version check
 %endif
 
@@ -2432,11 +2432,14 @@ cd
 
 %if !%{disable_selinux}
 %preun selinux
+if [ `semodule -l | grep pcpupstream` ]
+then
 %if 0%{?fedora} >= 24 || 0%{?rhel} > 6
     semodule -X 400 -r pcpupstream >/dev/null
 %else
     semodule -r pcpupstream >/dev/null
 %endif
+fi
 %endif
 %files -f base.list
 #
@@ -2886,6 +2889,9 @@ cd
 %endif
 
 %changelog
+* Tue Feb 28 2017 Lukas Berk <lberk@redhat.com> - 3.11.8-2
+- Disable selinux subrpm on EL5
+
 * Fri Feb 17 2017 Lukas Berk <lberk@redhat.com> - 3.11.8-1
 - Support newer kernels /proc/vmstat file contents (BZ 1396148)
 - Added pcp-selinux policy (BZs 1214090, 1381127, 1337968, 1398147)
