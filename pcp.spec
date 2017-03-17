@@ -1,7 +1,7 @@
 Summary: System-level performance monitoring and performance management
 Name: pcp
 Version: 3.11.8
-%global buildversion 1
+%global buildversion 2
 
 Release: %{buildversion}%{?dist}
 License: GPLv2+ and LGPLv2.1+ and CC-BY
@@ -2361,9 +2361,9 @@ chown -R pcp:pcp %{_logsdir}/pmmgr 2>/dev/null
 %if !%{disable_selinux}
 %post selinux
 %if 0%{?fedora} >= 24 || 0%{?rhel} > 6
-    semodule -X 400 -i %{localstatedir}/lib/pcp/selinux/pcpupstream.pp
+    semodule -X 400 -i %{_selinuxdir}/pcpupstream.pp
 %else
-    semodule -i %{localstatedir}/lib/pcp/selinux/pcpupstream.pp
+    semodule -i %{_selinuxdir}/pcpupstream.pp
 %endif #distro version check
 %endif
 
@@ -2882,6 +2882,9 @@ cd
 %endif
 
 %changelog
+* Fri Mar 17 2017 Lukas Berk <lberk@redhat.com> - 3.11.8-2
+- related: BZ1433271 selinux post scriptlet
+
 * Fri Feb 17 2017 Lukas Berk <lberk@redhat.com> - 3.11.8-1
 - Support newer kernels /proc/vmstat file contents (BZ 1396148)
 - Added pcp-selinux policy (BZs 1214090, 1381127, 1337968, 1398147)
