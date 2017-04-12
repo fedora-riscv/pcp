@@ -87,6 +87,10 @@ Source4: %{github}/pcp-webapp-blinkenlights/archive/1.0.0/pcp-webapp-blinkenligh
 # Qt development and runtime environment missing components before el6
 %if 0%{?rhel} == 0 || 0%{?rhel} > 5
 %global disable_qt 0
+# We need qt5 for fedora
+%if 0%{?fedora} != 0
+%global default_qt 5
+%endif
 %else
 %global disable_qt 1
 %endif
@@ -165,7 +169,12 @@ BuildRequires: systemd-devel
 %endif
 %if !%{disable_qt}
 BuildRequires: desktop-file-utils
+%if 0%{?default_qt} != 5
 BuildRequires: qt4-devel >= 4.4
+%else
+BuildRequires: qt5-qtbase-devel
+BuildRequires: qt5-qtsvg-devel
+%endif
 %endif
 
 Requires: bash gawk sed grep fileutils findutils initscripts which
@@ -2486,7 +2495,7 @@ cd
 
 %if !%{disable_selinux}
 %preun selinux
-if [ `semodule -l | grep pcpupstream` ]
+if semodule -l | grep pcpupstream >/dev/null 2>&1
 then
 %if 0%{?fedora} >= 24 || 0%{?rhel} > 6
     semodule -X 400 -r pcpupstream >/dev/null
@@ -2495,7 +2504,7 @@ then
 %endif
 fi
 %triggerun selinux -- docker-selinux
-if [ `semodule -l | grep pcpupstream-docker` ]
+if semodule -l | grep pcpupstream-docker >/dev/null 2>&1
 then
 %if 0%{?fedora} >= 24 || 0%{?rhel} > 6
     semodule -X 400 -r pcpupstream-docker
@@ -2505,7 +2514,7 @@ semodule -r pcpupstream-docker
 fi
 
 %triggerun selinux -- container-selinux
-if [ `semodule -l | grep pcpupstream-container` ]
+if semodule -l | grep pcpupstream-container >/dev/null 2>&1
 then
 %if 0%{?fedora} >= 24 || 0%{?rhel} > 6
     semodule -X 400 -r pcpupstream-container
@@ -2967,6 +2976,10 @@ fi
 %endif
 
 %changelog
+* Wed May 17 2017 Dave Brolley <brolley@redhat.com> - 3.11.10-1
+- Require qt5 for Fedora.
+- Update to latest PCP Sources.
+
 * Fri Mar 31 2017 Nathan Scott <nathans@redhat.com> - 3.11.9-1
 - Fix pmchart chart legends toggling behaviour (BZ 1359961)
 - Improve multiple local context attr handling (BZ 1430248)
