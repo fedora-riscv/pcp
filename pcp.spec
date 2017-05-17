@@ -1,5 +1,5 @@
 Name:    pcp
-Version: 3.11.9
+Version: 3.11.10
 Release: 1%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2.1+ and CC-BY
@@ -262,6 +262,31 @@ then
     if [ -f "%{_confdir}/pmcd/pmcd.conf" ] && [ -f "%{_pmdasdir}/%2/domain.h" ]
     then
 	(cd %{_pmdasdir}/%2/ && ./Remove >/dev/null 2>&1)
+    fi
+fi
+}
+
+%global selinux_handle_policy() %{expand:
+if [ "%1" -eq 1 ]
+then
+    PCP_SELINUX_DIR=%{_selinuxdir}
+    if [ -f "$PCP_SELINUX_DIR/%2" ]
+    then
+	%if 0%{?fedora} >= 24 || 0%{?rhel} > 6
+            (semodule -X 400 -i %{_selinuxdir}/%2)
+	%else
+            (semodule -i %{_selinuxdir}/%2)
+	%endif #distro version check
+    fi
+elif [ "%1" -eq 0 ]
+then
+    if semodule -l | grep %2 >/dev/null 2>&1
+    then
+	%if 0%{?fedora} >= 24 || 0%{?rhel} > 6
+	    (semodule -X 400 -r %2 >/dev/null)
+	%else
+	    (semodule -r %2 >/dev/null)
+	%endif #distro version check
     fi
 fi
 }
@@ -1721,6 +1746,18 @@ This meta-package contains the PCP performance monitoring dependencies.  This
 includes a large number of packages for analysing PCP metrics in various ways.
 # monitor
 
+%package zeroconf
+License: GPLv2+
+Group: Applications/System
+Summary: Performance Co-Pilot (PCP) Zeroconf Package
+URL: http://www.pcp.io
+Requires: pcp
+Requires: pcp-pmda-dm pcp-pmda-nfsclient
+%description zeroconf
+This package contains configuration tweaks and files to increase metrics
+gathering frequency, several extended pmlogger configurations, as well as
+automated pmie diagnosis, alerting and self-healing for the localhost.
+
 %if !%{disable_python2}
 #
 # python-pcp. This is the PCP library bindings for python.
@@ -2407,31 +2444,44 @@ chown -R pcp:pcp %{_logsdir}/pmmgr 2>/dev/null
 %endif
 %endif
 
+%post zeroconf
+PCP_PMDAS_DIR=%{_pmdasdir}
+PCP_SYSCONFIG_DIR=%{_sysconfdir}/sysconfig
+# auto-install important PMDAs for RH Support
+for PMDA in dm nfsclient ; do
+    touch "$PCP_PMDAS_DIR/$PMDA/.NeedInstall"
+done
+# increase default pmlogger recording frequency
+sed -i 's/^\#\ PMLOGGER_INTERVAL.*/PMLOGGER_INTERVAL=10/g' "$PCP_SYSCONFIG_DIR/pmlogger"
+# auto-enable these usually optional pmie rules
+pmieconf -c enable dmthin
+%if 0%{?rhel}
+%if !%{disable_systemd}
+    systemctl restart pmcd >/dev/null 2>&1
+    systemctl restart pmlogger >/dev/null 2>&1
+    systemctl restart pmie >/dev/null 2>&1
+    systemctl enable pmcd >/dev/null 2>&1
+    systemctl enable pmlogger >/dev/null 2>&1
+    systemctl enable pmie >/dev/null 2>&1
+%else
+    /sbin/chkconfig --add pmcd >/dev/null 2>&1
+    /sbin/chkconfig --add pmlogger >/dev/null 2>&1
+    /sbin/chkconfig --add pmie >/dev/null 2>&1
+    /sbin/service pmcd condrestart
+    /sbin/service pmlogger condrestart
+    /sbin/service pmie condrestart
+%endif
+%endif #zeroconf
+
 %if !%{disable_selinux}
 %post selinux
-%if 0%{?fedora} >= 24 || 0%{?rhel} > 6
-    semodule -X 400 -i %{_selinuxdir}/pcpupstream.pp
-%else
-    semodule -i %{_selinuxdir}/pcpupstream.pp
-%endif #distro version check
+%{selinux_handle_policy "$1" "pcpupstream.pp"}
+
 %triggerin selinux -- docker-selinux
-if ls %{_selinuxdir} | grep -q docker 2>/dev/null
-then
-%if 0%{?fedora} >= 24 || 0%{?rhel} > 6
-    semodule -X 400 -i %{_selinuxdir}/pcpupstream-docker.pp
-%else
-    semodule -i %{_selinuxdir}/pcpupstream-docker.pp
-%endif #distro version check
-fi
+%{selinux_handle_policy "$1" "pcpupstream-docker.pp"}
+
 %triggerin selinux -- container-selinux
-if ls %{_selinuxdir} | grep -q container 2>/dev/null
-then
-%if 0%{?fedora} >= 24 || 0%{?rhel} > 6
-    semodule -X 400 -i %{_selinuxdir}/pcpupstream-container.pp
-%else
-    semodule -i %{_selinuxdir}/pcpupstream-container.pp
-%endif #distro version check
-fi
+%{selinux_handle_policy "$1" "pcpupstream-container.pp"}
 %endif
 
 %post
@@ -2495,33 +2545,14 @@ cd
 
 %if !%{disable_selinux}
 %preun selinux
-if semodule -l | grep pcpupstream >/dev/null 2>&1
-then
-%if 0%{?fedora} >= 24 || 0%{?rhel} > 6
-    semodule -X 400 -r pcpupstream >/dev/null
-%else
-    semodule -r pcpupstream >/dev/null
-%endif
-fi
+%{selinux_handle_policy "$1" "pcpupstream"}
+
 %triggerun selinux -- docker-selinux
-if semodule -l | grep pcpupstream-docker >/dev/null 2>&1
-then
-%if 0%{?fedora} >= 24 || 0%{?rhel} > 6
-    semodule -X 400 -r pcpupstream-docker
-%else
-semodule -r pcpupstream-docker
-%endif #distro version check
-fi
+%{selinux_handle_policy "$1" "pcpupstream-docker"}
 
 %triggerun selinux -- container-selinux
-if semodule -l | grep pcpupstream-container >/dev/null 2>&1
-then
-%if 0%{?fedora} >= 24 || 0%{?rhel} > 6
-    semodule -X 400 -r pcpupstream-container
-%else
-    semodule -r pcpupstream-container
-%endif #distro version check
-fi
+%{selinux_handle_policy "$1" "pcpupstream-container"}
+
 %endif
 %files -f base.list
 #
@@ -2614,6 +2645,11 @@ fi
 
 %files collector
 #empty
+
+%files zeroconf
+%{_localstatedir}/lib/pcp/config/pmlogconf/zeroconf
+
+#additional pmlogger config files
 
 %files conf
 %dir %{_includedir}/pcp
@@ -2977,7 +3013,9 @@ fi
 
 %changelog
 * Wed May 17 2017 Dave Brolley <brolley@redhat.com> - 3.11.10-1
-- Require qt5 for Fedora.
+- python api: handle non-POSIXLY_CORRECT getopt cases (BZ 1289912)
+- Fix pmchart reaction to timezone changes from pmtime (BZ 968823)
+- Require Qt5 for Fedora.
 - Update to latest PCP Sources.
 
 * Fri Mar 31 2017 Nathan Scott <nathans@redhat.com> - 3.11.9-1
