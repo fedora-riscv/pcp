@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 3.11.10
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL:     http://www.pcp.io
@@ -200,6 +200,7 @@ Obsoletes: pcp-gui-debuginfo
 %global _pmdasdir %{_localstatedir}/lib/pcp/pmdas
 %global _testsdir %{_localstatedir}/lib/pcp/testsuite
 %global _selinuxdir %{_localstatedir}/lib/pcp/selinux
+%global _logconfdir %{_localstatedir}/lib/pcp/config/pmlogconf
 %global _pixmapdir %{_datadir}/pcp-gui/pixmaps
 %global _booksdir %{_datadir}/doc/pcp-doc
 
@@ -2072,7 +2073,10 @@ ls -1 $RPM_BUILD_ROOT/%{_pixmapdir} |\
 cat base_bin.list base_exec.list |\
   grep -E "$PCP_GUI" >> pcp-gui.list
 %endif
-cat base_pmdas.list base_bin.list base_exec.list |\
+ls -1 $RPM_BUILD_ROOT/%{_logconfdir}/ |\
+    sed -e 's#^#'%{_logconfdir}'\/#' |\
+    grep -E -v 'zeroconf' >pcp-logconf.list
+cat base_pmdas.list base_bin.list base_exec.list pcp-logconf.list|\
   grep -E -v 'pmdaib|pmmgr|pmweb|pmsnap|2pcp|pmdas/systemd' |\
   grep -E -v "$PCP_GUI|pixmaps|pcp-doc|tutorials|selinux" |\
   grep -E -v %{_confdir} | grep -E -v %{_logsdir} > base.list
@@ -2629,7 +2633,6 @@ cd
 %{_localstatedir}/lib/pcp/config/pmieconf
 %dir %attr(0775,pcp,pcp) %{_localstatedir}/lib/pcp/config/pmlogger
 %{_localstatedir}/lib/pcp/config/pmlogger/*
-%{_localstatedir}/lib/pcp/config/pmlogconf
 %{_localstatedir}/lib/pcp/config/pmlogrewrite
 %dir %attr(0775,pcp,pcp) %{_localstatedir}/lib/pcp/config/pmda
 
@@ -3012,6 +3015,9 @@ cd
 %endif
 
 %changelog
+* Fri Jun 2 2017 Lukas Berk <lberk@redhat.com> - 3.11.10-2
+- Correct subrpm inclusion of zeroconf config files (BZ 1456262)
+
 * Wed May 17 2017 Dave Brolley <brolley@redhat.com> - 3.11.10-1
 - python api: handle non-POSIXLY_CORRECT getopt cases (BZ 1289912)
 - Fix pmchart reaction to timezone changes from pmtime (BZ 968823)
