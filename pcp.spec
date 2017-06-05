@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 3.11.10
-Release: 2%{?dist}
+Release: 3%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL:     http://www.pcp.io
@@ -3015,6 +3015,9 @@ cd
 %endif
 
 %changelog
+* Mon Jun 05 2017 Jitka Plesnikova <jplesnik@redhat.com> - 3.11.10-3
+- Perl 5.26 rebuild
+
 * Fri Jun 2 2017 Lukas Berk <lberk@redhat.com> - 3.11.10-2
 - Correct subrpm inclusion of zeroconf config files (BZ 1456262)
 
