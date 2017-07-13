@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 3.12.0
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL:     http://www.pcp.io
@@ -500,7 +500,7 @@ Group: Development/Libraries
 Summary: Performance Co-Pilot (PCP) Perl bindings and documentation
 URL: http://www.pcp.io
 Requires: pcp-libs = %{version}-%{release}
-Requires: perl
+Requires: perl-interpreter
 
 %description -n perl-PCP-PMDA
 The PCP::PMDA Perl module contains the language bindings for
@@ -3053,6 +3053,10 @@ cd
 %endif
 
 %changelog
+* Thu Jul 13 2017 Petr Pisar <ppisar@redhat.com> - 3.12.0-2
+- perl dependency renamed to perl-interpreter
+  <https://fedoraproject.org/wiki/Changes/perl_Package_to_Install_Core_Modules>
+
 * Fri Jun 30 2017 Lukas Berk <lberk@redhat.com> - 3.12.0-1
 - Fix pcp-atop failure in open-ended write mode (BZ 1431292)
 - Resolve additional selinux policy issues (BZ 1317515)
