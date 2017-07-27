@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 3.12.0
-Release: 2%{?dist}
+Release: 3%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL:     http://www.pcp.io
@@ -3053,6 +3053,9 @@ cd
 %endif
 
 %changelog
+* Thu Jul 27 2017 Fedora Release Engineering <releng@fedoraproject.org> - 3.12.0-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_27_Mass_Rebuild
+
 * Thu Jul 13 2017 Petr Pisar <ppisar@redhat.com> - 3.12.0-2
 - perl dependency renamed to perl-interpreter
   <https://fedoraproject.org/wiki/Changes/perl_Package_to_Install_Core_Modules>
