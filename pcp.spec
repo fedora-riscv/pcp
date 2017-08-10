@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 3.12.0
-Release: 4%{?dist}
+Release: 5%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL:     http://www.pcp.io
@@ -3053,6 +3053,9 @@ cd
 %endif
 
 %changelog
+* Thu Aug 10 2017 Igor Gnatenko <ignatenko@redhat.com> - 3.12.0-5
+- Rebuilt for RPM soname bump
+
 * Thu Aug 03 2017 Fedora Release Engineering <releng@fedoraproject.org> - 3.12.0-4
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_27_Binutils_Mass_Rebuild
 
