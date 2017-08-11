@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 3.12.0
-Release: 6%{?dist}
+Release: 7%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL:     http://www.pcp.io
@@ -3053,6 +3053,9 @@ cd
 %endif
 
 %changelog
+* Fri Aug 11 2017 Igor Gnatenko <ignatenko@redhat.com> - 3.12.0-7
+- Rebuilt after RPM update (№ 3)
+
 * Thu Aug 10 2017 Igor Gnatenko <ignatenko@redhat.com> - 3.12.0-6
 - Rebuilt for RPM soname bump
 
