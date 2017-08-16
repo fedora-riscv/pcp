@@ -1,6 +1,6 @@
 Name:    pcp
-Version: 3.11.10
-Release: 2%{?dist}
+Version: 3.12.1
+Release: 1%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL:     http://www.pcp.io
@@ -57,6 +57,12 @@ Source4: %{github}/pcp-webapp-blinkenlights/archive/1.0.0/pcp-webapp-blinkenligh
 %endif
 %else
 %global disable_python3 1
+%endif
+
+%if 0%{?fedora} >= 24 || 0%{?rhel} > 7
+%global perl_interpreter perl-interpreter
+%else
+%global perl_interpreter perl
 %endif
 
 # support for pmdajson
@@ -227,15 +233,17 @@ Obsoletes: pcp-gui-debuginfo
 %endif
 %endif
 
-%if %{disable_infiniband}
-%global _with_ib --with-infiniband=no
+%if !%{disable_infiniband}
+%global _with_ib --with-infiniband=yes
 %endif
 
 %if !%{disable_papi}
 %global _with_papi --with-papi=yes
 %endif
 
-%if !%{disable_perfevent}
+%if %{disable_perfevent}
+%global _with_perfevent --with-perfevent=no
+%else
 %global _with_perfevent --with-perfevent=yes
 %endif
 
@@ -498,7 +506,7 @@ Group: Development/Libraries
 Summary: Performance Co-Pilot (PCP) Perl bindings and documentation
 URL: http://www.pcp.io
 Requires: pcp-libs = %{version}-%{release}
-Requires: perl
+Requires: %{perl_interpreter}
 
 %description -n perl-PCP-PMDA
 The PCP::PMDA Perl module contains the language bindings for
@@ -516,6 +524,7 @@ Group: Development/Libraries
 Summary: Performance Co-Pilot (PCP) Perl bindings for PCP Memory Mapped Values
 URL: http://www.pcp.io
 Requires: pcp-libs = %{version}-%{release}
+Requires: %{perl_interpreter}
 
 %description -n perl-PCP-MMV
 The PCP::MMV module contains the Perl language bindings for
@@ -534,6 +543,7 @@ Group: Development/Libraries
 Summary: Performance Co-Pilot (PCP) Perl bindings for importing external data into PCP archives
 URL: http://www.pcp.io
 Requires: pcp-libs = %{version}-%{release}
+Requires: %{perl_interpreter}
 
 %description -n perl-PCP-LogImport
 The PCP::LogImport module contains the Perl language bindings for
@@ -549,6 +559,7 @@ Group: Development/Libraries
 Summary: Performance Co-Pilot (PCP) Perl bindings for post-processing output of pmlogsummary
 URL: http://www.pcp.io
 Requires: pcp-libs = %{version}-%{release}
+Requires: %{perl_interpreter}
 
 %description -n perl-PCP-LogSummary
 The PCP::LogSummary module provides a Perl module for using the
@@ -1350,6 +1361,24 @@ collecting metrics about Intel MIC cards.
 # end pcp-pmda-mic
 
 #
+# pcp-pmda-haproxy
+#
+%package pmda-haproxy
+License: GPLv2+
+Group: Applications/System
+Summary: Performance Co-Pilot (PCP) metrics for HAProxy
+URL: http://www.pcp.io
+%if !%{disable_python3}
+Requires: python3-pcp
+%else
+Requires: python-pcp
+%endif
+%description pmda-haproxy
+This package contains the PCP Performance Metrics Domain Agent (PMDA) for
+extracting performance metrics from HAProxy over the HAProxy stats socket.
+# end pcp-pmda-haproxy
+
+#
 # pcp-pmda-libvirt
 #
 %package pmda-libvirt
@@ -1360,12 +1389,12 @@ URL: http://www.pcp.io
 %if !%{disable_python3}
 Requires: python3-pcp
 Requires: libvirt-python3 python3-lxml
-BuildRequires: libvirt-python3
+BuildRequires: libvirt-python3 python3-lxml
 %else
 Requires: python-pcp
 Requires: libvirt-python python-lxml
 %if 0%{?rhel} == 0 || 0%{?rhel} > 5
-BuildRequires: libvirt-python
+BuildRequires: libvirt-python python-lxml
 %endif
 %endif
 %description pmda-libvirt
@@ -1385,9 +1414,11 @@ URL: http://www.pcp.io
 %if !%{disable_python3}
 Requires: python3-pcp
 Requires: python3-rtslib
+BuildRequires: python3-rtslib
 %else
 Requires: python-pcp
 Requires: python-rtslib
+BuildRequires: python-rtslib
 %endif
 %description pmda-lio
 This package provides a PMDA to gather performance metrics from the kernels
@@ -1396,6 +1427,30 @@ kernels configfs filesystem. The PMDA provides per LUN level stats, and a
 summary instance per iSCSI target, which aggregates all LUN metrics within the
 target.
 #end pcp-pmda-lio
+
+#
+# pcp-pmda-prometheus
+#
+%package pmda-prometheus
+License: GPLv2+
+Group: Applications/System
+Summary: Performance Co-Pilot (PCP) metrics from Prometheus endpoints
+URL: http://www.pcp.io
+Requires: pcp-libs = %{version}-%{release}
+%if !%{disable_python3}
+Requires: python3-pcp
+Requires: python3-requests
+BuildRequires: python3-requests
+%else
+Requires: python-pcp
+Requires: python-requests
+BuildRequires: python-requests
+%endif
+
+%description pmda-prometheus
+This package contains the PCP Performance Metrics Domain Agent (PMDA) for
+extracting statistics from programs instrumented as Prometheus endpoints.
+#end pcp-pmda-prometheus
 
 %endif # !%{disable_python2} || !%{disable_python3}
 
@@ -1708,7 +1763,8 @@ Requires: pcp-pmda-lustrecomm pcp-pmda-logger pcp-pmda-docker pcp-pmda-bind2
 Requires: pcp-pmda-nutcracker
 %endif
 %if !%{disable_python2} || !%{disable_python3}
-Requires: pcp-pmda-gluster pcp-pmda-zswap pcp-pmda-unbound pcp-pmda-mic pcp-pmda-libvirt pcp-pmda-lio
+Requires: pcp-pmda-gluster pcp-pmda-zswap pcp-pmda-unbound pcp-pmda-mic
+Requires: pcp-pmda-libvirt pcp-pmda-lio pcp-pmda-prometheus pcp-pmda-haproxy
 %endif
 %if !%{disable_snmp}
 Requires: pcp-pmda-snmp
@@ -1876,6 +1932,7 @@ Group: Applications/System
 Summary: Selinux policy package
 URL: http://www.pcp.io
 BuildRequires: selinux-policy-devel
+BuildRequires: selinux-policy-targeted
 %if 0%{?rhel} == 5
 BuildRequires: setools
 %else
@@ -1965,6 +2022,12 @@ for f in $RPM_BUILD_ROOT/%{_initddir}/{pcp,pmcd,pmlogger,pmie,pmwebd,pmmgr,pmpro
 	sed -i -e '/^# chkconfig/s/:.*$/: - 95 05/' -e '/^# Default-Start:/s/:.*$/:/' $f
 done
 
+%if 0%{?fedora} > 26
+PCP_SYSCONFIG_DIR=%{_sysconfdir}/sysconfig
+sed -i 's/^\#\ PMLOGGER_LOCAL.*/PMLOGGER_LOCAL=1/g' "$RPM_BUILD_ROOT/$PCP_SYSCONFIG_DIR/pmlogger"
+sed -i 's/^\#\ PMCD_LOCAL.*/PMCD_LOCAL=1/g' "$RPM_BUILD_ROOT/$PCP_SYSCONFIG_DIR/pmcd"
+%endif
+
 # list of PMDAs in the base pkg
 ls -1 $RPM_BUILD_ROOT/%{_pmdasdir} |\
   grep -E -v '^simple|sample|trivial|txmon' |\
@@ -2028,6 +2091,7 @@ ls -1 $RPM_BUILD_ROOT/%{_pmdasdir} |\
   grep -E -v '^gluster' |\
   grep -E -v '^zswap' |\
   grep -E -v '^unbound' |\
+  grep -E -v '^haproxy' |\
   sed -e 's#^#'%{_pmdasdir}'\/#' >base_pmdas.list
 
 # all base pcp package files except those split out into sub packages
@@ -2076,7 +2140,7 @@ cat base_bin.list base_exec.list |\
 ls -1 $RPM_BUILD_ROOT/%{_logconfdir}/ |\
     sed -e 's#^#'%{_logconfdir}'\/#' |\
     grep -E -v 'zeroconf' >pcp-logconf.list
-cat base_pmdas.list base_bin.list base_exec.list pcp-logconf.list|\
+cat base_pmdas.list base_bin.list base_exec.list pcp-logconf.list |\
   grep -E -v 'pmdaib|pmmgr|pmweb|pmsnap|2pcp|pmdas/systemd' |\
   grep -E -v "$PCP_GUI|pixmaps|pcp-doc|tutorials|selinux" |\
   grep -E -v %{_confdir} | grep -E -v %{_logsdir} > base.list
@@ -2270,6 +2334,9 @@ fi
 %preun pmda-lio
 %{pmda_remove "$1" "lio"}
 
+%preun pmda-prometheus
+%{pmda_remove "$1" "prometheus"}
+
 %preun pmda-lustre
 %{pmda_remove "$1" "lustre"}
 
@@ -2330,6 +2397,9 @@ fi
 %preun pmda-mic
 %{pmda_remove "$1" "mic"}
 
+%preun pmda-haproxy
+%{pmda_remove "$1" "haproxy"}
+
 %preun pmda-libvirt
 %{pmda_remove "$1" "libvirt"}
 %endif # !%{disable_python[2,3]}
@@ -2387,11 +2457,10 @@ if [ "$1" -eq 0 ]
 then
     # stop daemons before erasing the package
     %if !%{disable_systemd}
-	systemctl --no-reload disable pmlogger.service >/dev/null 2>&1
-	systemctl --no-reload disable pmie.service >/dev/null 2>&1
-	systemctl --no-reload disable pmproxy.service >/dev/null 2>&1
-	systemctl --no-reload disable pmcd.service >/dev/null 2>&1
-
+       %systemd_preun pmlogger.service
+       %systemd_preun pmie.service
+       %systemd_preun pmproxy.service
+       %systemd_preun pmcd.service
 	systemctl stop pmlogger.service >/dev/null 2>&1
 	systemctl stop pmie.service >/dev/null 2>&1
 	systemctl stop pmproxy.service >/dev/null 2>&1
@@ -2526,9 +2595,12 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 touch "$PCP_PMNS_DIR/.NeedRebuild"
 chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 %if !%{disable_systemd}
-    systemctl condrestart pmcd.service >/dev/null 2>&1
-    systemctl condrestart pmlogger.service >/dev/null 2>&1
-    systemctl condrestart pmie.service >/dev/null 2>&1
+    %systemd_postun_with_restart pmcd.service
+    %systemd_post pmcd.service
+    %systemd_postun_with_restart pmlogger.service
+    %systemd_post pmlogger.service
+    %systemd_postun_with_restart pmie.service
+    %systemd_post pmie.service
     systemctl condrestart pmproxy.service >/dev/null 2>&1
 %else
     /sbin/chkconfig --add pmcd >/dev/null 2>&1
@@ -2679,6 +2751,9 @@ cd
 %{_libdir}/libpcp_trace.so
 %{_libdir}/libpcp_import.so
 %{_libdir}/libpcp_web.so
+%{_libdir}/pkgconfig/libpcp.pc
+%{_libdir}/pkgconfig/libpcp_pmda.pc
+%{_libdir}/pkgconfig/libpcp_import.pc
 %{_includedir}/pcp/*.h
 
 %files devel -f devel.list
@@ -2816,6 +2891,9 @@ cd
 %files pmda-lio
 %{_pmdasdir}/lio
 
+%files pmda-prometheus
+%{_pmdasdir}/prometheus
+
 %files pmda-lustre
 %{_pmdasdir}/lustre
 
@@ -2898,6 +2976,9 @@ cd
 
 %files pmda-mic
 %{_pmdasdir}/mic
+
+%files pmda-haproxy
+%{_pmdasdir}/haproxy
 
 %files pmda-libvirt
 %{_pmdasdir}/libvirt
@@ -3015,6 +3096,22 @@ cd
 %endif
 
 %changelog
+* Wed Aug 16 2017 Nathan Scott <nathans@redhat.com> - 3.12.1-1
+- Update to latest PCP sources.
+
+* Thu Jul 13 2017 Petr Pisar <ppisar@redhat.com> - 3.12.0-2
+- perl dependency renamed to perl-interpreter
+  <https://fedoraproject.org/wiki/Changes/perl_Package_to_Install_Core_Modules>
+
+* Fri Jun 30 2017 Lukas Berk <lberk@redhat.com> - 3.12.0-1
+- Fix pcp-atop failure in open-ended write mode (BZ 1431292)
+- Resolve additional selinux policy issues (BZ 1317515)
+- Improve poor pmlogconf performance (BZ1376857)
+- Update to latest PCP sources.
+
+* Mon Jun 05 2017 Jitka Plesnikova <jplesnik@redhat.com> - 3.11.10-3
+- Perl 5.26 rebuild
+
 * Fri Jun 2 2017 Lukas Berk <lberk@redhat.com> - 3.11.10-2
 - Correct subrpm inclusion of zeroconf config files (BZ 1456262)
 
@@ -3022,13 +3119,13 @@ cd
 - python api: handle non-POSIXLY_CORRECT getopt cases (BZ 1289912)
 - Fix pmchart reaction to timezone changes from pmtime (BZ 968823)
 - Require Qt5 for Fedora.
-- Update to latest PCP Sources.
+- Update to latest PCP sources.
 
 * Fri Mar 31 2017 Nathan Scott <nathans@redhat.com> - 3.11.9-1
 - Fix pmchart chart legends toggling behaviour (BZ 1359961)
 - Improve multiple local context attr handling (BZ 1430248)
 - Fix error during installation of pcp-selinux (BZ 1433271)
-- Update to latest PCP Sources.
+- Update to latest PCP sources.
 
 * Fri Feb 17 2017 Lukas Berk <lberk@redhat.com> - 3.11.8-1
 - Support newer kernels /proc/vmstat file contents (BZ 1396148)
@@ -3048,7 +3145,7 @@ cd
 - Ensure pmieconf and pmlogconf handle empty files (BZ 1249123)
 - Ignore rpmsave and rpmnew suffixed control files (BZ 1375415)
 - Add new pcp-pmda-libvirt package for virtual machine metrics
-- Update to latest PCP Sources.
+- Update to latest PCP sources.
 
 * Fri Aug 05 2016 Nathan Scott <nathans@redhat.com> - 3.11.4-1
 - Support inside-container metric values in python (BZ 1333702)
@@ -3058,7 +3155,7 @@ cd
 - Use "dirsrv" as default pmdads389log user account (BZ 1357607)
 - Make pmie(1) honour SIGINT while parsing rules (BZ 1327226)
 - Add pmlogconf support for pcp-pidstat and pcp-mpstat (BZ 1361943)
-- Update to latest PCP Sources.
+- Update to latest PCP sources.
 
 * Fri Jun 17 2016 Nathan Scott <nathans@redhat.com> - 3.11.3-1
 - Fix memory leak in derived metrics error handling (BZ 1331973)
@@ -3066,7 +3163,7 @@ cd
 - Disallow stopping pmie/pmlogger daemons from cron (BZ 1336792)
 - Fail fast for easily detected bad pmcd configuration (BZ 1336210)
 - Implement primary (local) pmie concept in rc pmie (BZ 1323851)
-- Update to latest PCP Sources.
+- Update to latest PCP sources.
 
 * Mon May 16 2016 Jitka Plesnikova <jplesnik@redhat.com> - 3.11.2-2.1
 - Perl 5.24 rebuild
@@ -3076,7 +3173,7 @@ cd
 - Multithreaded clients with concurrent pmNewContext improvements (BZ 1325363)
 - PMCD agent auto-restart (BZ 1323521)
 - Segv in libpcp during discovery error processing (BZ 1319288)
-- Update to latest PCP Sources.
+- Update to latest PCP sources.
 
 * Fri Mar 18 2016 Dave Brolley <brolley@redhat.com> - 3.11.1-1
 - Call Remove script when uninstalling individual PMDAs (BZ 1304722)
