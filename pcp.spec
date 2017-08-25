@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 3.12.1
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL:     http://www.pcp.io
@@ -3096,6 +3096,9 @@ cd
 %endif
 
 %changelog
+* Fri Aug 25 2017 Lukas Berk <lberk@redhat.com> - 3.12.1-2
+- Rebuild for infiniband dep breakage.
+
 * Wed Aug 16 2017 Nathan Scott <nathans@redhat.com> - 3.12.1-1
 - Update to latest PCP sources.
 
