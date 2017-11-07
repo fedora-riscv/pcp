@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 3.12.2
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL:     http://www.pcp.io
@@ -207,7 +207,7 @@ BuildRequires: qt5-qtsvg-devel
 %endif
 %endif
 
-Requires: bash gawk sed grep fileutils findutils initscripts which
+Requires: bash gawk sed grep findutils initscripts which
 Requires: pcp-libs = %{version}-%{release}
 %if !%{disable_selinux}
 Requires: pcp-selinux = %{version}-%{release}
@@ -602,7 +602,6 @@ Summary: Performance Co-Pilot tools for importing sar data into PCP archive logs
 URL: http://www.pcp.io
 Requires: pcp-libs = %{version}-%{release}
 Requires: perl-PCP-LogImport = %{version}-%{release}
-Requires: sysstat
 Requires: perl(XML::TokeParser)
 
 %description import-sar2pcp
@@ -619,7 +618,6 @@ Summary: Performance Co-Pilot tools for importing iostat data into PCP archive l
 URL: http://www.pcp.io
 Requires: pcp-libs = %{version}-%{release}
 Requires: perl-PCP-LogImport = %{version}-%{release}
-Requires: sysstat
 
 %description import-iostat2pcp
 Performance Co-Pilot (PCP) front-end tools for importing iostat data
@@ -3244,6 +3242,9 @@ cd
 %endif
 
 %changelog
+* Tue Nov 07 2017 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 3.12.2-2
+- Remove old crufty coreutils requires
+
 * Wed Oct 18 2017 Lukas Berk <lberk@redhat.com> - 3.12.2-1
 - selinux: add pmlogger_exec_t rule from (BZ 1483320)
 - selinux: pmlc accessing tcp port 4330 (BZ 1447585)
