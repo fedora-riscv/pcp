@@ -156,7 +156,6 @@ Source4: %{github}/pcp-webapp-blinkenlights/archive/1.0.0/pcp-webapp-blinkenligh
 # prevent conflicting binary and man page install for pcp(1)
 Conflicts: librapi
 
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # https://fedoraproject.org/wiki/Packaging:C_and_C%2B%2B
 BuildRequires: gcc gcc-c++
 BuildRequires: procps autoconf bison flex
