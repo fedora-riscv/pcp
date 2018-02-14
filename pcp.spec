@@ -2084,9 +2084,6 @@ updated policy package.
 %setup -q -T -D -a 4 -c -n blinkenlights
 %setup -q
 
-%clean
-rm -Rf $RPM_BUILD_ROOT
-
 %build
 %if !%{disable_python2} && 0%{?default_python} != 3
 export PYTHON=python%{?default_python}
