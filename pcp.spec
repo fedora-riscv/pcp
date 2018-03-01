@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 4.0.0
-Release: 2%{?dist}
+Release: 3%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL:     http://www.pcp.io
@@ -1574,9 +1574,9 @@ Requires: libvirt-python3 python3-lxml
 BuildRequires: libvirt-python3 python3-lxml
 %else
 Requires: %{__python2}-pcp
-Requires: libvirt-python %{__python2}-lxml
+Requires: %{__python2}-libvirt %{__python2}-lxml
 %if 0%{?rhel} == 0 || 0%{?rhel} > 5
-BuildRequires: libvirt-python %{__python2}-lxml
+BuildRequires: %{__python2}-libvirt %{__python2}-lxml
 %endif
 %endif
 %description pmda-libvirt
@@ -2017,7 +2017,7 @@ Obsoletes: python-pcp
 %if 0%{?rhel} == 5
 Requires: python%{default_python}
 %else
-Requires: python
+Requires: python2
 %endif
 
 %description -n %{__python2}-pcp
@@ -3300,6 +3300,10 @@ cd
 %endif
 
 %changelog
+* Thu Mar 01 2018 Iryna Shcherbina <ishcherb@redhat.com> - 4.0.0-3
+- Update Python 2 dependency declarations to new packaging standards
+  (See https://fedoraproject.org/wiki/FinalizingFedoraSwitchtoPython3)
+
 * Tue Feb 20 2018 Nathan Scott <nathans@redhat.com> - 4.0.0-2
 - Disable pmdabcc on architectures without BCC/eBPF support.
 
