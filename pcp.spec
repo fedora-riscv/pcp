@@ -1,6 +1,6 @@
 Name:    pcp
-Version: 4.0.0
-Release: 3%{?dist}
+Version: 4.0.1
+Release: 1%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL:     http://www.pcp.io
@@ -367,7 +367,7 @@ fi # check for an active selinux install
 
 %description
 Performance Co-Pilot (PCP) provides a framework and services to support
-system-level performance monitoring and performance management. 
+system-level performance monitoring and performance management.
 
 The PCP open source release provides a unifying abstraction for all of
 the interesting performance data in a system, and allows client
@@ -748,7 +748,7 @@ BuildRequires: %{__python2}-elasticsearch
 Performance Co-Pilot (PCP) front-end tools for exporting metric values
 to Elasticsearch - a distributed, RESTful search and analytics engine.
 See https://www.elastic.co/community for further details.
-%endif 
+%endif
 #
 # pcp-export-pcp2graphite
 #
@@ -1140,7 +1140,7 @@ Requires: perl-PCP-PMDA = %{version}-%{release}
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
 collecting metrics about the Lustre Filesystem.
 #end pcp-pmda-lustre
-   
+
 #
 # pcp-pmda-lustrecomm
 #
@@ -1450,7 +1450,7 @@ Requires: pcp-libs = %{version}-%{release}
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
 collecting metrics about the Device Mapper Cache and Thin Client.
 # end pcp-pmda-dm
-   
+
 
 %if !%{disable_bcc}
 #
@@ -1487,7 +1487,7 @@ Requires: %{__python2}-pcp
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
 collecting metrics about the gluster filesystem.
 # end pcp-pmda-gluster
-   
+
 #
 # pcp-pmda-zswap
 #
@@ -1575,8 +1575,11 @@ BuildRequires: libvirt-python3 python3-lxml
 %else
 Requires: %{__python2}-pcp
 Requires: %{__python2}-libvirt %{__python2}-lxml
-%if 0%{?rhel} == 0 || 0%{?rhel} > 5
+%if 0%{?rhel} == 0 || 0%{?fedora} >= 28
 BuildRequires: %{__python2}-libvirt %{__python2}-lxml
+%endif
+%if 0%{?rhel} > 5
+BuildRequires: libvirt-%{__python2}
 %endif
 %endif
 %description pmda-libvirt
@@ -1978,7 +1981,7 @@ URL: http://www.pcp.io
 Requires: pcp-webapi
 %endif
 %if !%{disable_python2} || !%{disable_python3}
-Requires: pcp-system-tools 
+Requires: pcp-system-tools
 %endif
 %if !%{disable_qt}
 Requires: pcp-gui
@@ -1993,12 +1996,16 @@ License: GPLv2+
 Group: Applications/System
 Summary: Performance Co-Pilot (PCP) Zeroconf Package
 URL: http://www.pcp.io
-Requires: pcp
+Requires: pcp pcp-doc pcp-system-tools
 Requires: pcp-pmda-dm pcp-pmda-nfsclient
+# to make pcp-zeroconf replace sysstat, uncomment the next line
+# Obsoletes: sysstat
 %description zeroconf
 This package contains configuration tweaks and files to increase metrics
 gathering frequency, several extended pmlogger configurations, as well as
 automated pmie diagnosis, alerting and self-healing for the localhost.
+A cron script also writes daily performance summary reports similar to
+those written by sysstat.
 
 %if !%{disable_python2}
 #
@@ -2017,7 +2024,7 @@ Obsoletes: python-pcp
 %if 0%{?rhel} == 5
 Requires: python%{default_python}
 %else
-Requires: python2
+Requires: %{__python2}
 %endif
 
 %description -n %{__python2}-pcp
@@ -2065,7 +2072,7 @@ Requires: pcp-libs = %{version}-%{release}
 This PCP module contains additional system monitoring tools written
 in python.
 %endif #end pcp-system-tools
-   
+
 %if !%{disable_qt}
 #
 # pcp-gui package for Qt tools
@@ -2076,6 +2083,7 @@ Group: Applications/System
 Summary: Visualization tools for the Performance Co-Pilot toolkit
 URL: http://www.pcp.io
 Requires: pcp = %{version}-%{release} pcp-libs = %{version}-%{release}
+Requires: liberation-sans-fonts
 BuildRequires: hicolor-icon-theme
 
 %description gui
@@ -2533,6 +2541,14 @@ fi
 %preun pmda-prometheus
 %{pmda_remove "$1" "prometheus"}
 
+%post pmda-prometheus
+# pcp-4.0.1 and later: pmdaprometheus starts "notready" - this is for upgrades
+. /etc/pcp.env
+if grep -q ^prometheus "$PCP_PMCDCONF_PATH" 2>/dev/null
+then
+    touch $PCP_PMDAS_DIR/prometheus/.NeedInstall
+fi
+
 %preun pmda-lustre
 %{pmda_remove "$1" "lustre"}
 
@@ -2875,6 +2891,8 @@ cd
 %config(noreplace) %{_confdir}/pmlogger/control
 %config(noreplace) %{_confdir}/pmlogger/control.d/local
 %dir %attr(0775,pcp,pcp) %{_confdir}/nssdb
+%dir %{_confdir}/discover
+%config(noreplace) %{_confdir}/discover/pcp-kube-pods.conf
 
 %ghost %{_localstatedir}/run/pcp
 %{_localstatedir}/lib/pcp/config/pmafm
@@ -2900,6 +2918,8 @@ cd
 #empty
 
 %files zeroconf
+%{_libexecdir}/pcp/bin/pmlogger_daily_report
+%config(noreplace) %{_sysconfdir}/cron.d/pcp-pmlogger-daily-report
 %{_localstatedir}/lib/pcp/config/pmlogconf/zeroconf
 
 #additional pmlogger config files
@@ -3124,8 +3144,8 @@ cd
 %files pmda-rsyslog
 %{_pmdasdir}/rsyslog
 
-%files pmda-samba 
-%{_pmdasdir}/samba 
+%files pmda-samba
+%{_pmdasdir}/samba
 
 %if !%{disable_snmp}
 %files pmda-snmp
@@ -3300,6 +3320,12 @@ cd
 %endif
 
 %changelog
+* Thu Mar 29 2018 Mark Goodwin <mgoodwin@redhat.com> - 4.0.1-1
+- selinux blocks pmdagluster (BZ 1558708)
+- pmcd binding only to localhost:44321 by default (BZ 1529915)
+- See also https://github.com/performancecopilot/pcp/issues
+- Update to latest PCP sources.
+
 * Thu Mar 01 2018 Iryna Shcherbina <ishcherb@redhat.com> - 4.0.0-3
 - Update Python 2 dependency declarations to new packaging standards
   (See https://fedoraproject.org/wiki/FinalizingFedoraSwitchtoPython3)
