@@ -1,5 +1,5 @@
 Name:    pcp
-Version: 4.0.1
+Version: 4.0.2
 Release: 1%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2.1+ and CC-BY
@@ -10,7 +10,7 @@ Group:   Applications/System
 %global  github https://github.com/performancecopilot
 
 Source0: %{bintray}/download/pcp/source/pcp-%{version}.src.tar.gz
-Source1: %{github}/pcp-webapp-vector/archive/1.2.1/pcp-webapp-vector-1.2.1.tar.gz
+Source1: %{github}/pcp-webapp-vector/archive/1.2.2/pcp-webapp-vector-1.2.2.tar.gz
 Source2: %{github}/pcp-webapp-grafana/archive/1.9.1-2/pcp-webapp-grafana-1.9.1-2.tar.gz
 Source3: %{github}/pcp-webapp-graphite/archive/0.9.10/pcp-webapp-graphite-0.9.10.tar.gz
 Source4: %{github}/pcp-webapp-blinkenlights/archive/1.0.0/pcp-webapp-blinkenlights-1.0.0.tar.gz
@@ -473,6 +473,7 @@ Group: Applications/System
 Summary: Performance Co-Pilot (PCP) web API service
 URL: http://www.pcp.io
 Requires: pcp = %{version}-%{release} pcp-libs = %{version}-%{release}
+Requires: liberation-sans-fonts
 
 %description webapi
 Provides a daemon (pmwebd) that binds a large subset of the Performance
@@ -1573,13 +1574,15 @@ Requires: python3-pcp
 Requires: libvirt-python3 python3-lxml
 BuildRequires: libvirt-python3 python3-lxml
 %else
+%if 0%{?rhel} == 0 || 0%{?fedora} >= 27
 Requires: %{__python2}-pcp
 Requires: %{__python2}-libvirt %{__python2}-lxml
-%if 0%{?rhel} == 0 || 0%{?fedora} >= 28
 BuildRequires: %{__python2}-libvirt %{__python2}-lxml
 %endif
 %if 0%{?rhel} > 5
-BuildRequires: libvirt-%{__python2}
+Requires: %{__python2}-pcp
+Requires: libvirt-%{__python2} %{__python2}-lxml
+BuildRequires: libvirt-%{__python2} %{__python2}-lxml
 %endif
 %endif
 %description pmda-libvirt
@@ -1869,6 +1872,21 @@ arbitrary shell commands.
 # end pcp-pmda-shping
 
 #
+# pcp-pmda-smart
+#
+%package pmda-smart
+License: GPLv2+
+Group: Applications/System
+Summary: Performance Co-Pilot (PCP) metrics for S.M.A.R.T values
+URL: http://www.pcp.io
+Requires: pcp-libs = %{verison}-%{release}
+%description pmda-smart
+This package contains the PCP Performance Metric Domain Agent (PMDA) for
+collecting metrics of disk S.M.A.R.T values making use of data from the
+smartmontools package.
+#end pcp-pmda-smart
+
+#
 # pcp-pmda-summary
 #
 %package pmda-summary
@@ -1942,7 +1960,7 @@ Requires: pcp-pmda-nginx pcp-pmda-nfsclient pcp-pmda-pdns pcp-pmda-postfix pcp-p
 Requires: pcp-pmda-samba pcp-pmda-slurm pcp-pmda-vmware pcp-pmda-zimbra
 Requires: pcp-pmda-dm pcp-pmda-apache
 Requires: pcp-pmda-bash pcp-pmda-cisco pcp-pmda-gfs2 pcp-pmda-lmsensors pcp-pmda-mailq pcp-pmda-mounts
-Requires: pcp-pmda-nvidia-gpu pcp-pmda-roomtemp pcp-pmda-sendmail pcp-pmda-shping
+Requires: pcp-pmda-nvidia-gpu pcp-pmda-roomtemp pcp-pmda-sendmail pcp-pmda-shping pcp-pmda-smart
 Requires: pcp-pmda-lustrecomm pcp-pmda-logger pcp-pmda-docker pcp-pmda-bind2
 %if !%{disable_nutcracker}
 Requires: pcp-pmda-nutcracker
@@ -2282,6 +2300,7 @@ ls -1 $RPM_BUILD_ROOT/%{_pmdasdir} |\
   grep -E -v '^roomtemp' |\
   grep -E -v '^sendmail' |\
   grep -E -v '^shping' |\
+  grep -E -v '^smart' |\
   grep -E -v '^summary' |\
   grep -E -v '^trace' |\
   grep -E -v '^weblog' |\
@@ -2601,6 +2620,16 @@ fi
 %{pmda_remove "$1" "bcc"}
 %endif
 
+%if !%{disable_bcc}
+%post pmda-bcc
+# pcp-4.0.2 and later: pmdabcc starts "notready" - this is for upgrades
+. /etc/pcp.env
+if grep -q ^bcc "$PCP_PMCDCONF_PATH" 2>/dev/null
+then
+    touch $PCP_PMDAS_DIR/bcc/.NeedInstall
+fi
+%endif
+
 %if !%{disable_python2} || !%{disable_python3}
 %preun pmda-gluster
 %{pmda_remove "$1" "gluster"}
@@ -2659,6 +2688,9 @@ fi
 
 %preun pmda-shping
 %{pmda_remove "$1" "shping"}
+
+%preun pmda-smart
+%{pmda_remove "$1" "smart"}
 
 %preun pmda-summary
 %{pmda_remove "$1" "summary"}
@@ -2783,6 +2815,7 @@ rm -f $PCP_LOG_DIR/configs.sh
 
 chown -R pcp:pcp %{_logsdir}/pmcd 2>/dev/null
 chown -R pcp:pcp %{_logsdir}/pmlogger 2>/dev/null
+chown -R pcp:pcp %{_logsdir}/sa 2>/dev/null
 chown -R pcp:pcp %{_logsdir}/pmie 2>/dev/null
 chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 touch "$PCP_PMNS_DIR/.NeedRebuild"
@@ -3216,6 +3249,7 @@ cd
 
 %files export-zabbix-agent
 %{_libdir}/zabbix
+%{_sysconfdir}/zabbix/zabbix_agent.d/zbxpcp.conf
 
 %if !%{disable_json}
 %files pmda-json
@@ -3265,6 +3299,9 @@ cd
 
 %files pmda-shping
 %{_pmdasdir}/shping
+
+%files pmda-smart
+%{_pmdasdir}/smart
 
 %files pmda-summary
 %{_pmdasdir}/summary
@@ -3320,10 +3357,15 @@ cd
 %endif
 
 %changelog
+* Fri May 11 2018 Mark Goodwin <mgoodwin@redhat.com> - 4.0.2-1
+- Propogate build flags throughout PCP (BZ 1538187)
+- Further additions to selinux policy (BZ 1565158)
+- Update to Vector v1.2.2 in pcp-webapp-vector.
+- Update to latest PCP sources.
+
 * Thu Mar 29 2018 Mark Goodwin <mgoodwin@redhat.com> - 4.0.1-1
-- selinux blocks pmdagluster (BZ 1558708)
+- Fix selinux policy to allow pmdagluster to work (BZ 1558708)
 - pmcd binding only to localhost:44321 by default (BZ 1529915)
-- See also https://github.com/performancecopilot/pcp/issues
 - Update to latest PCP sources.
 
 * Thu Mar 01 2018 Iryna Shcherbina <ishcherb@redhat.com> - 4.0.0-3
