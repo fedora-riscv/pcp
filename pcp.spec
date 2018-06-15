@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 4.1.0
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL:     https://pcp.io
@@ -216,7 +216,8 @@ BuildRequires: boost-devel
 %if 0%{?rhel} == 0 || 0%{?rhel} > 5
 BuildRequires: perl-devel perl-generators
 %endif
-BuildRequires: perl(ExtUtils::MakeMaker)
+BuildRequires: perl(strict) perl(ExtUtils::MakeMaker) perl(LWP::UserAgent) perl(JSON)
+BuildRequires: perl(LWP::UserAgent) perl(Time::HiRes) perl(Digest::MD5)
 BuildRequires: initscripts man
 %if !%{disable_systemd}
 BuildRequires: systemd-devel
@@ -3350,8 +3351,9 @@ cd
 %endif
 
 %changelog
-* Fri Jun 15 2018 Nathan Scott <nathans@redhat.com> - 4.1.0-1
+* Fri Jun 15 2018 Nathan Scott <nathans@redhat.com> - 4.1.0-2
 - Rapid compression of PCP log data and metadata (BZ 1293471)
+- Added Perl package build dependencies.
 - Update to latest PCP sources.
 
 * Fri May 11 2018 Mark Goodwin <mgoodwin@redhat.com> - 4.0.2-1
