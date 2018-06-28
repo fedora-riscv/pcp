@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 4.1.0
-Release: 3%{?dist}
+Release: 4%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL:     https://pcp.io
@@ -3351,6 +3351,9 @@ cd
 %endif
 
 %changelog
+* Thu Jun 28 2018 Jitka Plesnikova <jplesnik@redhat.com> - 4.1.0-4
+- Perl 5.28 rebuild
+
 * Tue Jun 19 2018 Miro Hrončok <mhroncok@redhat.com> - 4.1.0-3
 - Rebuilt for Python 3.7
 
