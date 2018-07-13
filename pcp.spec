@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 4.1.0
-Release: 6%{?dist}
+Release: 7%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL:     https://pcp.io
@@ -3351,6 +3351,9 @@ cd
 %endif
 
 %changelog
+* Fri Jul 13 2018 Fedora Release Engineering <releng@fedoraproject.org> - 4.1.0-7
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_29_Mass_Rebuild
+
 * Tue Jul 03 2018 Petr Pisar <ppisar@redhat.com> - 4.1.0-6
 - Perl 5.28 rebuild
 
