@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 4.1.1
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL:     https://pcp.io
@@ -3372,6 +3372,9 @@ cd
 %endif
 
 %changelog
+* Fri Aug 03 2018 Dave Brolley <brolley@redhat.com> - 4.1.1-2
+- pcp.spec: Fix the _with_dstat reference in the %configure command
+
 * Fri Aug 03 2018 Dave Brolley <brolley@redhat.com> - 4.1.1-1
 - SELinux is preventing pmdalinux from 'unix_read' accesses on the shared memory Unknown
   (BZ 1592901)
