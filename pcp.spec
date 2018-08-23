@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 4.1.1
-Release: 2%{?dist}
+Release: 3%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL:     https://pcp.io
@@ -10,10 +10,10 @@ Group:   Applications/System
 %global  github https://github.com/performancecopilot
 
 Source0: %{bintray}/download/pcp/source/pcp-%{version}.src.tar.gz
-Source1: %{github}/pcp-webapp-vector/archive/1.2.2/pcp-webapp-vector-1.2.2.tar.gz
+Source1: %{github}/pcp-webapp-vector/archive/1.3.0/pcp-webapp-vector-1.3.0.tar.gz
 Source2: %{github}/pcp-webapp-grafana/archive/1.9.1-2/pcp-webapp-grafana-1.9.1-2.tar.gz
 Source3: %{github}/pcp-webapp-graphite/archive/0.9.10/pcp-webapp-graphite-0.9.10.tar.gz
-Source4: %{github}/pcp-webapp-blinkenlights/archive/1.0.0/pcp-webapp-blinkenlights-1.0.0.tar.gz
+Source4: %{github}/pcp-webapp-blinkenlights/archive/1.0.1/pcp-webapp-blinkenlights-1.0.1.tar.gz
 
 %if 0%{?fedora} >= 26 || 0%{?rhel} > 7
 %global __python2 python2
@@ -3372,6 +3372,9 @@ cd
 %endif
 
 %changelog
+* Thu Aug 23 2018 Nathan Scott <nathans@redhat.com> - 4.1.1-3
+- Updated versions of Vector (1.3.0) and Blinkenlights (1.0.1) webapps
+
 * Fri Aug 03 2018 Dave Brolley <brolley@redhat.com> - 4.1.1-2
 - pcp.spec: Fix the _with_dstat reference in the %configure command
 
