@@ -3372,8 +3372,8 @@ cd
 %endif
 
 %changelog
-* Thu Aug 23 2018 Nathan Scott <nathans@redhat.com> - 4.1.1-3
-- Updated versions of Vector (1.3.0) and Blinkenlights (1.0.1) webapps
+* Wed Aug 29 2018 Nathan Scott <nathans@redhat.com> - 4.1.1-3
+- Updated versions of Vector (1.3.1) and Blinkenlights (1.0.1) webapps
 
 * Fri Aug 03 2018 Dave Brolley <brolley@redhat.com> - 4.1.1-2
 - pcp.spec: Fix the _with_dstat reference in the %configure command
