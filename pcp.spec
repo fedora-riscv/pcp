@@ -1,6 +1,6 @@
 Name:    pcp
-Version: 4.1.1
-Release: 4%{?dist}
+Version: 4.1.3
+Release: 1%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL:     https://pcp.io
@@ -50,7 +50,7 @@ Source4: %{github}/pcp-webapp-blinkenlights/archive/1.0.1/pcp-webapp-blinkenligh
 %global disable_webapps 0
 %global disable_cairo 0
 
-%if 0%{?rhel} > 7
+%if 0%{?rhel} > 7 || 0%{?fedora} >= 30
 %global disable_python2 1
 %else
 %global disable_python2 0
@@ -120,8 +120,7 @@ Source4: %{github}/pcp-webapp-blinkenlights/archive/1.0.1/pcp-webapp-blinkenligh
 # Qt development and runtime environment missing components before el6
 %if 0%{?rhel} == 0 || 0%{?rhel} > 5
 %global disable_qt 0
-# We need qt5 for fedora
-%if 0%{?fedora} != 0
+%if 0%{?fedora} != 0 || 0%{?rhel} > 7
 %global default_qt 5
 %endif
 %else
@@ -238,7 +237,7 @@ BuildRequires: qt5-qtsvg-devel
 %endif
 %endif
 
-Requires: bash gawk sed grep findutils which
+Requires: bash bc bzip2 gawk gcc sed grep findutils which
 Requires: pcp-libs = %{version}-%{release}
 %if !%{disable_selinux}
 Requires: pcp-selinux = %{version}-%{release}
@@ -1060,7 +1059,9 @@ Group: Applications/System
 Summary: Performance Co-Pilot (PCP) metrics for 389 Directory Servers
 URL: https://pcp.io
 Requires: perl-PCP-PMDA = %{version}-%{release}
+%if 0%{?rhel} <= 7
 Requires: perl-LDAP
+%endif
 
 %description pmda-ds389
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
@@ -1351,9 +1352,16 @@ License: GPLv2+
 Group: Applications/System
 Summary: Performance Co-Pilot (PCP) metrics for PostgreSQL
 URL: https://pcp.io
-Requires: perl-PCP-PMDA = %{version}-%{release}
-Requires: perl(DBI) perl(DBD::Pg)
-BuildRequires: perl(DBI) perl(DBD::Pg)
+
+%if !%{disable_python3}
+Requires: python3-pcp
+Requires: python3-psycopg2
+BuildRequires: python3-psycopg2
+%else
+Requires: %{__python2}-pcp
+Requires: %{__python2}-psycopg2
+BuildRequires: %{__python2}-psycopg2
+%endif
 
 %description pmda-postgresql
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
@@ -1396,7 +1404,7 @@ collecting metrics about Samba.
 %package pmda-slurm
 License: GPLv2+
 Group: Applications/System
-Summary: Performance Co-Pilot (PCP) metrics for NFS Clients
+Summary: Performance Co-Pilot (PCP) metrics for the SLURM Workload Manager
 URL: https://pcp.io
 Requires: perl-PCP-PMDA = %{version}-%{release}
 
@@ -3372,8 +3380,8 @@ cd
 %endif
 
 %changelog
-* Thu Aug 30 2018 Nathan Scott <nathans@redhat.com> - 4.1.1-4
-- Updated version of Vector (1.3.1-1) webapp
+* Fri Sep 21 2018 Nathan Scott <nathans@redhat.com> - 4.1.3-1
+- Update to latest PCP sources.
 
 * Wed Aug 29 2018 Nathan Scott <nathans@redhat.com> - 4.1.1-3
 - Updated versions of Vector (1.3.1) and Blinkenlights (1.0.1) webapps
