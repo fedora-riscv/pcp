@@ -1,5 +1,5 @@
 Name:    pcp
-Version: 4.2.0
+Version: 4.3.0
 Release: 1%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2.1+ and CC-BY
@@ -167,12 +167,6 @@ Source4: %{github}/pcp-webapp-blinkenlights/archive/1.0.1/pcp-webapp-blinkenligh
 %global disable_noarch 1
 %endif
 
-%if 0%{?fedora} >= 24 || 0%{?rhel} > 8
-%global disable_elasticsearch 0
-%else
-%global disable_elasticsearch 1
-%endif
-
 %if 0%{?fedora} >= 24
 %global disable_xlsx 0
 %else
@@ -288,6 +282,7 @@ Requires: pcp-libs = %{version}-%{release}
 %global _with_dstat --with-dstat-symlink=yes
 %global disable_dstat 0
 %else
+%global _with_dstat --with-dstat-symlink=no
 %global disable_dstat 1
 %endif
 
@@ -798,7 +793,6 @@ Zabbix via the Zabbix agent - see zbxpcp(3) for further details.
 #
 # pcp-export-pcp2elasticsearch
 #
-%if !%{disable_elasticsearch}
 %package export-pcp2elasticsearch
 License: GPLv2+
 Group: Applications/System
@@ -819,7 +813,7 @@ BuildRequires: %{__python2}-requests
 Performance Co-Pilot (PCP) front-end tools for exporting metric values
 to Elasticsearch - a distributed, RESTful search and analytics engine.
 See https://www.elastic.co/community for further details.
-%endif
+
 #
 # pcp-export-pcp2graphite
 #
@@ -1694,12 +1688,8 @@ Summary: Performance Co-Pilot (PCP) metrics for Elasticsearch
 URL: https://pcp.io
 %if !%{disable_python3}
 Requires: python3-pcp
-Requires: python3-urllib3
-BuildRequires: python3-urllib3
 %else
 Requires: %{__python2}-pcp
-Requires: %{__python2}-urllib3
-BuildRequires: %{__python2}-urllib3
 %endif
 %description pmda-elasticsearch
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
@@ -3228,6 +3218,7 @@ cd
 
 %files pmda-postgresql
 %{_pmdasdir}/postgresql
+%config(noreplace) %{_pmdasdir}/postgresql/pmdapostgresql.conf
 
 %files pmda-redis
 %{_pmdasdir}/redis
@@ -3279,10 +3270,8 @@ cd
 %files pmda-libvirt
 %{_pmdasdir}/libvirt
 
-%if !%{disable_elasticsearch}
 %files export-pcp2elasticsearch
 %{_bindir}/pcp2elasticsearch
-%endif
 
 %files export-pcp2graphite
 %{_bindir}/pcp2graphite
@@ -3421,6 +3410,19 @@ cd
 %endif
 
 %changelog
+* Fri Dec 21 2018 Nathan Scott <nathans@redhat.com> - 4.3.0-1
+- Add the dstat -f/--full option to expand instances (BZ 1651536)
+- Improve systemd interaction for local pmie (BZ 1650999)
+- SELinux is preventing ps from 'search' accesses on the directory
+  .config (BZ 1569697)
+- SELinux is preventing pmdalinux from 'search' accesses on
+  the directory /var/lib/libvirt/images (BZ 1579988)
+- SELinux is preventing pmdalinux from 'unix_read' accesses
+  on the semáforo Unknown (BZ 1607658)
+- SELinux is preventing pmdalinux from 'unix_read' accesses
+  on the shared memory Unknown (BZ 1618756, BZ 1619381, BZ 1601721)
+- Update to latest PCP sources.
+
 * Fri Nov 16 2018 Mark Goodwin <mgoodwin@redhat.com> - 4.2.0-1
 - Resolves dstat packaging issues (BZ 1640912)
 - Resolves dstat cursor positioning problem (BZ 1640913)
