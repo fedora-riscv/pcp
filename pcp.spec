@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 4.3.0
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL:     https://pcp.io
@@ -14,6 +14,8 @@ Source1: %{github}/pcp-webapp-vector/archive/1.3.1-1/pcp-webapp-vector-1.3.1-1.t
 Source2: %{github}/pcp-webapp-grafana/archive/1.9.1-2/pcp-webapp-grafana-1.9.1-2.tar.gz
 Source3: %{github}/pcp-webapp-graphite/archive/0.9.10/pcp-webapp-graphite-0.9.10.tar.gz
 Source4: %{github}/pcp-webapp-blinkenlights/archive/1.0.1/pcp-webapp-blinkenlights-1.0.1.tar.gz
+# patch for GH#597
+Patch0: pcp-revert-pmlogger_daily-daystart.patch
 
 %if 0%{?fedora} >= 26 || 0%{?rhel} > 7
 %global __python2 python2
@@ -2223,6 +2225,7 @@ updated policy package.
 %setup -q -T -D -a 3 -c -n graphite
 %setup -q -T -D -a 4 -c -n blinkenlights
 %setup -q
+%patch0 -p1
 
 %build
 %if !%{disable_python2} && 0%{?default_python} != 3
@@ -3410,6 +3413,9 @@ cd
 %endif
 
 %changelog
+* Wed Dec 26 2018 Mark Goodwin <mgoodwin@redhat.com> - 4.3.0-2
+- Revert pmlogger_daily daystart patch (BZ 1662034)
+
 * Fri Dec 21 2018 Nathan Scott <nathans@redhat.com> - 4.3.0-1
 - Add the dstat -f/--full option to expand instances (BZ 1651536)
 - Improve systemd interaction for local pmie (BZ 1650999)
