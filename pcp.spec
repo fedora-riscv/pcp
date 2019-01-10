@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 4.3.0
-Release: 2%{?dist}
+Release: 3%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL:     https://pcp.io
@@ -162,6 +162,13 @@ Patch0: pcp-revert-pmlogger_daily-daystart.patch
 %global disable_boost 1
 %endif
 
+# libuv
+%if 0%{?fedora} >= 28 || 0%{?rhel} > 7
+%global disable_libuv 0
+%else
+%global disable_libuv 1
+%endif
+
 # rpm producing "noarch" packages
 %if 0%{?rhel} == 0 || 0%{?rhel} > 5
 %global disable_noarch 0
@@ -223,6 +230,9 @@ BuildRequires: systemtap-sdt-devel
 %endif
 %if !%{disable_boost}
 BuildRequires: boost-devel
+%endif
+%if !%{disable_libuv}
+BuildRequires: libuv-devel >= 1.16
 %endif
 %if 0%{?rhel} == 0 || 0%{?rhel} > 7
 BuildRequires: perl-generators
@@ -3413,6 +3423,9 @@ cd
 %endif
 
 %changelog
+* Thu Jan 10 2019 Mark Goodwin <mgoodwin@redhat.com> - 4.3.0-3
+- add missing build deps on libuv for pmseries and libpcp_web (BZ 1630540)
+
 * Wed Dec 26 2018 Mark Goodwin <mgoodwin@redhat.com> - 4.3.0-2
 - Revert pmlogger_daily daystart patch (BZ 1662034)
 
