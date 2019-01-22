@@ -2907,8 +2907,7 @@ chmod 644 "$PCP_PMNS_DIR/.NeedRebuild"
 cd $PCP_PMNS_DIR && ./Rebuild -s && rm -f .NeedRebuild
 cd
 
-%post libs -p /sbin/ldconfig
-%postun libs -p /sbin/ldconfig
+%ldconfig_scriptlets libs
 
 %if !%{disable_selinux}
 %preun selinux
