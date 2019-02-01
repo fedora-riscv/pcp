@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 4.3.0
-Release: 3%{?dist}
+Release: 4%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL:     https://pcp.io
@@ -3319,6 +3319,9 @@ cd
 %endif
 
 %changelog
+* Fri Feb 01 2019 Fedora Release Engineering <releng@fedoraproject.org> - 4.3.0-4
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_30_Mass_Rebuild
+
 * Thu Jan 10 2019 Mark Goodwin <mgoodwin@redhat.com> - 4.3.0-3
 - add missing build deps on libuv for pmseries and libpcp_web (BZ 1630540)
 
