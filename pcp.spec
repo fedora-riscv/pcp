@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 4.3.0
-Release: 4%{?dist}
+Release: 5%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL:     https://pcp.io
@@ -15,6 +15,7 @@ Source3: %{github}/pcp-webapp-graphite/archive/0.9.10/pcp-webapp-graphite-0.9.10
 Source4: %{github}/pcp-webapp-blinkenlights/archive/1.0.1/pcp-webapp-blinkenlights-1.0.1.tar.gz
 # patch for GH#597
 Patch0: pcp-revert-pmlogger_daily-daystart.patch
+Patch1: pmcd-pmlogger-local-context.patch
 
 %if 0%{?fedora} >= 26 || 0%{?rhel} > 7
 %global __python2 python2
@@ -2133,6 +2134,7 @@ updated policy package.
 %setup -q -T -D -a 4 -c -n blinkenlights
 %setup -q
 %patch0 -p1
+%patch1 -p1
 
 %build
 %if !%{disable_python2} && 0%{?default_python} != 3
@@ -2201,15 +2203,6 @@ for f in $RPM_BUILD_ROOT/%{_initddir}/{pcp,pmcd,pmlogger,pmie,pmwebd,pmmgr,pmpro
 	test -f "$f" || continue
 	sed -i -e '/^# chkconfig/s/:.*$/: - 95 05/' -e '/^# Default-Start:/s/:.*$/:/' $f
 done
-
-%if 0%{?fedora} > 26
-if [ "$1" -eq 1 ]
-then
-PCP_SYSCONFIG_DIR=%{_sysconfdir}/sysconfig
-sed -i 's/^\#\ PMLOGGER_LOCAL.*/PMLOGGER_LOCAL=1/g' "$RPM_BUILD_ROOT/$PCP_SYSCONFIG_DIR/pmlogger"
-sed -i 's/^\#\ PMCD_LOCAL.*/PMCD_LOCAL=1/g' "$RPM_BUILD_ROOT/$PCP_SYSCONFIG_DIR/pmcd"
-fi
-%endif
 
 # list of PMDAs in the base pkg
 ls -1 $RPM_BUILD_ROOT/%{_pmdasdir} |\
@@ -3319,6 +3312,9 @@ cd
 %endif
 
 %changelog
+* Tue Feb 12 2019 Lukas Berk <lberk@redhat.com> - 4.3.0-5
+- Add patch to enable PMCD_LOCAL and PMLOGGER_LOCAL sysconfig vars
+
 * Fri Feb 01 2019 Fedora Release Engineering <releng@fedoraproject.org> - 4.3.0-4
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_30_Mass_Rebuild
 

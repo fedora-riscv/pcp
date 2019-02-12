@@ -4,3 +4,4 @@ pcp-webapp-*.tar.gz
 pcp-webjs-*
 vector-*
 /pcp-revert-pmlogger_daily-daystart.patch
+/pmcd-pmlogger-local-context.patch
