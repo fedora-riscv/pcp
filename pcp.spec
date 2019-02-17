@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 4.3.0
-Release: 5%{?dist}
+Release: 6%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2.1+ and CC-BY
 URL:     https://pcp.io
@@ -3312,6 +3312,9 @@ cd
 %endif
 
 %changelog
+* Sun Feb 17 2019 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 4.3.0-6
+- Rebuild for readline 8.0
+
 * Tue Feb 12 2019 Lukas Berk <lberk@redhat.com> - 4.3.0-5
 - Add patch to enable PMCD_LOCAL and PMLOGGER_LOCAL sysconfig vars
 
