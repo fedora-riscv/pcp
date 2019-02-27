@@ -1,8 +1,8 @@
 Name:    pcp
-Version: 4.3.0
-Release: 4%{?dist}
+Version: 4.3.1
+Release: 1%{?dist}
 Summary: System-level performance monitoring and performance management
-License: GPLv2+ and LGPLv2.1+ and CC-BY
+License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
 Group:   Applications/System
 
@@ -14,9 +14,6 @@ Source1: %{github}/pcp-webapp-vector/archive/1.3.1-1/pcp-webapp-vector-1.3.1-1.t
 Source2: %{github}/pcp-webapp-grafana/archive/1.9.1-2/pcp-webapp-grafana-1.9.1-2.tar.gz
 Source3: %{github}/pcp-webapp-graphite/archive/0.9.10/pcp-webapp-graphite-0.9.10.tar.gz
 Source4: %{github}/pcp-webapp-blinkenlights/archive/1.0.1/pcp-webapp-blinkenlights-1.0.1.tar.gz
-# patch for GH#597
-Patch0: pcp-revert-pmlogger_daily-daystart.patch
-Patch1: pmcd-pmlogger-local-context.patch
 
 %if 0%{?fedora} >= 26 || 0%{?rhel} > 7
 %global __python2 python2
@@ -50,7 +47,7 @@ Patch1: pmcd-pmlogger-local-context.patch
 %endif
 
 # libvarlink and pmdapodman
-%if 0%{?fedora} >= 28 || 0%{?rhel} >= 7
+%if 0%{?fedora} >= 28 || 0%{?rhel} > 7
 %global disable_podman 0
 %else
 %global disable_podman 1
@@ -89,15 +86,11 @@ Patch1: pmcd-pmlogger-local-context.patch
 %endif
 
 # support for pmdabcc
-%if 0%{?fedora} >= 25 || 0%{?rhel} > 7
+%if 0%{?fedora} >= 25 || 0%{?rhel} > 6
 %ifarch s390 s390x armv7hl aarch64 i686
 %global disable_bcc 1
 %else
-%if !%{disable_python3}
 %global disable_bcc 0
-%else
-%global disable_bcc 1
-%endif
 %endif
 %else
 %global disable_bcc 1
@@ -378,14 +371,6 @@ then
 fi
 }
 
-# force upgrade of PMDAs starting in "notready" state
-%global pmda_notready() %{expand:
-if grep -q ^%2 "%{_confdir}/pmcd/pmcd.conf" 2>/dev/null
-then
-    touch %{_pmdasdir}/%2/.NeedInstall
-fi
-}
-
 %global selinux_handle_policy() %{expand:
 if [ %1 -ge 1 ]
 then
@@ -408,7 +393,7 @@ applications to easily retrieve and process any subset of that data.
 # pcp-conf
 #
 %package conf
-License: LGPLv2.1+
+License: LGPLv2+
 Group: System Environment/Libraries
 Summary: Performance Co-Pilot run-time configuration
 URL: https://pcp.io
@@ -423,7 +408,7 @@ Performance Co-Pilot (PCP) run-time configuration
 # pcp-libs
 #
 %package libs
-License: LGPLv2.1+
+License: LGPLv2+
 Group: System Environment/Libraries
 Summary: Performance Co-Pilot run-time libraries
 URL: https://pcp.io
@@ -436,7 +421,7 @@ Performance Co-Pilot (PCP) run-time libraries
 # pcp-libs-devel
 #
 %package libs-devel
-License: GPLv2+ and LGPLv2.1+
+License: GPLv2+ and LGPLv2+
 Group: Development/Libraries
 Summary: Performance Co-Pilot (PCP) development headers
 URL: https://pcp.io
@@ -449,7 +434,7 @@ Performance Co-Pilot (PCP) headers for development.
 # pcp-devel
 #
 %package devel
-License: GPLv2+ and LGPLv2.1+
+License: GPLv2+ and LGPLv2+
 Group: Development/Libraries
 Summary: Performance Co-Pilot (PCP) development tools and documentation
 URL: https://pcp.io
@@ -518,6 +503,7 @@ Requires: pcp-system-tools
 Requires: pcp-gui
 %endif
 Requires: bc gcc gzip bzip2
+Requires: redhat-rpm-config
 
 %description testsuite
 Quality assurance test suite for Performance Co-Pilot (PCP).
@@ -2023,7 +2009,7 @@ Requires: pcp = %{version}-%{release}
 Requires: pcp-libs = %{version}-%{release}
 %description pmda-summary
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
-collecting metrics about other installed pmdas.
+collecting metrics about other installed PMDAs.
 # end pcp-pmda-summary
 
 %if !%{disable_systemd}
@@ -2236,8 +2222,6 @@ updated policy package.
 %setup -q -T -D -a 3 -c -n graphite
 %setup -q -T -D -a 4 -c -n blinkenlights
 %setup -q
-%patch0 -p1
-%patch1 -p1
 
 %build
 %if !%{disable_python2} && 0%{?default_python} != 3
@@ -2306,6 +2290,15 @@ for f in $RPM_BUILD_ROOT/%{_initddir}/{pcp,pmcd,pmlogger,pmie,pmwebd,pmmgr,pmpro
 	test -f "$f" || continue
 	sed -i -e '/^# chkconfig/s/:.*$/: - 95 05/' -e '/^# Default-Start:/s/:.*$/:/' $f
 done
+
+%if 0%{?fedora} > 26
+if [ "$1" -eq 1 ]
+then
+PCP_SYSCONFIG_DIR=%{_sysconfdir}/sysconfig
+sed -i 's/^\#\ PMLOGGER_LOCAL.*/PMLOGGER_LOCAL=1/g' "$RPM_BUILD_ROOT/$PCP_SYSCONFIG_DIR/pmlogger"
+sed -i 's/^\#\ PMCD_LOCAL.*/PMCD_LOCAL=1/g' "$RPM_BUILD_ROOT/$PCP_SYSCONFIG_DIR/pmcd"
+fi
+%endif
 
 # list of PMDAs in the base pkg
 ls -1 $RPM_BUILD_ROOT/%{_pmdasdir} |\
@@ -2766,6 +2759,17 @@ fi
 %preun pmda-weblog
 %{pmda_remove "$1" "weblog"}
 
+%if !%{disable_systemd}
+%preun zeroconf
+if [ "$1" -eq 0 ]
+then
+    %systemd_preun pmlogger_daily_report.timer
+    %systemd_preun pmlogger_daily_report.service
+    %systemd_preun pmlogger_daily_report-poll.timer
+    %systemd_preun pmlogger_daily_report-poll.service
+fi
+%endif
+
 %preun
 if [ "$1" -eq 0 ]
 then
@@ -2819,9 +2823,13 @@ chown -R pcp:pcp %{_logsdir}/pmmgr 2>/dev/null
 %post zeroconf
 PCP_PMDAS_DIR=%{_pmdasdir}
 PCP_SYSCONFIG_DIR=%{_sysconfdir}/sysconfig
-# auto-install important PMDAs for RH Support
+PCP_PMCDCONF_PATH=%{_confdir}/pmcd/pmcd.conf
+# auto-install important PMDAs for RH Support (if not present already)
 for PMDA in dm nfsclient ; do
-    touch "$PCP_PMDAS_DIR/$PMDA/.NeedInstall"
+    if ! grep -q "$PMDA/pmda$PMDA" "$PCP_PMCDCONF_PATH"
+    then
+	touch "$PCP_PMDAS_DIR/$PMDA/.NeedInstall"
+    fi
 done
 # increase default pmlogger recording frequency
 sed -i 's/^\#\ PMLOGGER_INTERVAL.*/PMLOGGER_INTERVAL=10/g' "$PCP_SYSCONFIG_DIR/pmlogger"
@@ -2834,6 +2842,8 @@ pmieconf -c enable dmthin
     systemctl restart pmie >/dev/null 2>&1
     systemctl enable pmcd >/dev/null 2>&1
     systemctl enable pmlogger >/dev/null 2>&1
+    systemctl enable pmlogger_daily_report >/dev/null 2>&1
+    systemctl enable pmlogger_daily_report-poll >/dev/null 2>&1
     systemctl enable pmie >/dev/null 2>&1
 %else
     /sbin/chkconfig --add pmcd >/dev/null 2>&1
@@ -2855,14 +2865,6 @@ pmieconf -c enable dmthin
 %triggerin selinux -- container-selinux
 %{selinux_handle_policy "$1" "pcpupstream-container"}
 %endif
-
-%if !%{disable_bcc}
-%post pmda-bcc
-%{pmda_notready "$1" "bcc"}
-%endif
-
-%post pmda-prometheus
-%{pmda_notready "$1" "prometheus"}
 
 %post
 PCP_LOG_DIR=%{_logsdir}
@@ -2958,10 +2960,23 @@ cd
 %{_unitdir}/pmlogger.service
 %{_unitdir}/pmie.service
 %{_unitdir}/pmproxy.service
-%endif
-%config(noreplace) %{_sysconfdir}/sasl2/pmcd.conf
+# services and timers replacing the old cron scripts
+%{_unitdir}/pmlogger_check.service
+%{_unitdir}/pmlogger_check.timer
+%{_unitdir}/pmlogger_daily.service
+%{_unitdir}/pmlogger_daily.timer
+%{_unitdir}/pmlogger_daily-poll.service
+%{_unitdir}/pmlogger_daily-poll.timer
+%{_unitdir}/pmie_check.service
+%{_unitdir}/pmie_check.timer
+%{_unitdir}/pmie_daily.service
+%{_unitdir}/pmie_daily.timer
+%else
+# cron scripts
 %config(noreplace) %{_sysconfdir}/cron.d/pcp-pmlogger
 %config(noreplace) %{_sysconfdir}/cron.d/pcp-pmie
+%endif
+%config(noreplace) %{_sysconfdir}/sasl2/pmcd.conf
 %config(noreplace) %{_sysconfdir}/sysconfig/pmlogger
 %config(noreplace) %{_sysconfdir}/sysconfig/pmproxy
 %config(noreplace) %{_sysconfdir}/sysconfig/pmcd
@@ -2984,6 +2999,8 @@ cd
 %dir %attr(0775,pcp,pcp) %{_confdir}/nssdb
 %dir %{_confdir}/discover
 %config(noreplace) %{_confdir}/discover/pcp-kube-pods.conf
+%dir %{_confdir}/pmseries
+%config(noreplace) %{_confdir}/pmseries/pmseries.conf
 
 %ghost %dir %attr(0775,pcp,pcp) %{_localstatedir}/run/pcp
 %{_localstatedir}/lib/pcp/config/pmafm
@@ -3004,7 +3021,15 @@ cd
 
 %files zeroconf
 %{_libexecdir}/pcp/bin/pmlogger_daily_report
+%if !%{disable_systemd}
+# systemd services for pmlogger_daily_report to replace the cron script
+%{_unitdir}/pmlogger_daily_report.service
+%{_unitdir}/pmlogger_daily_report.timer
+%{_unitdir}/pmlogger_daily_report-poll.service
+%{_unitdir}/pmlogger_daily_report-poll.timer
+%else
 %config(noreplace) %{_sysconfdir}/cron.d/pcp-pmlogger-daily-report
+%endif
 %{_localstatedir}/lib/pcp/config/pmlogconf/zeroconf
 
 #additional pmlogger config files
@@ -3416,14 +3441,11 @@ cd
 %endif
 
 %changelog
-* Tue Feb 12 2019 Lukas Berk <lberk@redhat.com> - 4.3.0-4
-- Add patch to enable PMCD_LOCAL and PMLOGGER_LOCAL sysconfig vars
-
-* Thu Jan 10 2019 Mark Goodwin <mgoodwin@redhat.com> - 4.3.0-3
-- add missing build deps on libuv for pmseries and libpcp_web (BZ 1630540)
-
-* Wed Dec 26 2018 Mark Goodwin <mgoodwin@redhat.com> - 4.3.0-2
-- Revert pmlogger_daily daystart patch (BZ 1662034)
+* Wed Feb 27 2019 Mark Goodwin <mgoodwin@redhat.com> - 4.3.1-1
+- Fixes pcp-dstat in --full (all instances) mode (BZ 1661912)
+- Remove package dependencies on initscripts (BZ 1592380)
+- Set include directory for cppcheck use (BZ 1663372)
+- Update to latest PCP sources.
 
 * Fri Dec 21 2018 Nathan Scott <nathans@redhat.com> - 4.3.0-1
 - Add the dstat -f/--full option to expand instances (BZ 1651536)
