@@ -1,6 +1,6 @@
 Name:    pcp
-Version: 4.3.1
-Release: 2%{?dist}
+Version: 4.3.2
+Release: 1%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
@@ -14,7 +14,6 @@ Source2: %{github}/pcp-webapp-grafana/archive/1.9.1-2/pcp-webapp-grafana-1.9.1-2
 Source3: %{github}/pcp-webapp-graphite/archive/0.9.10/pcp-webapp-graphite-0.9.10.tar.gz
 Source4: %{github}/pcp-webapp-blinkenlights/archive/1.0.1/pcp-webapp-blinkenlights-1.0.1.tar.gz
 Patch0: pmcd-pmlogger-local-context.patch
-Patch1: selinux-policy-updates.patch
 
 %if 0%{?fedora} >= 26 || 0%{?rhel} > 7
 %global __python2 python2
@@ -30,16 +29,10 @@ Patch1: selinux-policy-updates.patch
 
 %global disable_snmp 0
 
-# There are no papi/libpfm devel packages for s390, armv7hl nor for some rhels, disable
+# No libpfm devel packages for s390, armv7hl nor for some rhels, disable
 %ifarch s390 s390x armv7hl
-%global disable_papi 1
 %global disable_perfevent 1
 %else
-%if 0%{?rhel} == 0 || 0%{?rhel} > 5
-%global disable_papi 0
-%else
-%global disable_papi 1
-%endif
 %if 0%{?fedora} >= 20 || 0%{?rhel} > 6
 %global disable_perfevent 0
 %else
@@ -205,9 +198,6 @@ BuildRequires: python3-devel
 BuildRequires: ncurses-devel
 BuildRequires: readline-devel
 BuildRequires: cyrus-sasl-devel
-%if !%{disable_papi}
-BuildRequires: papi-devel
-%endif
 %if !%{disable_podman}
 BuildRequires: libvarlink-devel
 %endif
@@ -314,10 +304,6 @@ Requires: pcp-libs = %{version}-%{release}
 
 %if !%{disable_infiniband}
 %global _with_ib --with-infiniband=yes
-%endif
-
-%if !%{disable_papi}
-%global _with_papi --with-papi=yes
 %endif
 
 %if %{disable_perfevent}
@@ -925,22 +911,6 @@ Performance Co-Pilot (PCP) front-end tools for exporting metric values
 to the Zabbix (https://www.zabbix.org/) monitoring software.
 %endif
 
-%if !%{disable_papi}
-#
-# pcp-pmda-papi
-#
-%package pmda-papi
-License: GPLv2+
-Summary: Performance Co-Pilot (PCP) metrics for Performance API and hardware counters
-URL: https://pcp.io
-Requires: pcp = %{version}-%{release} pcp-libs = %{version}-%{release}
-BuildRequires: papi-devel
-
-%description pmda-papi
-This package contains the PCP Performance Metrics Domain Agent (PMDA) for
-collecting hardware counters statistics through PAPI (Performance API).
-%endif
-
 %if !%{disable_podman}
 #
 # pcp-pmda-podman
@@ -969,6 +939,7 @@ URL: https://pcp.io
 Requires: pcp = %{version}-%{release} pcp-libs = %{version}-%{release}
 Requires: libpfm >= 4
 BuildRequires: libpfm-devel >= 4
+Obsoletes: pcp-pmda-papi pcp-pmda-papi-debuginfo
 
 %description pmda-perfevent
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
@@ -2039,7 +2010,7 @@ Requires: pcp-libs = %{version}-%{release}
 # https://fedoraproject.org/wiki/Packaging:Guidelines "Renaming/Replacing Existing Packages"
 Provides: dstat = %{version}-%{release}
 Provides: /usr/bin/dstat
-Obsoletes: dstat <= 0.7.3-5
+Obsoletes: dstat <= 0.8
 %endif
 
 %description system-tools
@@ -2122,13 +2093,12 @@ updated policy package.
 %setup -q -T -D -a 4 -c -n blinkenlights
 %setup -q
 %patch0 -p1
-%patch1 -p1
 
 %build
 %if !%{disable_python2} && 0%{?default_python} != 3
 export PYTHON=python%{?default_python}
 %endif
-%configure %{?_with_initd} %{?_with_doc} %{?_with_dstat} %{?_with_ib} %{?_with_papi} %{?_with_podman} %{?_with_perfevent} %{?_with_bcc} %{?_with_json} %{?_with_snmp} %{?_with_nutcracker} %{?_with_webapps} %{?_with_python2}
+%configure %{?_with_initd} %{?_with_doc} %{?_with_dstat} %{?_with_ib} %{?_with_podman} %{?_with_perfevent} %{?_with_bcc} %{?_with_json} %{?_with_snmp} %{?_with_nutcracker} %{?_with_webapps} %{?_with_python2}
 make %{?_smp_mflags} default_pcp
 
 %install
@@ -2219,7 +2189,6 @@ ls -1 $RPM_BUILD_ROOT/%{_pmdasdir} |\
   grep -E -v '^nginx' |\
   grep -E -v '^nutcracker' |\
   grep -E -v '^oracle' |\
-  grep -E -v '^papi' |\
   grep -E -v '^pdns' |\
   grep -E -v '^podman' |\
   grep -E -v '^postfix' |\
@@ -2440,11 +2409,6 @@ fi
 %preun pmda-rpm
 %{pmda_remove "$1" "rpm"}
 %endif #preun pmda-rpm
-
-%if !%{disable_papi}
-%preun pmda-papi
-%{pmda_remove "$1" "papi"}
-%endif #preun pmda-papi
 
 %if !%{disable_systemd}
 %preun pmda-systemd
@@ -2862,6 +2826,8 @@ cd
 %{_unitdir}/pmie_check.timer
 %{_unitdir}/pmie_daily.service
 %{_unitdir}/pmie_daily.timer
+%config(noreplace) %{_sysconfdir}/sysconfig/pmie_timers
+%config(noreplace) %{_sysconfdir}/sysconfig/pmlogger_timers
 %else
 # cron scripts
 %config(noreplace) %{_sysconfdir}/cron.d/pcp-pmlogger
@@ -2879,6 +2845,7 @@ cd
 %config(noreplace) %{_confdir}/pmcd/rc.local
 %dir %{_confdir}/pmproxy
 %config(noreplace) %{_confdir}/pmproxy/pmproxy.options
+%config(noreplace) %{_confdir}/pmproxy/pmproxy.conf
 %dir %{_confdir}/pmie
 %dir %{_confdir}/pmie/control.d
 %config(noreplace) %{_confdir}/pmie/control
@@ -3038,11 +3005,6 @@ cd
 
 %files import-collectl2pcp
 %{_bindir}/collectl2pcp
-
-%if !%{disable_papi}
-%files pmda-papi
-%{_pmdasdir}/papi
-%endif
 
 %if !%{disable_podman}
 %files pmda-podman
@@ -3332,10 +3294,11 @@ cd
 %endif
 
 %changelog
-* Thu Mar 07 2019 Nathan Scott <nathans@redhat.com> - 4.3.1-2
-- Remove Group: spec settings, use %ldconfig_scriptlets once more
-- Revert removal of pmcd/pmlogger-local-mode patch
-- Update selinux policy.
+* Fri Apr 26 2019 Mark Goodwin <mgoodwin@redhat.com> 4.3.2-1
+- Resolve selinux policy issues for pmie daemon mode (BZ 1702589)
+- Resolve selinux policy issues for BPF permissions (BZ 1693332)
+- Further improvements to daily archive processing (BZ 1647390)
+- Update to latest PCP sources.
 
 * Wed Feb 27 2019 Mark Goodwin <mgoodwin@redhat.com> - 4.3.1-1
 - Fixes pcp-dstat in --full (all instances) mode (BZ 1661912)
