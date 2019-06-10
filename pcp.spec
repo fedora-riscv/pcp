@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 4.3.2
-Release: 2%{?dist}
+Release: 3%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
@@ -3294,6 +3294,9 @@ cd
 %endif
 
 %changelog
+* Mon Jun 10 15:42:04 CET 2019 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 4.3.2-3
+- Rebuild for RPM 4.15
+
 * Fri May 31 2019 Jitka Plesnikova <jplesnik@redhat.com> - 4.3.2-2
 - Perl 5.30 rebuild
 
