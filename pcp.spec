@@ -1,5 +1,5 @@
 Name:    pcp
-Version: 4.3.2
+Version: 4.3.3
 Release: 1%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
@@ -157,6 +157,8 @@ Patch0: pmcd-pmlogger-local-context.patch
 %global disable_libuv 1
 %endif
 
+%global disable_openssl 0
+
 # rpm producing "noarch" packages
 %if 0%{?rhel} == 0 || 0%{?rhel} > 5
 %global disable_noarch 0
@@ -218,6 +220,9 @@ BuildRequires: boost-devel
 %endif
 %if !%{disable_libuv}
 BuildRequires: libuv-devel >= 1.16
+%endif
+%if !%{disable_openssl}
+BuildRequires: openssl-devel >= 1.1.1
 %endif
 %if 0%{?rhel} == 0 || 0%{?rhel} > 7
 BuildRequires: perl-generators
@@ -439,6 +444,9 @@ Requires: pcp = %{version}-%{release}
 Requires: pcp-libs = %{version}-%{release}
 Requires: pcp-libs-devel = %{version}-%{release}
 Requires: pcp-devel = %{version}-%{release}
+%if !%{disable_libuv}
+Requires: libuv-devel >= 1.16
+%endif
 Obsoletes: pcp-gui-testsuite
 # The following are inherited from pcp-collector and pcp-monitor,
 # both of which are now obsoleted by the base pcp package
@@ -2698,8 +2706,6 @@ pmieconf -c enable dmthin
     systemctl restart pmie >/dev/null 2>&1
     systemctl enable pmcd >/dev/null 2>&1
     systemctl enable pmlogger >/dev/null 2>&1
-    systemctl enable pmlogger_daily_report >/dev/null 2>&1
-    systemctl enable pmlogger_daily_report-poll >/dev/null 2>&1
     systemctl enable pmie >/dev/null 2>&1
 %else
     /sbin/chkconfig --add pmcd >/dev/null 2>&1
@@ -2857,8 +2863,10 @@ cd
 %dir %attr(0775,pcp,pcp) %{_confdir}/nssdb
 %dir %{_confdir}/discover
 %config(noreplace) %{_confdir}/discover/pcp-kube-pods.conf
+%if !%{disable_libuv}
 %dir %{_confdir}/pmseries
 %config(noreplace) %{_confdir}/pmseries/pmseries.conf
+%endif
 
 %ghost %dir %attr(0775,pcp,pcp) %{_localstatedir}/run/pcp
 %{_localstatedir}/lib/pcp/config/pmafm
@@ -3294,7 +3302,21 @@ cd
 %endif
 
 %changelog
-* Fri Apr 26 2019 Mark Goodwin <mgoodwin@redhat.com> 4.3.2-1
+* Fri Jun 28 2019 Mark Goodwin <mgoodwin@redhat.com> - 4.3.3-1
+- Resolve segv running pmchart with bogus timezone (BZ 1718948)
+- Resolve pmrep wait.formula for collectl-dm-sD and collectl-sD (BZ 1724288)
+- Update to latest PCP sources.
+
+* Mon Jun 10 22:13:21 CET 2019 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 4.3.2-4
+- Rebuild for RPM 4.15
+
+* Mon Jun 10 15:42:04 CET 2019 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 4.3.2-3
+- Rebuild for RPM 4.15
+
+* Fri May 31 2019 Jitka Plesnikova <jplesnik@redhat.com> - 4.3.2-2
+- Perl 5.30 rebuild
+
+* Fri Apr 26 2019 Mark Goodwin <mgoodwin@redhat.com> - 4.3.2-1
 - Resolve selinux policy issues for pmie daemon mode (BZ 1702589)
 - Resolve selinux policy issues for BPF permissions (BZ 1693332)
 - Further improvements to daily archive processing (BZ 1647390)
