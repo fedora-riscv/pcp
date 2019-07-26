@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 4.3.3
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
@@ -3302,6 +3302,9 @@ cd
 %endif
 
 %changelog
+* Fri Jul 26 2019 Fedora Release Engineering <releng@fedoraproject.org> - 4.3.3-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_31_Mass_Rebuild
+
 * Fri Jun 28 2019 Mark Goodwin <mgoodwin@redhat.com> - 4.3.3-1
 - Resolve segv running pmchart with bogus timezone (BZ 1718948)
 - Resolve pmrep wait.formula for collectl-dm-sD and collectl-sD (BZ 1724288)
