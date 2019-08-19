@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 4.3.4
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
@@ -3307,6 +3307,9 @@ cd
 %endif
 
 %changelog
+* Mon Aug 19 2019 Miro Hrončok <mhroncok@redhat.com> - 4.3.4-2
+- Rebuilt for Python 3.8
+
 * Fri Aug 16 2019 Nathan Scott <nathans@redhat.com> - 4.3.4-1
 - Resolve bootup issues with pmlogger service (BZ 1737091, BZ 1721223)
 - Resolve selinux policy issues in PCP tools (BZ 1721644, BZ 1711547)
