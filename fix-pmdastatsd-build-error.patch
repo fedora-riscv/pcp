@@ -1,0 +1,68 @@
+commit f2d39ef808c9a1a395821eec45be17b4f1734d04
+Author: Miroslav Foltýn <miroslav.foltyn01@upol.cz>
+Date:   Sun Oct 20 00:54:03 2019 +0200
+
+    Removed void casts on Ragel generated variable declarations
+
+diff --git a/src/pmdas/statsd/src/parser-ragel.rl b/src/pmdas/statsd/src/parser-ragel.rl
+index 8cb8dda76..3506205c1 100644
+--- a/src/pmdas/statsd/src/parser-ragel.rl
++++ b/src/pmdas/statsd/src/parser-ragel.rl
+@@ -194,10 +194,6 @@ ragel_parser_parse(char* str, struct statsd_datagram** datagram) {
+ 		write exec;
+ 
+ 	}%%
+-	(void)statsd_en_main;
+-	(void)statsd_error;
+-	(void)statsd_first_final;
+-	(void)_statsd_eof_actions;
+ 
+ 	if (any_tags) {
+ 		char* json = tag_collection_to_json(tags);
+
+commit 682b26b0b1d0040f267064bf92e0d61eb1771301
+Author: Miroslav Foltýn <miroslav.foltyn01@upol.cz>
+Date:   Sun Oct 20 01:06:09 2019 +0200
+
+    Removed unnecessary '-C' flag when parsing pmdastatsd ragel-parser
+
+diff --git a/src/pmdas/statsd/src/GNUmakefile b/src/pmdas/statsd/src/GNUmakefile
+index 7a9741569..77508b8fc 100644
+--- a/src/pmdas/statsd/src/GNUmakefile
++++ b/src/pmdas/statsd/src/GNUmakefile
+@@ -81,7 +81,7 @@ install_pcp : install
+ $(OBJECTS): domain.h $(RFILES)
+ 
+ $(RFILES): $(RAGELTARGET).rl
+-	$(RAGEL) -C $<
++	$(RAGEL) $<
+ 
+ $(VERSION_SCRIPT):
+ 	$(VERSION_SCRIPT_MAKERULE)
+
+commit 6f20094e3920c0ba6af818d838668fedd33e5a09
+Author: Mark Goodwin <mgoodwin@redhat.com>
+Date:   Mon Oct 21 00:56:32 2019 +1100
+
+    pmdastatsd: fix compile warnings in ragel generated code
+    
+    Restore the void casts for statsd_en_main, statsd_error and
+    statsd_first_final to fix compiler warnings on rawhide. Only
+    the void cast for _statsd_eof_actions needs to be removed
+    because that variable is no longer generated with the newer
+    version of ragel on rawhide.
+
+diff --git a/src/pmdas/statsd/src/parser-ragel.rl b/src/pmdas/statsd/src/parser-ragel.rl
+index 3506205c1..7d0166aa8 100644
+--- a/src/pmdas/statsd/src/parser-ragel.rl
++++ b/src/pmdas/statsd/src/parser-ragel.rl
+@@ -194,6 +194,9 @@ ragel_parser_parse(char* str, struct statsd_datagram** datagram) {
+ 		write exec;
+ 
+ 	}%%
++	(void)statsd_en_main;
++	(void)statsd_error;
++	(void)statsd_first_final;
+ 
+ 	if (any_tags) {
+ 		char* json = tag_collection_to_json(tags);

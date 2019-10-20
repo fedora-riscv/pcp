@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 5.0.0
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
@@ -9,6 +9,7 @@ URL:     https://pcp.io
 Source0: %{bintray}/pcp/source/pcp-%{version}.src.tar.gz
 
 Patch0: pmcd-pmlogger-local-context.patch
+Patch1: fix-pmdastatsd-build-error.patch
 
 %if 0%{?fedora} >= 26 || 0%{?rhel} > 7
 %global __python2 python2
@@ -2080,6 +2081,7 @@ updated policy package.
 %prep
 %setup -q
 %patch0 -p1
+%patch1 -p1
 
 %build
 %if !%{disable_python2} && 0%{?default_python} != 3
@@ -2887,7 +2889,7 @@ cd
 %if !%{disable_statsd}
 %files pmda-statsd
 %{_pmdasdir}/statsd
-%config(noreplace) %{_pmdasdir}/statsd/statsd.ini
+%config(noreplace) %{_pmdasdir}/statsd/pmdastatsd.ini
 %endif
 
 %if !%{disable_perfevent}
@@ -3184,6 +3186,10 @@ cd
 %endif
 
 %changelog
+* Sun Oct 20 2019 Mark Goodwin <mgoodwin@redhat.com> - 5.0.0-2
+- various spec fixes for pmdastatsd
+- add patch1 to fix pmdastatsd build on rawhide
+
 * Fri Oct 11 2019 Mark Goodwin <mgoodwin@redhat.com> - 5.0.0-1
 - Update to latest PCP sources.
 

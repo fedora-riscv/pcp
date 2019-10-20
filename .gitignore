@@ -6,3 +6,4 @@ vector-*
 /pcp-revert-pmlogger_daily-daystart.patch
 /pmcd-pmlogger-local-context.patch
 /selinux-policy-updates.patch
+/fix-pmdastatsd-build-error.patch
