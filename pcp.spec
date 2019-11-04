@@ -1,5 +1,5 @@
 Name:    pcp
-Version: 5.0.0
+Version: 5.0.1
 Release: 1%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
@@ -7,8 +7,6 @@ URL:     https://pcp.io
 
 %global  bintray https://bintray.com/artifact/download
 Source0: %{bintray}/pcp/source/pcp-%{version}.src.tar.gz
-
-Patch0: pmcd-pmlogger-local-context.patch
 
 %if 0%{?fedora} >= 26 || 0%{?rhel} > 7
 %global __python2 python2
@@ -43,7 +41,7 @@ Patch0: pmcd-pmlogger-local-context.patch
 %endif
 
 # libchan, libhdr_histogram and pmdastatsd
-%if 0%{?fedora} > 31 || 0%{?rhel} > 8
+%if 0%{?fedora} >= 31 || 0%{?rhel} > 8
 %global disable_statsd 0
 %else
 %global disable_statsd 1
@@ -447,9 +445,6 @@ Requires: pcp = %{version}-%{release}
 Requires: pcp-libs = %{version}-%{release}
 Requires: pcp-libs-devel = %{version}-%{release}
 Requires: pcp-devel = %{version}-%{release}
-%if !%{disable_libuv}
-Requires: libuv-devel >= 1.0
-%endif
 Obsoletes: pcp-gui-testsuite
 # The following are inherited from pcp-collector and pcp-monitor,
 # both of which are now obsoleted by the base pcp package
@@ -2079,7 +2074,6 @@ updated policy package.
 
 %prep
 %setup -q
-%patch0 -p1
 
 %build
 %if !%{disable_python2} && 0%{?default_python} != 3
@@ -2129,7 +2123,12 @@ rm -rf $RPM_BUILD_ROOT/usr/share/doc/pcp-gui
 desktop-file-validate $RPM_BUILD_ROOT/%{_datadir}/applications/pmchart.desktop
 %endif
 
-# default chkconfig off for Fedora and RHEL
+%if 0%{?rhel} || 0%{?fedora}
+# Fedora and RHEL default local only access for pmcd and pmlogger
+sed -i -e '/^# .*_LOCAL=1/s/^# //' $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig/{pmcd,pmlogger}
+%endif
+
+# default chkconfig off (all RPM platforms)
 for f in $RPM_BUILD_ROOT/%{_initddir}/{pcp,pmcd,pmlogger,pmie,pmmgr,pmproxy}; do
 	test -f "$f" || continue
 	sed -i -e '/^# chkconfig/s/:.*$/: - 95 05/' -e '/^# Default-Start:/s/:.*$/:/' $f
@@ -2887,7 +2886,7 @@ cd
 %if !%{disable_statsd}
 %files pmda-statsd
 %{_pmdasdir}/statsd
-%config(noreplace) %{_pmdasdir}/statsd/statsd.ini
+%config(noreplace) %{_pmdasdir}/statsd/pmdastatsd.ini
 %endif
 
 %if !%{disable_perfevent}
@@ -3184,6 +3183,14 @@ cd
 %endif
 
 %changelog
+* Mon Nov 04 2019 Nathan Scott <nathans@redhat.com> - 5.0.1-1
+- Resolve selinux policy issues in PCP tools (BZ 1743040)
+- Update to latest PCP sources.
+
+* Sun Oct 20 2019 Mark Goodwin <mgoodwin@redhat.com> - 5.0.0-2
+- various spec fixes for pmdastatsd
+- add patch1 to fix pmdastatsd build on rawhide
+
 * Fri Oct 11 2019 Mark Goodwin <mgoodwin@redhat.com> - 5.0.0-1
 - Update to latest PCP sources.
 
