@@ -41,7 +41,7 @@ Source0: %{bintray}/pcp/source/pcp-%{version}.src.tar.gz
 %endif
 
 # libchan, libhdr_histogram and pmdastatsd
-%if 0%{?fedora} > 31 || 0%{?rhel} > 8
+%if 0%{?fedora} >= 31 || 0%{?rhel} > 8
 %global disable_statsd 0
 %else
 %global disable_statsd 1
