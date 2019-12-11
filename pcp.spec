@@ -1,5 +1,5 @@
 Name:    pcp
-Version: 5.0.1
+Version: 5.0.2
 Release: 1%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
@@ -41,13 +41,13 @@ Source0: %{bintray}/pcp/source/pcp-%{version}.src.tar.gz
 %endif
 
 # libchan, libhdr_histogram and pmdastatsd
-%if 0%{?fedora} > 31 || 0%{?rhel} > 8
+%if 0%{?fedora} >= 29 || 0%{?rhel} > 8
 %global disable_statsd 0
 %else
 %global disable_statsd 1
 %endif
 
-%if 0%{?rhel} > 7 || 0%{?fedora} >= 30
+%if 0%{?fedora} >= 30 || 0%{?rhel} > 7
 %global _with_python2 --with-python=no
 %global disable_python2 1
 %else
@@ -173,14 +173,15 @@ Source0: %{bintray}/pcp/source/pcp-%{version}.src.tar.gz
 %endif
 
 # prevent conflicting binary and man page install for pcp(1)
-Conflicts: librapi
+Conflicts: librapi < 0.16
 
 # KVM PMDA moved into pcp (no longer using Perl, default on)
-Obsoletes: pcp-pmda-kvm
+Obsoletes: pcp-pmda-kvm < 4.1.1
 Provides: pcp-pmda-kvm
 
 # PCP REST APIs are now provided by pmproxy
-Obsoletes: pcp-webapi pcp-webapi-debuginfo
+Obsoletes: pcp-webapi-debuginfo < 5.0.0
+Obsoletes: pcp-webapi < 5.0.0
 Provides: pcp-webapi
 
 # https://fedoraproject.org/wiki/Packaging "C and C++"
@@ -190,6 +191,7 @@ BuildRequires: nss-devel
 BuildRequires: rpm-devel
 BuildRequires: avahi-devel
 BuildRequires: xz-devel
+BuildRequires: zlib-devel
 %if !%{disable_python2}
 %if 0%{?default_python} != 3
 BuildRequires: python%{?default_python}-devel
@@ -227,7 +229,7 @@ BuildRequires: perl-generators
 BuildRequires: perl-devel perl(strict)
 BuildRequires: perl(ExtUtils::MakeMaker) perl(LWP::UserAgent) perl(JSON)
 BuildRequires: perl(LWP::UserAgent) perl(Time::HiRes) perl(Digest::MD5)
-BuildRequires: man
+BuildRequires: man hostname
 %if !%{disable_systemd}
 BuildRequires: systemd-devel
 %endif
@@ -241,7 +243,7 @@ BuildRequires: qt5-qtsvg-devel
 %endif
 %endif
 
-Requires: bash xz gawk sed grep findutils which
+Requires: bash xz gawk sed grep findutils which hostname
 Requires: pcp-libs = %{version}-%{release}
 %if !%{disable_selinux}
 Requires: pcp-selinux = %{version}-%{release}
@@ -249,27 +251,30 @@ Requires: pcp-selinux = %{version}-%{release}
 
 # Some older releases did not update or replace pcp-gui-debuginfo properly
 %if 0%{?fedora} < 27 && 0%{?rhel} <= 7 && "%{_vendor}" == "redhat"
-Obsoletes: pcp-gui-debuginfo
+Obsoletes: pcp-gui-debuginfo < 4.1.1
 %endif
 
-Obsoletes: pcp-compat pcp-collector pcp-monitor
-Obsoletes: pcp-pmda-nvidia
+Obsoletes: pcp-compat < 4.2.0
+Obsoletes: pcp-monitor < 4.2.0
+Obsoletes: pcp-collector < 4.2.0
+Obsoletes: pcp-pmda-nvidia < 3.10.5
 
 Requires: pcp-libs = %{version}-%{release}
 
-%global tapsetdir      %{_datadir}/systemtap/tapset
-
-%global _confdir  %{_sysconfdir}/pcp
-%global _logsdir  %{_localstatedir}/log/pcp
-%global _pmnsdir  %{_localstatedir}/lib/pcp/pmns
-%global _tempsdir %{_localstatedir}/lib/pcp/tmp
-%global _pmdasdir %{_localstatedir}/lib/pcp/pmdas
-%global _testsdir %{_localstatedir}/lib/pcp/testsuite
-%global _selinuxdir %{_localstatedir}/lib/pcp/selinux
-%global _logconfdir %{_localstatedir}/lib/pcp/config/pmlogconf
-%global _pixmapdir %{_datadir}/pcp-gui/pixmaps
-%global _hicolordir %{_datadir}/icons/hicolor
-%global _booksdir %{_datadir}/doc/pcp-doc
+%global _confdir	%{_sysconfdir}/pcp
+%global _logsdir	%{_localstatedir}/log/pcp
+%global _pmnsdir	%{_localstatedir}/lib/pcp/pmns
+%global _tempsdir	%{_localstatedir}/lib/pcp/tmp
+%global _pmdasdir	%{_localstatedir}/lib/pcp/pmdas
+%global _testsdir	%{_localstatedir}/lib/pcp/testsuite
+%global _selinuxdir	%{_localstatedir}/lib/pcp/selinux
+%global _logconfdir	%{_localstatedir}/lib/pcp/config/pmlogconf
+%global _ieconfdir	%{_localstatedir}/lib/pcp/config/pmieconf
+%global _tapsetdir	%{_datadir}/systemtap/tapset
+%global _bashcompdir	%{_datadir}/bash-completion/completions
+%global _pixmapdir	%{_datadir}/pcp-gui/pixmaps
+%global _hicolordir	%{_datadir}/icons/hicolor
+%global _booksdir	%{_datadir}/doc/pcp-doc
 
 %if 0%{?fedora} >= 20 || 0%{?rhel} >= 8
 %global _with_doc --with-docdir=%{_docdir}/%{name}
@@ -357,9 +362,11 @@ Requires: pcp-libs = %{version}-%{release}
 %global pmda_remove() %{expand:
 if [ %1 -eq 0 ]
 then
-    if [ -f "%{_confdir}/pmcd/pmcd.conf" -a -f "%{_pmdasdir}/%2/domain.h" ]
+    PCP_PMDAS_DIR=%{_pmdasdir}
+    PCP_PMCDCONF_PATH=%{_confdir}/pmcd/pmcd.conf
+    if [ -f "$PCP_PMCDCONF_PATH" -a -f "$PCP_PMDAS_DIR/%2/domain.h" ]
     then
-	(cd %{_pmdasdir}/%2/ && ./Remove >/dev/null 2>&1)
+	(cd "$PCP_PMDAS_DIR/%2/" && ./Remove >/dev/null 2>&1)
     fi
 fi
 }
@@ -445,7 +452,7 @@ Requires: pcp = %{version}-%{release}
 Requires: pcp-libs = %{version}-%{release}
 Requires: pcp-libs-devel = %{version}-%{release}
 Requires: pcp-devel = %{version}-%{release}
-Obsoletes: pcp-gui-testsuite
+Obsoletes: pcp-gui-testsuite < 3.9.5
 # The following are inherited from pcp-collector and pcp-monitor,
 # both of which are now obsoleted by the base pcp package
 Requires: pcp-pmda-activemq pcp-pmda-bonding pcp-pmda-dbping pcp-pmda-ds389 pcp-pmda-ds389log
@@ -852,7 +859,7 @@ License: GPLv2+
 Summary: Performance Co-Pilot (PCP) metrics from statsd
 URL: https://pcp.io
 Requires: pcp = %{version}-%{release} pcp-libs = %{version}-%{release}
-Requires: libchan.so.0() HdrHistogram_c
+Requires: chan HdrHistogram_c
 
 %description pmda-statsd
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
@@ -870,7 +877,8 @@ URL: https://pcp.io
 Requires: pcp = %{version}-%{release} pcp-libs = %{version}-%{release}
 Requires: libpfm >= 4
 BuildRequires: libpfm-devel >= 4
-Obsoletes: pcp-pmda-papi pcp-pmda-papi-debuginfo
+Obsoletes: pcp-pmda-papi < 5.0.0
+Obsoletes: pcp-pmda-papi-debuginfo < 5.0.0
 
 %description pmda-perfevent
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
@@ -1216,6 +1224,7 @@ License: GPLv2+
 Summary: Performance Co-Pilot (PCP) metrics for the Postfix (MTA)
 URL: https://pcp.io
 Requires: perl-PCP-PMDA = %{version}-%{release}
+Requires: perl-Time-HiRes
 %if 0%{?fedora} > 16 || 0%{?rhel} > 5
 Requires: postfix-perl-scripts
 BuildRequires: postfix-perl-scripts
@@ -1583,8 +1592,8 @@ Requires: %{__python2}-pcp
 Requires: %{__python2}-requests
 BuildRequires: %{__python2}-requests
 %endif
-Obsoletes: pcp-pmda-prometheus
-Provides: pcp-pmda-prometheus
+Obsoletes: pcp-pmda-prometheus < 5.0.0
+Provides: pcp-pmda-prometheus < 5.0.0
 
 %description pmda-openmetrics
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
@@ -1605,7 +1614,7 @@ Requires: python3-pcp
 Requires: %{__python2}-pcp
 %endif
 # rewritten in python, so there is no longer a debuginfo package
-Obsoletes: pcp-pmda-lmsensors-debuginfo
+Obsoletes: pcp-pmda-lmsensors-debuginfo < 4.2.0
 %description pmda-lmsensors
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
 collecting metrics about the Linux hardware monitoring sensors.
@@ -1647,7 +1656,7 @@ This package contains the PCP Performance Metrics Domain Agent (PMDA) for
 collecting metrics from simple network checks.
 # end pcp-pmda-netcheck
 
-%endif # !%{disable_python2} || !%{disable_python3}
+%endif
 
 %if !%{disable_json}
 #
@@ -1670,7 +1679,7 @@ BuildRequires: %{__python2}-jsonpointer %{__python2}-six
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
 collecting metrics output in JSON.
 # end pcp-pmda-json
-%endif # !%{disable_json}
+%endif
 
 #
 # C pmdas
@@ -1927,8 +1936,6 @@ Summary: Performance Co-Pilot (PCP) Zeroconf Package
 URL: https://pcp.io
 Requires: pcp pcp-doc pcp-system-tools
 Requires: pcp-pmda-dm pcp-pmda-nfsclient
-# to make pcp-zeroconf replace sysstat, uncomment the next line
-# Obsoletes: sysstat
 %description zeroconf
 This package contains configuration tweaks and files to increase metrics
 gathering frequency, several extended pmlogger configurations, as well as
@@ -1947,7 +1954,7 @@ URL: https://pcp.io
 Requires: pcp = %{version}-%{release} pcp-libs = %{version}-%{release}
 %if 0%{?fedora} >= 26 || 0%{?rhel} > 7
 # on these platforms, python2-pcp replaces python-pcp
-Obsoletes: python-pcp
+Obsoletes: python-pcp < %{version}
 %endif
 %if 0%{?rhel} == 5
 Requires: python%{default_python}
@@ -2002,7 +2009,7 @@ Obsoletes: dstat <= 0.8
 %description system-tools
 This PCP module contains additional system monitoring tools written
 in the Python language.
-%endif #end pcp-system-tools
+%endif
 
 %if !%{disable_qt}
 #
@@ -2035,7 +2042,6 @@ Summary: Documentation and tutorial for the Performance Co-Pilot
 URL: https://pcp.io
 # http://fedoraproject.org/wiki/Packaging:Conflicts "Splitting Packages"
 # (all man pages migrated to pcp-doc during great package split of '15)
-Conflicts: pcp-pmda-pmda < 3.10.5
 Conflicts: pcp-pmda-infiniband < 3.10.5
 
 %description doc
@@ -2161,6 +2167,7 @@ ls -1 $RPM_BUILD_ROOT/%{_pmdasdir} |\
   grep -E -v '^nginx' |\
   grep -E -v '^nutcracker' |\
   grep -E -v '^oracle' |\
+  grep -E -v '^openmetrics' |\
   grep -E -v '^pdns' |\
   grep -E -v '^podman' |\
   grep -E -v '^postfix' |\
@@ -2207,12 +2214,16 @@ ls -1 $RPM_BUILD_ROOT/%{_pmdasdir} |\
 
 # all base pcp package files except those split out into sub-packages
 ls -1 $RPM_BUILD_ROOT/%{_bindir} |\
-  grep -E -v 'pmiostat|zabbix|zbxpcp|dstat' |\
-  grep -E -v 'pmrep|pcp2graphite|pcp2influxdb|pcp2zabbix' |\
+  grep -E -v 'pmiostat|zabbix|zbxpcp|dstat|pmrep' |\
+  grep -E -v 'pcp2spark|pcp2graphite|pcp2influxdb|pcp2zabbix' |\
   grep -E -v 'pcp2elasticsearch|pcp2json|pcp2xlsx|pcp2xml' |\
-  grep -E -v 'pcp2spark' |\
   grep -E -v 'pmdbg|pmclient|pmerr|genpmda' |\
 sed -e 's#^#'%{_bindir}'\/#' >base_bin.list
+ls -1 $RPM_BUILD_ROOT/%{_bashcompdir} |\
+  grep -E -v 'pcp2spark|pcp2graphite|pcp2influxdb|pcp2zabbix' |\
+  grep -E -v 'pcp2elasticsearch|pcp2json|pcp2xlsx|pcp2xml' |\
+  grep -E -v 'pmrep|pmdumptext' |\
+sed -e 's#^#'%{_bashcompdir}'\/#' >base_bashcomp.list
 
 # Separate the pcp-system-tools package files.
 # pmiostat is a back-compat symlink to its pcp(1) sub-command variant
@@ -2237,9 +2248,10 @@ ls -1 $RPM_BUILD_ROOT/%{_libexecdir}/pcp/bin |\
 
 ls -1 $RPM_BUILD_ROOT/%{_libexecdir}/pcp/bin |\
 %if !%{disable_python2} || !%{disable_python3}
-  grep -E -v 'atop|collectl|dmcache|dstat|free|iostat|mpstat|numastat' |\
-  grep -E -v 'shping|tapestat|uptime|verify|selinux-setup' |\
+  grep -E -v 'atop|collectl|dmcache|dstat|free|iostat|ipcs|lvmcache|mpstat' |\
+  grep -E -v 'numastat|shping|tapestat|uptime|verify|selinux-setup' |\
 %endif
+  grep -E -v 'pmlogger_daily_report' |\
   sed -e 's#^#'%{_libexecdir}/pcp/bin'\/#' >base_exec.list
 ls -1 $RPM_BUILD_ROOT/%{_booksdir} |\
   sed -e 's#^#'%{_booksdir}'\/#' > pcp-doc.list
@@ -2254,14 +2266,18 @@ ls -1 $RPM_BUILD_ROOT/%{_pixmapdir} |\
   sed -e 's#^#'%{_pixmapdir}'\/#' > pcp-gui.list
 ls -1 $RPM_BUILD_ROOT/%{_hicolordir} |\
   sed -e 's#^#'%{_hicolordir}'\/#' >> pcp-gui.list
-cat base_bin.list base_exec.list |\
+cat base_bin.list base_exec.list base_bashcomp.list |\
   grep -E "$PCP_GUI" >> pcp-gui.list
 %endif
 ls -1 $RPM_BUILD_ROOT/%{_logconfdir}/ |\
     sed -e 's#^#'%{_logconfdir}'\/#' |\
     grep -E -v 'zeroconf' >pcp-logconf.list
-cat base_pmdas.list base_bin.list base_exec.list pcp-logconf.list |\
-  grep -E -v 'pmdaib|pmmgr|pmsnap|2pcp|pmdas/systemd' |\
+ls -1 $RPM_BUILD_ROOT/%{_ieconfdir}/ |\
+    sed -e 's#^#'%{_ieconfdir}'\/#' |\
+    grep -E -v 'zeroconf' >pcp-ieconf.list
+cat base_pmdas.list base_bin.list base_exec.list base_bashcomp.list \
+    pcp-logconf.list pcp-ieconf.list |\
+  grep -E -v 'pmdaib|pmmgr|pmsnap|2pcp|pmdas/systemd|zeroconf' |\
   grep -E -v "$PCP_GUI|pixmaps|hicolor|pcp-doc|tutorials|selinux" |\
   grep -E -v %{_confdir} | grep -E -v %{_logsdir} > base.list
 
@@ -2320,37 +2336,37 @@ fi
 %if !%{disable_rpm}
 %preun pmda-rpm
 %{pmda_remove "$1" "rpm"}
-%endif #preun pmda-rpm
+%endif
 
 %if !%{disable_systemd}
 %preun pmda-systemd
 %{pmda_remove "$1" "systemd"}
-%endif #preun pmda-systemd
+%endif
 
 %if !%{disable_infiniband}
 %preun pmda-infiniband
 %{pmda_remove "$1" "infiniband"}
-%endif #preun pmda-infiniband
+%endif
 
 %if !%{disable_perfevent}
 %preun pmda-perfevent
 %{pmda_remove "$1" "perfevent"}
-%endif #preun pmda-perfevent
+%endif
 
 %if !%{disable_podman}
 %preun pmda-podman
 %{pmda_remove "$1" "podman"}
-%endif #preun pmda-podman
+%endif
 
 %if !%{disable_statsd}
 %preun pmda-statsd
 %{pmda_remove "$1" "statsd"}
-%endif #preun pmda-statsd
+%endif
 
 %if !%{disable_json}
 %preun pmda-json
 %{pmda_remove "$1" "json"}
-%endif #preun pmda-json
+%endif
 
 %preun pmda-nginx
 %{pmda_remove "$1" "nginx"}
@@ -2493,7 +2509,7 @@ fi
 %preun pmda-netcheck
 %{pmda_remove "$1" "netcheck"}
 
-%endif # !%{disable_python[2,3]}
+%endif
 
 %preun pmda-apache
 %{pmda_remove "$1" "apache"}
@@ -2624,7 +2640,7 @@ pmieconf -c enable dmthin
     /sbin/service pmlogger condrestart
     /sbin/service pmie condrestart
 %endif
-%endif #zeroconf
+%endif
 
 %if !%{disable_selinux}
 %post selinux
@@ -2697,11 +2713,17 @@ cd
 %dir %{_confdir}
 %dir %{_pmdasdir}
 %dir %{_datadir}/pcp
+%dir %{_libexecdir}/pcp
+%dir %{_libexecdir}/pcp/bin
 %dir %{_localstatedir}/lib/pcp
 %dir %{_localstatedir}/lib/pcp/config
 %dir %attr(0775,pcp,pcp) %{_tempsdir}
+%dir %attr(0775,pcp,pcp) %{_tempsdir}/bash
+%dir %attr(0775,pcp,pcp) %{_tempsdir}/json
+%dir %attr(0775,pcp,pcp) %{_tempsdir}/mmv
 %dir %attr(0775,pcp,pcp) %{_tempsdir}/pmie
 %dir %attr(0775,pcp,pcp) %{_tempsdir}/pmlogger
+%dir %attr(0775,pcp,pcp) %{_tempsdir}/pmproxy
 %dir %attr(0700,root,root) %{_tempsdir}/pmcd
 
 %dir %{_datadir}/pcp/lib
@@ -2753,6 +2775,7 @@ cd
 %config(noreplace) %{_sysconfdir}/sysconfig/pmproxy
 %config(noreplace) %{_sysconfdir}/sysconfig/pmcd
 %config %{_sysconfdir}/pcp.env
+%dir %{_confdir}/pipe.conf.d
 %dir %{_confdir}/labels
 %dir %{_confdir}/pmcd
 %config(noreplace) %{_confdir}/pmcd/pmcd.conf
@@ -2787,11 +2810,9 @@ cd
 %{_localstatedir}/lib/pcp/config/pmlogrewrite
 %dir %attr(0775,pcp,pcp) %{_localstatedir}/lib/pcp/config/pmda
 
-%{_datadir}/bash-completion/completions/*
 %{_datadir}/zsh/site-functions/_pcp
-
 %if !%{disable_sdt}
-%{tapsetdir}/pmcd.stp
+%{_tapsetdir}/pmcd.stp
 %endif
 
 %files zeroconf
@@ -2805,7 +2826,8 @@ cd
 %else
 %config(noreplace) %{_sysconfdir}/cron.d/pcp-pmlogger-daily-report
 %endif
-%{_localstatedir}/lib/pcp/config/pmlogconf/zeroconf
+%{_ieconfdir}/zeroconf
+%{_logconfdir}/zeroconf
 
 #additional pmlogger config files
 
@@ -3007,6 +3029,7 @@ cd
 
 %files pmda-dm
 %{_pmdasdir}/dm
+%{_ieconfdir}/dm
 
 %if !%{disable_bcc}
 %files pmda-bcc
@@ -3039,29 +3062,37 @@ cd
 
 %files export-pcp2elasticsearch
 %{_bindir}/pcp2elasticsearch
+%{_bashcompdir}/pcp2elasticsearch
 
 %files export-pcp2graphite
 %{_bindir}/pcp2graphite
+%{_bashcompdir}/pcp2graphite
 
 %files export-pcp2influxdb
 %{_bindir}/pcp2influxdb
+%{_bashcompdir}/pcp2influxdb
 
 %files export-pcp2json
 %{_bindir}/pcp2json
+%{_bashcompdir}/pcp2json
 
 %files export-pcp2spark
 %{_bindir}/pcp2spark
+%{_bashcompdir}/pcp2spark
 
 %if !%{disable_xlsx}
 %files export-pcp2xlsx
 %{_bindir}/pcp2xlsx
+%{_bashcompdir}/pcp2xlsx
 %endif
 
 %files export-pcp2xml
 %{_bindir}/pcp2xml
+%{_bashcompdir}/pcp2xml
 
 %files export-pcp2zabbix
 %{_bindir}/pcp2zabbix
+%{_bashcompdir}/pcp2zabbix
 
 %files pmda-lmsensors
 %{_pmdasdir}/lmsensors
@@ -3072,7 +3103,7 @@ cd
 %files pmda-netcheck
 %{_pmdasdir}/netcheck
 
-%endif # !%{disable_python2} || !%{disable_python3}
+%endif
 
 %files export-zabbix-agent
 %{_libdir}/zabbix
@@ -3166,12 +3197,14 @@ cd
 %{_localstatedir}/lib/pcp/config/pmchart
 %{_localstatedir}/lib/pcp/config/pmafm/pcp-gui
 %{_datadir}/applications/pmchart.desktop
+%{_bashcompdir}/pmdumptext
 %endif
 
 %files doc -f pcp-doc.list
 
 %if !%{disable_selinux}
 %files selinux -f pcp-selinux.list
+%dir %{_selinuxdir}
 %endif
 
 %if !%{disable_python2} || !%{disable_python3}
@@ -3180,9 +3213,16 @@ cd
 %dir %{_confdir}/pmrep
 %config(noreplace) %{_confdir}/dstat/*
 %config(noreplace) %{_confdir}/pmrep/*
+%{_bashcompdir}/pmrep
 %endif
 
 %changelog
+* Wed Dec 11 2019 Nathan Scott <nathans@redhat.com> - 5.0.2-1
+- Resolve fresh install pmlogger timeout bug (BZ 1721223)
+- Fix dstat exception writing to a closed fd (BZ 1768619)
+- Fix chan lib dependency of pcp-pmda-statsd (BZ 1770815)
+- Update to latest PCP sources.
+
 * Mon Nov 04 2019 Nathan Scott <nathans@redhat.com> - 5.0.1-1
 - Resolve selinux policy issues in PCP tools (BZ 1743040)
 - Update to latest PCP sources.
