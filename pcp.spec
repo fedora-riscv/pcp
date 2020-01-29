@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 5.0.2
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
@@ -3217,6 +3217,9 @@ cd
 %endif
 
 %changelog
+* Wed Jan 29 2020 Fedora Release Engineering <releng@fedoraproject.org> - 5.0.2-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_32_Mass_Rebuild
+
 * Wed Dec 11 2019 Nathan Scott <nathans@redhat.com> - 5.0.2-1
 - Resolve fresh install pmlogger timeout bug (BZ 1721223)
 - Fix dstat exception writing to a closed fd (BZ 1768619)
