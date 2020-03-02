@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 5.0.3
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
@@ -950,7 +950,7 @@ Requires: perl(LWP::UserAgent)
 Requires: perl(XML::LibXML)
 Requires: perl(File::Slurp)
 Requires: perl-autodie
-Requires: perl-Time-HighRes
+Requires: perl-Time-HiRes
 
 %description pmda-bind2
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
@@ -3263,6 +3263,9 @@ cd
 %endif
 
 %changelog
+* Mon Mar 02 2020 Mark Goodwin <mgoodwin@redhat.com> - 5.0.3-2
+- fix typo in Requires: perl-Time-HiRes affecting pcp-pmda-bind2
+
 * Thu Feb 27 2020 Mark Goodwin <mgoodwin@redhat.com> - 5.0.3-1
 - Avoid python ctypes bitfield struct on-stack (BZ 1800685)
 - Add dstat support for DM/MD/part devices (BZ 1794273)
