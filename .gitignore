@@ -7,3 +7,4 @@ vector-*
 /pmcd-pmlogger-local-context.patch
 /selinux-policy-updates.patch
 /fix-pmdastatsd-build-error.patch
+/pcp-selinux-drop-name_connect-udp.patch

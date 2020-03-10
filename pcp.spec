@@ -1,12 +1,15 @@
 Name:    pcp
 Version: 5.0.3
-Release: 2%{?dist}
+Release: 3%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
 
 %global  bintray https://bintray.com/artifact/download
 Source0: %{bintray}/pcp/source/pcp-%{version}.src.tar.gz
+
+# Patches
+Patch0:  pcp-selinux-drop-name_connect-udp.patch
 
 %if 0%{?fedora} >= 26 || 0%{?rhel} > 7
 %global __python2 python2
@@ -2113,6 +2116,7 @@ updated policy package.
 
 %prep
 %setup -q
+%patch0 -p1
 
 %build
 %if !%{disable_python2} && 0%{?default_python} != 3
@@ -3263,6 +3267,9 @@ cd
 %endif
 
 %changelog
+* Wed Mar 11 2020 Mark Goodwin <mgoodwin@redhat.com> - 5.0.3-3
+- Resolve pcp-selinux issues causing services failures - (BZ 1810458)
+
 * Mon Mar 02 2020 Mark Goodwin <mgoodwin@redhat.com> - 5.0.3-2
 - fix typo in Requires: perl-Time-HiRes affecting pcp-pmda-bind2
 
