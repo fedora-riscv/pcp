@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 5.0.3
-Release: 3%{?dist}
+Release: 4%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
@@ -3267,6 +3267,9 @@ cd
 %endif
 
 %changelog
+* Mon Mar 30 2020 Mark Goodwin <mgoodwin@redhat.com> - 5.0.3-4
+- Resolve more pcp-selinux issues (BZ 1817968)
+
 * Wed Mar 11 2020 Mark Goodwin <mgoodwin@redhat.com> - 5.0.3-3
 - Resolve pcp-selinux issues causing services failures - (BZ 1810458)
 
