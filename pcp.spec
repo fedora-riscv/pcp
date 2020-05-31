@@ -1,6 +1,6 @@
 Name:    pcp
-Version: 5.1.0
-Release: 2%{?dist}
+Version: 5.1.1
+Release: 1%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
@@ -47,7 +47,7 @@ Source0: %{bintray}/pcp/source/pcp-%{version}.src.tar.gz
 %endif
 
 # libchan, libhdr_histogram and pmdastatsd
-%if 0%{?fedora} >= 29 || 0%{?rhel} > 8
+%if 0%{?fedora} >= 29 || 0%{?rhel} > 7
 %global disable_statsd 0
 %else
 %global disable_statsd 1
@@ -226,7 +226,11 @@ BuildRequires: cyrus-sasl-devel
 BuildRequires: libvarlink-devel
 %endif
 %if !%{disable_statsd}
-BuildRequires: ragel chan-devel HdrHistogram_c-devel
+# ragel unavailable on RHEL8
+%if 0%{?rhel} == 0
+BuildRequires: ragel
+%endif
+BuildRequires: chan-devel HdrHistogram_c-devel
 %endif
 %if !%{disable_perfevent}
 BuildRequires: libpfm-devel >= 4
@@ -278,20 +282,20 @@ Obsoletes: pcp-pmda-nvidia < 3.10.5
 
 Requires: pcp-libs = %{version}-%{release}
 
-%global _confdir	%{_sysconfdir}/pcp
-%global _logsdir	%{_localstatedir}/log/pcp
-%global _pmnsdir	%{_localstatedir}/lib/pcp/pmns
-%global _tempsdir	%{_localstatedir}/lib/pcp/tmp
-%global _pmdasdir	%{_localstatedir}/lib/pcp/pmdas
-%global _testsdir	%{_localstatedir}/lib/pcp/testsuite
-%global _selinuxdir	%{_localstatedir}/lib/pcp/selinux
-%global _logconfdir	%{_localstatedir}/lib/pcp/config/pmlogconf
-%global _ieconfdir	%{_localstatedir}/lib/pcp/config/pmieconf
-%global _tapsetdir	%{_datadir}/systemtap/tapset
-%global _bashcompdir	%{_datadir}/bash-completion/completions
-%global _pixmapdir	%{_datadir}/pcp-gui/pixmaps
-%global _hicolordir	%{_datadir}/icons/hicolor
-%global _booksdir	%{_datadir}/doc/pcp-doc
+%global _confdir        %{_sysconfdir}/pcp
+%global _logsdir        %{_localstatedir}/log/pcp
+%global _pmnsdir        %{_localstatedir}/lib/pcp/pmns
+%global _tempsdir       %{_localstatedir}/lib/pcp/tmp
+%global _pmdasdir       %{_localstatedir}/lib/pcp/pmdas
+%global _testsdir       %{_localstatedir}/lib/pcp/testsuite
+%global _selinuxdir     %{_localstatedir}/lib/pcp/selinux
+%global _logconfdir     %{_localstatedir}/lib/pcp/config/pmlogconf
+%global _ieconfdir      %{_localstatedir}/lib/pcp/config/pmieconf
+%global _tapsetdir      %{_datadir}/systemtap/tapset
+%global _bashcompdir    %{_datadir}/bash-completion/completions
+%global _pixmapdir      %{_datadir}/pcp-gui/pixmaps
+%global _hicolordir     %{_datadir}/icons/hicolor
+%global _booksdir       %{_datadir}/doc/pcp-doc
 
 %if 0%{?fedora} >= 20 || 0%{?rhel} >= 8
 %global _with_doc --with-docdir=%{_docdir}/%{name}
@@ -341,9 +345,9 @@ Requires: pcp-libs = %{version}-%{release}
 %endif
 
 %if %{disable_statsd}
-%global _with_statsd --with-statsd=no
+%global _with_statsd --with-pmdastatsd=no
 %else
-%global _with_statsd --with-statsd=yes
+%global _with_statsd --with-pmdastatsd=yes
 %endif
 
 %if %{disable_bcc}
@@ -383,7 +387,7 @@ then
     PCP_PMCDCONF_PATH=%{_confdir}/pmcd/pmcd.conf
     if [ -f "$PCP_PMCDCONF_PATH" -a -f "$PCP_PMDAS_DIR/%2/domain.h" ]
     then
-	(cd "$PCP_PMDAS_DIR/%2/" && ./Remove >/dev/null 2>&1)
+        (cd "$PCP_PMDAS_DIR/%2/" && ./Remove >/dev/null 2>&1)
     fi
 fi
 }
@@ -517,7 +521,8 @@ Requires: pcp-pmda-bpftrace
 %if !%{disable_python2} || !%{disable_python3}
 Requires: pcp-pmda-gluster pcp-pmda-zswap pcp-pmda-unbound pcp-pmda-mic
 Requires: pcp-pmda-libvirt pcp-pmda-lio pcp-pmda-openmetrics pcp-pmda-haproxy
-Requires: pcp-pmda-lmsensors pcp-pmda-mssql pcp-pmda-netcheck pcp-pmda-rabbitmq
+Requires: pcp-pmda-lmsensors pcp-pmda-netcheck pcp-pmda-rabbitmq
+Requires: pcp-pmda-openvswitch
 %endif
 %if !%{disable_mssql}
 Requires: pcp-pmda-mssql 
@@ -540,6 +545,15 @@ Requires: pcp-gui
 %endif
 Requires: bc gcc gzip bzip2
 Requires: redhat-rpm-config
+%if !%{disable_selinux}
+Requires: selinux-policy-devel
+Requires: selinux-policy-targeted
+%if 0%{?rhel} == 5
+Requires: setools
+%else
+Requires: setools-console
+%endif
+%endif
 
 %description testsuite
 Quality assurance test suite for Performance Co-Pilot (PCP).
@@ -1073,7 +1087,6 @@ URL: https://pcp.io
 Requires: pcp = %{version}-%{release} pcp-libs = %{version}-%{release}
 Requires: perl-PCP-PMDA = %{version}-%{release}
 Requires: perl-Date-Manip
-Requires: 389-ds-base
 
 %description pmda-ds389log
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
@@ -1636,6 +1649,24 @@ collecting metrics about Elasticsearch.
 #end pcp-pmda-elasticsearch
 
 #
+# pcp-pmda-openvswitch
+#
+%package pmda-openvswitch
+License: GPLv2+
+Summary: Performance Co-Pilot (PCP) metrics for Open vSwitch
+URL: https://pcp.io
+Requires: pcp = %{version}-%{release} pcp-libs = %{version}-%{release}
+%if !%{disable_python3}
+Requires: python3-pcp
+%else
+Requires: %{__python2}-pcp
+%endif
+%description pmda-openvswitch
+This package contains the PCP Performance Metrics Domain Agent (PMDA) for
+collecting metrics from Open vSwitch.
+#end pcp-pmda-openvswitch
+
+#
 # pcp-pmda-rabbitmq
 #
 %package pmda-rabbitmq
@@ -2037,13 +2068,14 @@ License: GPLv2+
 Summary: Performance Co-Pilot (PCP) Zeroconf Package
 URL: https://pcp.io
 Requires: pcp pcp-doc pcp-system-tools
-Requires: pcp-pmda-dm pcp-pmda-nfsclient
+Requires: pcp-pmda-dm
+%if !%{disable_python2} || !%{disable_python3}
+Requires: pcp-pmda-nfsclient pcp-pmda-openmetrics
+%endif
 %description zeroconf
 This package contains configuration tweaks and files to increase metrics
 gathering frequency, several extended pmlogger configurations, as well as
 automated pmie diagnosis, alerting and self-healing for the localhost.
-A cron script also writes daily performance summary reports similar to
-those written by sysstat.
 
 %if !%{disable_python2}
 #
@@ -2247,8 +2279,8 @@ sed -i -e '/^# .*_LOCAL=1/s/^# //' $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig/{pmc
 
 # default chkconfig off (all RPM platforms)
 for f in $RPM_BUILD_ROOT/%{_initddir}/{pcp,pmcd,pmlogger,pmie,pmmgr,pmproxy}; do
-	test -f "$f" || continue
-	sed -i -e '/^# chkconfig/s/:.*$/: - 95 05/' -e '/^# Default-Start:/s/:.*$/:/' $f
+    test -f "$f" || continue
+    sed -i -e '/^# chkconfig/s/:.*$/: - 95 05/' -e '/^# Default-Start:/s/:.*$/:/' $f
 done
 
 # list of PMDAs in the base pkg
@@ -2305,6 +2337,7 @@ ls -1 $RPM_BUILD_ROOT/%{_pmdasdir} |\
   grep -E -v '^mssql' |\
   grep -E -v '^netcheck' |\
   grep -E -v '^nvidia' |\
+  grep -E -v '^openvswitch' |\
   grep -E -v '^rabbitmq' |\
   grep -E -v '^roomtemp' |\
   grep -E -v '^sendmail' |\
@@ -2494,6 +2527,9 @@ fi
 
 %preun pmda-elasticsearch
 %{pmda_remove "$1" "elasticsearch"}
+
+%preun pmda-openvswitch
+%{pmda_remove "$1" "openvswitch"}
 
 %preun pmda-rabbitmq
 %{pmda_remove "$1" "rabbitmq"}
@@ -2696,21 +2732,21 @@ then
        %systemd_preun pmie.service
        %systemd_preun pmproxy.service
        %systemd_preun pmcd.service
-	systemctl stop pmlogger.service >/dev/null 2>&1
-	systemctl stop pmie.service >/dev/null 2>&1
-	systemctl stop pmproxy.service >/dev/null 2>&1
-	systemctl stop pmcd.service >/dev/null 2>&1
+        systemctl stop pmlogger.service >/dev/null 2>&1
+        systemctl stop pmie.service >/dev/null 2>&1
+        systemctl stop pmproxy.service >/dev/null 2>&1
+        systemctl stop pmcd.service >/dev/null 2>&1
     %else
-	/sbin/service pmlogger stop >/dev/null 2>&1
-	/sbin/service pmie stop >/dev/null 2>&1
-	/sbin/service pmproxy stop >/dev/null 2>&1
-	/sbin/service pmcd stop >/dev/null 2>&1
+        /sbin/service pmlogger stop >/dev/null 2>&1
+        /sbin/service pmie stop >/dev/null 2>&1
+        /sbin/service pmproxy stop >/dev/null 2>&1
+        /sbin/service pmcd stop >/dev/null 2>&1
 
-	/sbin/chkconfig --del pcp >/dev/null 2>&1
-	/sbin/chkconfig --del pmcd >/dev/null 2>&1
-	/sbin/chkconfig --del pmlogger >/dev/null 2>&1
-	/sbin/chkconfig --del pmie >/dev/null 2>&1
-	/sbin/chkconfig --del pmproxy >/dev/null 2>&1
+        /sbin/chkconfig --del pcp >/dev/null 2>&1
+        /sbin/chkconfig --del pmcd >/dev/null 2>&1
+        /sbin/chkconfig --del pmlogger >/dev/null 2>&1
+        /sbin/chkconfig --del pmie >/dev/null 2>&1
+        /sbin/chkconfig --del pmproxy >/dev/null 2>&1
     %endif
     # cleanup namespace state/flag, may still exist
     PCP_PMNS_DIR=%{_pmnsdir}
@@ -2731,10 +2767,10 @@ PCP_PMDAS_DIR=%{_pmdasdir}
 PCP_SYSCONFIG_DIR=%{_sysconfdir}/sysconfig
 PCP_PMCDCONF_PATH=%{_confdir}/pmcd/pmcd.conf
 # auto-install important PMDAs for RH Support (if not present already)
-for PMDA in dm nfsclient ; do
+for PMDA in dm nfsclient openmetrics ; do
     if ! grep -q "$PMDA/pmda$PMDA" "$PCP_PMCDCONF_PATH"
     then
-	%{install_file "$PCP_PMDAS_DIR/$PMDA" .NeedInstall}
+        %{install_file "$PCP_PMDAS_DIR/$PMDA" .NeedInstall}
     fi
 done
 # increase default pmlogger recording frequency
@@ -2863,34 +2899,44 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %{_initddir}/pmproxy
 %if !%{disable_systemd}
 %{_unitdir}/pmcd.service
-%{_unitdir}/pmlogger.service
-%{_unitdir}/pmie.service
 %{_unitdir}/pmproxy.service
+%{_unitdir}/pmlogger.service
+%{_unitdir}/pmfind.service
+%{_unitdir}/pmie.service
 # services and timers replacing the old cron scripts
 %{_unitdir}/pmlogger_check.service
 %{_unitdir}/pmlogger_check.timer
+%{_unitdir}/pmlogger_check.path
 %{_unitdir}/pmlogger_daily.service
 %{_unitdir}/pmlogger_daily.timer
 %{_unitdir}/pmlogger_daily-poll.service
 %{_unitdir}/pmlogger_daily-poll.timer
+%{_unitdir}/pmie_check.timer
+%{_unitdir}/pmie_check.path
 %{_unitdir}/pmie_check.service
 %{_unitdir}/pmie_check.timer
+%{_unitdir}/pmie_check.path
 %{_unitdir}/pmie_daily.service
 %{_unitdir}/pmie_daily.timer
+%{_unitdir}/pmfind.timer
+%{_unitdir}/pmfind.path
 %config(noreplace) %{_sysconfdir}/sysconfig/pmie_timers
 %config(noreplace) %{_sysconfdir}/sysconfig/pmlogger_timers
 %else
 # cron scripts
 %config(noreplace) %{_sysconfdir}/cron.d/pcp-pmlogger
+%config(noreplace) %{_sysconfdir}/cron.d/pcp-pmfind
 %config(noreplace) %{_sysconfdir}/cron.d/pcp-pmie
 %endif
 %config(noreplace) %{_sysconfdir}/sasl2/pmcd.conf
 %config(noreplace) %{_sysconfdir}/sysconfig/pmlogger
 %config(noreplace) %{_sysconfdir}/sysconfig/pmproxy
+%config(noreplace) %{_sysconfdir}/sysconfig/pmfind
 %config(noreplace) %{_sysconfdir}/sysconfig/pmcd
 %config %{_sysconfdir}/pcp.env
-%dir %{_confdir}/pipe.conf.d
 %dir %{_confdir}/labels
+%dir %{_confdir}/labels/optional
+%dir %{_confdir}/pipe.conf.d
 %dir %{_confdir}/pmcd
 %config(noreplace) %{_confdir}/pmcd/pmcd.conf
 %config(noreplace) %{_confdir}/pmcd/pmcd.options
@@ -3057,6 +3103,9 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 
 %files pmda-elasticsearch
 %{_pmdasdir}/elasticsearch
+
+%files pmda-openvswitch
+%{_pmdasdir}/openvswitch
 
 %files pmda-rabbitmq
 %{_pmdasdir}/rabbitmq
@@ -3336,6 +3385,12 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %endif
 
 %changelog
+* Fri May 29 2020 Mark Goodwin <mgoodwin@redhat.com> - 5.1.1-1
+- Rebuild to pick up changed HdrHistogram_c version (BZ 1831502)
+- Existing configure macro in pcp-5.1.0 changelog was expanded (BZ 1833876)
+- pmdakvm: handle kernel lockdown in integrity mode (BZ 1824297)
+- Update to latest PCP sources.
+
 * Tue May 26 2020 Miro Hrončok <mhroncok@redhat.com> - 5.1.0-2
 - Rebuilt for Python 3.9
 
@@ -3448,7 +3503,7 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 - Updated versions of Vector (1.3.1) and Blinkenlights (1.0.1) webapps
 
 * Fri Aug 03 2018 Dave Brolley <brolley@redhat.com> - 4.1.1-2
-- pcp.spec: Fix the _with_dstat reference in the %configure command
+- pcp.spec: Fix the _with_dstat reference in the %%configure command
 
 * Fri Aug 03 2018 Dave Brolley <brolley@redhat.com> - 4.1.1-1
 - SELinux is preventing pmdalinux from 'unix_read' accesses on the shared memory Unknown
