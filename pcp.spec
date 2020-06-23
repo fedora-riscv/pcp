@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 5.1.1
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
@@ -3385,6 +3385,9 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %endif
 
 %changelog
+* Tue Jun 23 2020 Jitka Plesnikova <jplesnik@redhat.com> - 5.1.1-2
+- Perl 5.32 rebuild
+
 * Fri May 29 2020 Mark Goodwin <mgoodwin@redhat.com> - 5.1.1-1
 - Rebuild to pick up changed HdrHistogram_c version (BZ 1831502)
 - Existing configure macro in pcp-5.1.0 changelog was expanded (BZ 1833876)
