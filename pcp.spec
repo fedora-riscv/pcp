@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 5.1.1
-Release: 2%{?dist}
+Release: 3%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
@@ -2216,6 +2216,12 @@ updated policy package.
 %setup -q
 
 %build
+# This package fails to build with LTO due to undefined symbols.  LTO
+# was disabled in OpenSuSE as well, but with no real explanation why
+# beyond the undefined symbols.  It really shold be investigated further.
+# Disable LTO
+%define _lto_cflags %{nil}
+
 %if !%{disable_python2} && 0%{?default_python} != 3
 export PYTHON=python%{?default_python}
 %endif
@@ -3385,6 +3391,9 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %endif
 
 %changelog
+* Wed Jul 01 2020 Jeff Law <law@redhat.com> - 5.1.1-3
+- Disable LTO
+
 * Tue Jun 23 2020 Jitka Plesnikova <jplesnik@redhat.com> - 5.1.1-2
 - Perl 5.32 rebuild
 
