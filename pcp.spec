@@ -1,5 +1,5 @@
 Name:    pcp
-Version: 5.2.0
+Version: 5.2.1
 Release: 1%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
@@ -3063,6 +3063,7 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %files pmda-elasticsearch
 %{_pmdasdir}/elasticsearch
 %{_pmdasexecdir}/elasticsearch
+%{_confdir}/elasticsearch
 
 %files pmda-openvswitch
 %{_pmdasdir}/openvswitch
@@ -3429,10 +3430,14 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %endif
 
 %changelog
+* Fri Sep 25 2020 Nathan Scott <nathans@redhat.com> - 5.2.1-1
+- Update to latest PCP sources.
+
 * Sat Aug 08 2020 Mark Goodwin <mgoodwin@redhat.com> - 5.2.0-1
-- rearrange installed /var file layouts extensively (BZ 1827441)
+- Rearrange installed /var file layouts extensively (BZ 1827441)
 - pmproxy intermittently crashes at uv_timer_stop (BZ 1789312)
 - Update to latest PCP sources.
+- Re-enabled LTO.
 
 * Tue Jul 28 2020 Fedora Release Engineering <releng@fedoraproject.org> - 5.1.1-4
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_33_Mass_Rebuild
