@@ -1,5 +1,5 @@
 Name:    pcp
-Version: 5.2.2
+Version: 5.2.3
 Release: 1%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
@@ -2339,7 +2339,7 @@ ls -1 $RPM_BUILD_ROOT/%{_bindir} |\
   grep -E -e 'pmiostat|pmrep|dstat|pcp2csv' |\
   sed -e 's#^#'%{_bindir}'\/#' >pcp-system-tools.list
 ls -1 $RPM_BUILD_ROOT/%{_libexecdir}/pcp/bin |\
-  grep -E -e 'atop|dmcache|dstat|free|iostat|ipcs|lvmcache|mpstat' \
+  grep -E -e 'atop|dmcache|dstat|free|htop|iostat|ipcs|lvmcache|mpstat' \
         -e 'numastat|pidstat|shping|tapestat|uptime|verify' |\
   sed -e 's#^#'%{_libexecdir}/pcp/bin'\/#' >>pcp-system-tools.list
 %endif
@@ -2356,7 +2356,7 @@ ls -1 $RPM_BUILD_ROOT/%{_libexecdir}/pcp/bin |\
 
 ls -1 $RPM_BUILD_ROOT/%{_libexecdir}/pcp/bin |\
 %if !%{disable_python2} || !%{disable_python3}
-  grep -E -v 'atop|dmcache|dstat|free|iostat|ipcs|lvmcache|mpstat' |\
+  grep -E -v 'atop|dmcache|dstat|free|htop|iostat|ipcs|lvmcache|mpstat' |\
   grep -E -v 'numastat|shping|tapestat|uptime|verify|selinux-setup' |\
 %endif
   grep -E -v 'pmlogger_daily_report' |\
@@ -2701,6 +2701,11 @@ then
        %systemd_preun pmie.service
        %systemd_preun pmproxy.service
        %systemd_preun pmcd.service
+       %systemd_preun pmie_daily.timer
+       %systemd_preun pmlogger_daily.timer
+       %systemd_preun pmlogger_daily-poll.timer
+       %systemd_preun pmlogger_check.timer
+
        systemctl stop pmlogger.service >/dev/null 2>&1
        systemctl stop pmie.service >/dev/null 2>&1
        systemctl stop pmproxy.service >/dev/null 2>&1
@@ -2896,6 +2901,7 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %dir %{_confdir}/labels
 %dir %{_confdir}/labels/optional
 %config(noreplace) %{_confdir}/labels.conf
+%config(noreplace) %{_confdir}/linux/interfaces.conf
 %dir %{_confdir}/pipe.conf.d
 %dir %{_confdir}/pmcd
 %config(noreplace) %{_confdir}/pmcd/pmcd.conf
@@ -3439,6 +3445,9 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %endif
 
 %changelog
+* Fri Dec 18 2020 Nathan Scott <nathans@redhat.com> - 5.2.3-1
+- Update to latest PCP sources.
+
 * Wed Nov 11 2020 Nathan Scott <nathans@redhat.com> - 5.2.2-1
 - Update to latest PCP sources.
 
