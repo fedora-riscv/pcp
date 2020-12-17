@@ -3217,6 +3217,7 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %files pmda-bcc
 %{_pmdasdir}/bcc
 %{_pmdasexecdir}/bcc
+%{_confdir}/bcc
 %endif
 
 %if !%{disable_bpftrace}
