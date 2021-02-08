@@ -1,0 +1,13 @@
+summary: Common functions for PCP tests
+contact:
+- Jan Kuřík <jkurik@redhat.com>
+component:
+- pcp
+test: ./runtest.sh
+framework: beakerlib
+recommend:
+- pcp
+- pcp-testsuite
+duration: 15m
+extra-summary: /CoreOS/pcp/Library/pcpcommon
+extra-task: /CoreOS/pcp/Library/pcpcommon

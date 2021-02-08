@@ -27,6 +27,7 @@
 
 # Include Beaker environment
 . /usr/share/beakerlib/beakerlib.sh || exit 1
+. ../../Library/pcpcommon/lib.sh || exit 1
 
 PACKAGE="pcp"
 TSUSER="pcpqa"
@@ -58,8 +59,7 @@ rlJournalStart
         /etc/sysconfig/pmcd /etc/sysconfig/pmie_timers /etc/sysconfig/pmlogger \
         /etc/sysconfig/pmlogger_timers /etc/sysconfig/pmproxy /var/lib/pcp/config 
     rlRun "TmpDir=\$(mktemp -d)"
-    rlRun "yum install -y --enablerepo=\* 'library(pcp/pcpcommon)'" 0-255
-    rlRun "rlImport pcp/pcpcommon"
+    rlRun "pcpcommonLibraryLoaded"
   rlPhaseEnd
 
   rlPhaseStartSetup "PCP restart"
