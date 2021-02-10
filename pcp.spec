@@ -2610,6 +2610,12 @@ BEGIN {
     printf ("%s\n", $0) >> f;
 }'
 
+%if %{disable_mssql}
+# TODO: integrate better into the PCP build (via autoconf)
+# so that this and other mssql artifacts are not generated.
+rm -f pcp-pmda-mssql.conf
+%endif
+
 for tmpfile in *.conf ; \
 do \
     mv $tmpfile $DIST_ROOT/$PCP_SYSTEMDTMPFILES_DIR/$tmpfile; \
