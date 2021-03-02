@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 5.2.5
-Release: 2%{?dist}
+Release: 3%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
@@ -3307,6 +3307,10 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %files zeroconf -f pcp-zeroconf-files.rpm
 
 %changelog
+* Tue Mar 02 2021 Zbigniew Jędrzejewski-Szmek <zbyszek@in.waw.pl> - 5.2.5-3
+- Rebuilt for updated systemd-rpm-macros
+  See https://pagure.io/fesco/issue/2583.
+
 * Wed Feb 10 2021 Nathan Scott <nathans@redhat.com> - 5.2.5-2
 - Update to latest PCP sources.
 - Fix pcp-dstat(1) sample count being off-by-one (BZ 1922768)
