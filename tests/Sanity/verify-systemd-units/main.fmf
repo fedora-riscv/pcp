@@ -1,0 +1,15 @@
+summary: Verification of systemd unit files
+description: ''
+contact: Jan Kuřík <jkurik@redhat.com>
+component:
+- pcp
+test: ./runtest.sh
+framework: beakerlib
+recommend:
+- avahi
+- pcp-manager
+- pcp
+- pcp-zeroconf
+duration: 5m
+extra-summary: /tools/pcp/Sanity/verify-systemd-units
+extra-task: /tools/pcp/Sanity/verify-systemd-units

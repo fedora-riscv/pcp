@@ -1,0 +1,3 @@
+PURPOSE of /tools/pcp/Sanity/verify-systemd-units
+Description: Verification of systemd unit files
+Author: Jan Kuřík <jkurik@redhat.com>
