@@ -1,0 +1,3 @@
+PURPOSE of /tools/pcp/Install/install-pcp
+Description: This task simply install pcp, by pulling it via Requires
+Author: Jan Kuřík <jkurik@redhat.com>
