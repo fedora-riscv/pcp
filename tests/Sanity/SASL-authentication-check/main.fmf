@@ -1,0 +1,15 @@
+summary: A basic test of SASL authentication
+description: ''
+contact: Jan Kuřík <jkurik@redhat.com>
+component:
+- pcp
+test: ./runtest.sh
+framework: beakerlib
+recommend:
+- pcp
+- cyrus-sasl-md5
+- cyrus-sasl-scram
+- cyrus-sasl-lib
+duration: 15m
+extra-summary: /tools/pcp/Sanity/SASL-authentication-check
+extra-task: /tools/pcp/Sanity/SASL-authentication-check

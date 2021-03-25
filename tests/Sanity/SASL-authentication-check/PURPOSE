@@ -1,0 +1,3 @@
+PURPOSE of /tools/pcp/Sanity/SASL-authentication-check
+Description: A basic test of SASL authentication
+Author: Jan Kuřík <jkurik@redhat.com>
