@@ -1,0 +1,15 @@
+summary: Test for BZ#1944150 (Job for pmlogger.service failed because the)
+description: |
+    Bug summary: Job for pmlogger.service failed because the service did not take the steps required by its unit configuration.
+    Bugzilla link: https://bugzilla.redhat.com/show_bug.cgi?id=1944150
+contact: Jan Kuřík <jkurik@redhat.com>
+component:
+- pcp
+test: ./runtest.sh
+framework: beakerlib
+recommend:
+- pcp
+- pcp-zeroconf
+duration: 15m
+extra-summary: /tools/pcp/Sanity/pcp-services
+extra-task: /tools/pcp/Sanity/pcp-services
