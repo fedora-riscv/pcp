@@ -1,0 +1,16 @@
+summary: A check for presence of version symbols
+description: |
+    Bug summary: pcp shared libraries need symbol-versioning
+    Bugzilla link: https://bugzilla.redhat.com/show_bug.cgi?id=1037771
+contact: Jan Kuřík <jkurik@redhat.com>
+component:
+- pcp
+test: ./runtest.sh
+framework: beakerlib
+recommend:
+- pcp
+- pcp-libs
+- binutils
+duration: 15m
+extra-summary: /tools/pcp/Sanity/shared-libraries-need-symbol-versioning
+extra-task: /tools/pcp/Sanity/shared-libraries-need-symbol-versioning
