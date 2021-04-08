@@ -1,0 +1,3 @@
+PURPOSE of /tools/pcp/Sanity/pcp-python-compliance
+Description: Check for a compliance with Fedora Packaging Guidelines
+Author: Jan Kuřík <jkurik@redhat.com>
