@@ -1,0 +1,5 @@
+PURPOSE of /tools/pcp/Sanity/writeable-suid-guid
+Description: Test for BZ#1025583 (pcp creates a world writeable directory)
+Author: Milos Prchlik <mprchlik@redhat.com>, Jan Kuřík <jkurik@redhat.com>
+Bug summary: pcp creates a world writeable directory /var/lib/pcp/tmp
+Bugzilla link: https://bugzilla.redhat.com/show_bug.cgi?id=1025583
