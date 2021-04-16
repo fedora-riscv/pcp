@@ -268,7 +268,8 @@ BuildRequires: perl-generators
 %endif
 BuildRequires: perl-devel perl(strict)
 BuildRequires: perl(ExtUtils::MakeMaker) perl(LWP::UserAgent) perl(JSON)
-BuildRequires: perl(LWP::UserAgent) perl(Time::HiRes) perl(Digest::MD5)
+BuildRequires: perl(Time::HiRes) perl(Digest::MD5)
+BuildRequires: perl(XML::LibXML) perl(File::Slurp)
 BuildRequires: man %{_hostname_executable}
 %if !%{disable_systemd}
 BuildRequires: systemd-devel systemd-rpm-macros
@@ -3310,7 +3311,7 @@ PCP_LOG_DIR=%{_logsdir}
 - Fixed typo in specfile (pcp-testsuite requires pcp-pmda-hacluster
   and pcp-pmda-sockets instead of pcp-pmdas-hacluster etc.)
 
-* Wed Feb 10 2021 Nathan Scott <nathans@redhat.com> - 5.2.5-2
+* Mon Feb 08 2021 Nathan Scott <nathans@redhat.com> - 5.2.5-1
 - Update to latest PCP sources.
 - Fix pcp-dstat(1) sample count being off-by-one (BZ 1922768)
 - Add dstat(1) symlink to pcp-dstat(1) in pcp-doc (BZ 1922771)
