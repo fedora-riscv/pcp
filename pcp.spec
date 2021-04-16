@@ -1,6 +1,6 @@
 Name:    pcp
-Version: 5.2.5
-Release: 3%{?dist}
+Version: 5.3.0
+Release: 1%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
@@ -208,6 +208,16 @@ Provides: pcp-webapi = %{version}-%{release}
 Obsoletes: pcp-manager-debuginfo < 5.2.0
 Obsoletes: pcp-manager < 5.2.0
 
+# Some older releases did not update or replace pcp-gui-debuginfo properly
+%if 0%{?fedora} < 27 && 0%{?rhel} <= 7 && "%{_vendor}" == "redhat"
+Obsoletes: pcp-gui-debuginfo < 4.1.1
+%endif
+
+Obsoletes: pcp-compat < 4.2.0
+Obsoletes: pcp-monitor < 4.2.0
+Obsoletes: pcp-collector < 4.2.0
+Obsoletes: pcp-pmda-nvidia < 3.10.5
+
 # https://fedoraproject.org/wiki/Packaging "C and C++"
 BuildRequires: make
 BuildRequires: gcc gcc-c++
@@ -278,16 +288,6 @@ Requires: pcp-libs = %{version}-%{release}
 %if !%{disable_selinux}
 Requires: pcp-selinux = %{version}-%{release}
 %endif
-
-# Some older releases did not update or replace pcp-gui-debuginfo properly
-%if 0%{?fedora} < 27 && 0%{?rhel} <= 7 && "%{_vendor}" == "redhat"
-Obsoletes: pcp-gui-debuginfo < 4.1.1
-%endif
-
-Obsoletes: pcp-compat < 4.2.0
-Obsoletes: pcp-monitor < 4.2.0
-Obsoletes: pcp-collector < 4.2.0
-Obsoletes: pcp-pmda-nvidia < 3.10.5
 
 Requires: pcp-libs = %{version}-%{release}
 
@@ -2986,11 +2986,6 @@ pmieconf -c enable dmthin
 %post
 PCP_PMNS_DIR=%{_pmnsdir}
 PCP_LOG_DIR=%{_logsdir}
-chown -R pcp:pcp %{_logsdir}/pmcd 2>/dev/null
-chown -R pcp:pcp %{_logsdir}/pmlogger 2>/dev/null
-chown -R pcp:pcp %{_logsdir}/sa 2>/dev/null
-chown -R pcp:pcp %{_logsdir}/pmie 2>/dev/null
-chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %{install_file "$PCP_PMNS_DIR" .NeedRebuild}
 %{install_file "$PCP_LOG_DIR/pmlogger" .NeedRewrite}
 %if !%{disable_systemd}
@@ -3307,9 +3302,13 @@ chown -R pcp:pcp %{_logsdir}/pmproxy 2>/dev/null
 %files zeroconf -f pcp-zeroconf-files.rpm
 
 %changelog
-* Tue Mar 02 2021 Zbigniew Jędrzejewski-Szmek <zbyszek@in.waw.pl> - 5.2.5-3
-- Rebuilt for updated systemd-rpm-macros
-  See https://pagure.io/fesco/issue/2583.
+* Fri Apr 16 2021 Nathan Scott <nathans@redhat.com> - 5.3.0-1
+- Added conditional lockdown policy access by pmdakvm (BZ 1929259)
+- Update to latest PCP sources.
+
+* Mon Feb 08 2021 Andreas Gerstmayr <agerstmayr@redhat.com> - 5.2.5-2
+- Fixed typo in specfile (pcp-testsuite requires pcp-pmda-hacluster
+  and pcp-pmda-sockets instead of pcp-pmdas-hacluster etc.)
 
 * Wed Feb 10 2021 Nathan Scott <nathans@redhat.com> - 5.2.5-2
 - Update to latest PCP sources.
