@@ -1,12 +1,14 @@
 Name:    pcp
 Version: 5.3.0
-Release: 1%{?dist}
+Release: 3%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
 
-%global  bintray https://bintray.com/artifact/download
-Source0: %{bintray}/pcp/source/pcp-%{version}.src.tar.gz
+%global  artifactory https://performancecopilot.jfrog.io/artifactory
+Source0: %{artifactory}/pcp-source-release/pcp-%{version}.src.tar.gz
+
+Patch000: redhat-bugzilla-1950263.patch
 
 %if 0%{?fedora} >= 26 || 0%{?rhel} > 7
 %global __python2 python2
@@ -2247,6 +2249,7 @@ updated policy package.
 
 %prep
 %setup -q
+%patch000 -p1
 
 %build
 # fix up build version
@@ -2559,6 +2562,9 @@ $1 == "d" {
             if (match ($5, "'$PCP_RUN_DIR'")) {
                 printf ("%%%%ghost ") >> f;
             }
+            if (match ($5, "'$PCP_VAR_DIR'/testsuite")) {
+                $3 = $4 = "pcpqa";
+            }
             printf ("%%%%dir %%%%attr(%s,%s,%s) %s\n", $2, $3, $4, $5) >> f
           }
 $1 == "f" && $6 ~ "etc/pcp\\.conf" { printf ("%%%%config ") >> f; }
@@ -2570,6 +2576,9 @@ $1 == "f" {
                     printf ("%%%%config(noreplace) ") >> f;
                     break;
                 }
+            }
+            if (match ($6, "'$PCP_VAR_DIR'/testsuite")) {
+                $3 = $4 = "pcpqa";
             }
             if (match ($6, "'$PCP_MAN_DIR'") || match ($6, "'$PCP_DOC_DIR'")) {
                 printf ("%%%%doc ") >> f;
@@ -3050,7 +3059,6 @@ PCP_LOG_DIR=%{_logsdir}
 %endif
 
 %files testsuite -f pcp-testsuite-files.rpm
-%defattr(-,pcpqa,pcpqa)
 
 %if !%{disable_infiniband}
 %files pmda-infiniband -f pcp-pmda-infiniband-files.rpm
@@ -3303,6 +3311,10 @@ PCP_LOG_DIR=%{_logsdir}
 %files zeroconf -f pcp-zeroconf-files.rpm
 
 %changelog
+* Thu Apr 22 2021 Nathan Scott <nathans@redhat.com> - 5.3.0-3
+- Correct pcp-testsuite file permissions and ownership.
+- Update location of upstream sources.
+
 * Fri Apr 16 2021 Nathan Scott <nathans@redhat.com> - 5.3.0-1
 - Added conditional lockdown policy access by pmdakvm (BZ 1929259)
 - Update to latest PCP sources.

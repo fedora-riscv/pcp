@@ -1,0 +1,33 @@
+commit 6528e1b09ad948a8bf82e03ad2f10c1a296078af
+Author: Nathan Scott <nathans@redhat.com>
+Date:   Tue Apr 20 11:02:26 2021 +1000
+
+    qa: specify PCP libraries only on libpcp_web link lines
+    
+    Tweaks the changes from commit c9bd0cc4e9b so that testsuite
+    sources linking with libpcp_web don't pull in 3rd party libs
+    (which may not be installed) like uv, ssl, crypto.
+    
+    Resolves Red Hat BZ #1950263
+
+diff --git a/qa/src/GNUlocaldefs b/qa/src/GNUlocaldefs
+index 3b5873c25..13fc09831 100644
+--- a/qa/src/GNUlocaldefs
++++ b/qa/src/GNUlocaldefs
+@@ -538,13 +538,13 @@ check_pmiend_fdleak:	check_pmiend_fdleak.c
+ 
+ httpfetch:	httpfetch.c
+ 	rm -f $@
+-	$(CCF) $(CDEFS) -o $@ $@.c $(LDLIBS) $(PCP_WEBLIB)
++	$(CCF) $(CDEFS) -o $@ $@.c $(LDLIBS) -lpcp_pmda -lpcp_web -lpcp_mmv
+ json_test:	json_test.c
+ 	rm -f $@
+-	$(CCF) $(CDEFS) -o $@ $@.c $(LDLIBS) $(PCP_WEBLIB)
++	$(CCF) $(CDEFS) -o $@ $@.c $(LDLIBS) -lpcp_pmda -lpcp_web -lpcp_mmv
+ sha1int2ext:	sha1int2ext.o
+ 	rm -f $@
+-	$(CCF) $(CDEFS) -o $@ $@.c $(LDLIBS) $(PCP_WEBLIB)
++	$(CCF) $(CDEFS) -o $@ $@.c $(LDLIBS) -lpcp_pmda -lpcp_web -lpcp_mmv
+ 
+ # --- need libpcp_fault
+ #
