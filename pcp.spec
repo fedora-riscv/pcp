@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 5.3.0
-Release: 3%{?dist}
+Release: 4%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
@@ -3311,6 +3311,9 @@ PCP_LOG_DIR=%{_logsdir}
 %files zeroconf -f pcp-zeroconf-files.rpm
 
 %changelog
+* Fri May 21 2021 Jitka Plesnikova <jplesnik@redhat.com> - 5.3.0-4
+- Perl 5.34 rebuild
+
 * Thu Apr 22 2021 Nathan Scott <nathans@redhat.com> - 5.3.0-3
 - Correct pcp-testsuite file permissions and ownership.
 - Update location of upstream sources.
