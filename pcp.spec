@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 5.3.1
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
@@ -3270,6 +3270,9 @@ PCP_LOG_DIR=%{_logsdir}
 %files zeroconf -f pcp-zeroconf-files.rpm
 
 %changelog
+* Fri Jun 04 2021 Python Maint <python-maint@redhat.com> - 5.3.1-2
+- Rebuilt for Python 3.10
+
 * Fri Jun 04 2021 Nathan Scott <nathans@redhat.com> - 5.3.1-1
 - Really fix selinux AVCs for pmdakvm on debugfs (BZ 1929259)
 - Update to latest PCP sources.
