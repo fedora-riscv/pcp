@@ -1,14 +1,12 @@
 Name:    pcp
-Version: 5.3.0
-Release: 4%{?dist}
+Version: 5.3.1
+Release: 1%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
 
 %global  artifactory https://performancecopilot.jfrog.io/artifactory
 Source0: %{artifactory}/pcp-source-release/pcp-%{version}.src.tar.gz
-
-Patch000: redhat-bugzilla-1950263.patch
 
 %if 0%{?fedora} >= 26 || 0%{?rhel} > 7
 %global __python2 python2
@@ -44,12 +42,7 @@ Patch000: redhat-bugzilla-1950263.patch
 %endif
 %endif
 
-# libvarlink and pmdapodman
-%if 0%{?fedora} >= 28 || 0%{?rhel} > 7
 %global disable_podman 0
-%else
-%global disable_podman 1
-%endif
 
 # libchan, libhdr_histogram and pmdastatsd
 %if 0%{?fedora} >= 29 || 0%{?rhel} > 7
@@ -137,13 +130,6 @@ Patch000: redhat-bugzilla-1950263.patch
 %global disable_nutcracker 1
 %endif
 
-# support for pmdarpm
-%if 0%{?rhel} == 0 || 0%{?rhel} > 5
-%global disable_rpm 0
-%else
-%global disable_rpm 1
-%endif
-
 # Qt development and runtime environment missing components before el6
 %if 0%{?rhel} == 0 || 0%{?rhel} > 5
 %global disable_qt 0
@@ -201,6 +187,10 @@ Conflicts: librapi < 0.16
 Obsoletes: pcp-pmda-kvm < 4.1.1
 Provides: pcp-pmda-kvm = %{version}-%{release}
 
+# RPM PMDA retired completely
+Obsoletes: pcp-pmda-rpm < 5.3.2
+Obsoletes: pcp-pmda-rpm-debuginfo < 5.3.2
+
 # PCP REST APIs are now provided by pmproxy
 Obsoletes: pcp-webapi-debuginfo < 5.0.0
 Obsoletes: pcp-webapi < 5.0.0
@@ -225,7 +215,6 @@ BuildRequires: make
 BuildRequires: gcc gcc-c++
 BuildRequires: procps autoconf bison flex
 BuildRequires: nss-devel
-BuildRequires: rpm-devel
 BuildRequires: avahi-devel
 BuildRequires: xz-devel
 BuildRequires: zlib-devel
@@ -243,9 +232,6 @@ BuildRequires: python3-setuptools
 BuildRequires: ncurses-devel
 BuildRequires: readline-devel
 BuildRequires: cyrus-sasl-devel
-%if !%{disable_podman}
-BuildRequires: libvarlink-devel
-%endif
 %if !%{disable_statsd}
 # ragel unavailable on RHEL8
 %if 0%{?rhel} == 0
@@ -291,8 +277,6 @@ Requires: pcp-libs = %{version}-%{release}
 %if !%{disable_selinux}
 Requires: pcp-selinux = %{version}-%{release}
 %endif
-
-Requires: pcp-libs = %{version}-%{release}
 
 %global _confdir        %{_sysconfdir}/pcp
 %global _logsdir        %{_localstatedir}/log/pcp
@@ -548,9 +532,6 @@ Requires: pcp-pmda-snmp
 %endif
 %if !%{disable_json}
 Requires: pcp-pmda-json
-%endif
-%if !%{disable_rpm}
-Requires: pcp-pmda-rpm
 %endif
 Requires: pcp-pmda-summary pcp-pmda-trace pcp-pmda-weblog
 %if !%{disable_python2} || !%{disable_python3}
@@ -893,12 +874,10 @@ License: GPLv2+
 Summary: Performance Co-Pilot (PCP) metrics for podman containers
 URL: https://pcp.io
 Requires: pcp = %{version}-%{release} pcp-libs = %{version}-%{release}
-Requires: libvarlink
-BuildRequires: libvarlink-devel
 
 %description pmda-podman
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
-collecting podman container and pod statistics through libvarlink.
+collecting podman container and pod statistics via the podman REST API.
 %endif
 
 %if !%{disable_statsd}
@@ -1956,21 +1935,6 @@ This package contains the PCP Performance Metrics Domain Agent (PMDA) for
 collecting metrics about the room temperature.
 # end pcp-pmda-roomtemp
 
-%if !%{disable_rpm}
-#
-# pcp-pmda-rpm
-#
-%package pmda-rpm
-License: GPLv2+
-Summary: Performance Co-Pilot (PCP) metrics for the RPM package manager
-URL: https://pcp.io
-Requires: pcp = %{version}-%{release} pcp-libs = %{version}-%{release}
-%description pmda-rpm
-This package contains the PCP Performance Metrics Domain Agent (PMDA) for
-collecting metrics about the installed RPM packages.
-%endif
-# end pcp-pmda-rpm
-
 #
 # pcp-pmda-sendmail
 #
@@ -2249,7 +2213,6 @@ updated policy package.
 
 %prep
 %setup -q
-%patch000 -p1
 
 %build
 # fix up build version
@@ -2291,9 +2254,11 @@ sed -i -e '/platformsz.h/d' $DIST_MANIFEST
 
 %if %{disable_mssql}
 # remove pmdamssql on platforms lacking MSODBC driver packages.
+rm -fr $RPM_BUILD_ROOT/%{_confdir}/mssql
+rm -fr $RPM_BUILD_ROOT/%{_confdir}/pmieconf/mssql
+rm -fr $RPM_BUILD_ROOT/%{_ieconfdir}/mssql
 rm -fr $RPM_BUILD_ROOT/%{_pmdasdir}/mssql
 rm -fr $RPM_BUILD_ROOT/%{_pmdasexecdir}/mssql
-rm -fr $RPM_BUILD_ROOT/%{_confdir}/mssql
 %endif
 
 %if !%{disable_qt}
@@ -2361,8 +2326,10 @@ grep -E 'pcp\/(examples|demos)|(etc/pcp|pcp/pmdas)\/(sample|simple|trivial|txmon
 # Note: /etc/pcp.{conf,env,sh} are %%config but not noreplace
 # and are treated specially below.
 cat >confpath.list <<EOF
+etc/zabbix/zabbix_agentd.d/
 etc/sysconfig/
 etc/cron.d/
+etc/sasl2/
 etc/pcp/
 EOF
 
@@ -2447,7 +2414,7 @@ basic_manifest | keep '(etc/pcp|pmdas)/memcache(/|$)' >pcp-pmda-memcache-files
 basic_manifest | keep '(etc/pcp|pmdas)/mailq(/|$)' >pcp-pmda-mailq-files
 basic_manifest | keep '(etc/pcp|pmdas)/mic(/|$)' >pcp-pmda-mic-files
 basic_manifest | keep '(etc/pcp|pmdas)/mounts(/|$)' >pcp-pmda-mounts-files
-basic_manifest | keep '(etc/pcp|pmdas)/mssql(/|$)' >pcp-pmda-mssql-files
+basic_manifest | keep '(etc/pcp|pmdas|pmieconf)/mssql(/|$)' >pcp-pmda-mssql-files
 basic_manifest | keep '(etc/pcp|pmdas)/mysql(/|$)' >pcp-pmda-mysql-files
 basic_manifest | keep '(etc/pcp|pmdas)/named(/|$)' >pcp-pmda-named-files
 basic_manifest | keep '(etc/pcp|pmdas)/netfilter(/|$)' >pcp-pmda-netfilter-files
@@ -2662,11 +2629,6 @@ getent group pcp >/dev/null || groupadd -r pcp
 getent passwd pcp >/dev/null || \
   useradd -c "Performance Co-Pilot" -g pcp -d %{_localstatedir}/lib/pcp -M -r -s /sbin/nologin pcp
 exit 0
-
-%if !%{disable_rpm}
-%preun pmda-rpm
-%{pmda_remove "$1" "rpm"}
-%endif
 
 %if !%{disable_systemd}
 %preun pmda-systemd
@@ -3248,9 +3210,6 @@ PCP_LOG_DIR=%{_logsdir}
 
 %files pmda-roomtemp -f pcp-pmda-roomtemp-files.rpm
 
-%if !%{disable_rpm}
-%files pmda-rpm -f pcp-pmda-rpm-files.rpm
-%endif
 %files pmda-sendmail -f pcp-pmda-sendmail-files.rpm
 
 %files pmda-shping -f pcp-pmda-shping-files.rpm
@@ -3311,6 +3270,10 @@ PCP_LOG_DIR=%{_logsdir}
 %files zeroconf -f pcp-zeroconf-files.rpm
 
 %changelog
+* Fri Jun 04 2021 Nathan Scott <nathans@redhat.com> - 5.3.1-1
+- Really fix selinux AVCs for pmdakvm on debugfs (BZ 1929259)
+- Update to latest PCP sources.
+
 * Fri May 21 2021 Jitka Plesnikova <jplesnik@redhat.com> - 5.3.0-4
 - Perl 5.34 rebuild
 
