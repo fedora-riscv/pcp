@@ -1,6 +1,6 @@
 Name:    pcp
-Version: 5.3.1
-Release: 3%{?dist}
+Version: 5.3.2
+Release: 1%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
@@ -501,7 +501,7 @@ Requires: pcp-pmda-samba pcp-pmda-slurm pcp-pmda-vmware pcp-pmda-zimbra
 Requires: pcp-pmda-dm pcp-pmda-apache
 Requires: pcp-pmda-bash pcp-pmda-cisco pcp-pmda-gfs2 pcp-pmda-mailq pcp-pmda-mounts
 Requires: pcp-pmda-nvidia-gpu pcp-pmda-roomtemp pcp-pmda-sendmail pcp-pmda-shping pcp-pmda-smart
-Requires: pcp-pmda-hacluster pcp-pmda-lustrecomm pcp-pmda-logger pcp-pmda-docker pcp-pmda-bind2
+Requires: pcp-pmda-hacluster pcp-pmda-lustrecomm pcp-pmda-logger pcp-pmda-denki pcp-pmda-docker pcp-pmda-bind2
 Requires: pcp-pmda-sockets
 %if !%{disable_podman}
 Requires: pcp-pmda-podman
@@ -534,9 +534,7 @@ Requires: pcp-pmda-snmp
 Requires: pcp-pmda-json
 %endif
 Requires: pcp-pmda-summary pcp-pmda-trace pcp-pmda-weblog
-%if !%{disable_python2} || !%{disable_python3}
 Requires: pcp-system-tools
-%endif
 %if !%{disable_qt}
 Requires: pcp-gui
 %endif
@@ -1103,6 +1101,20 @@ Requires: perl-JSON
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
 collecting metrics about a GPS Daemon.
 #end pcp-pmda-gpsd
+
+#
+# pcp-pmda-denki
+#
+%package pmda-denki
+License: GPLv2+
+Summary: Performance Co-Pilot (PCP) metrics dealing with electrical power
+URL: https://pcp.io
+Requires: pcp = %{version}-%{release} pcp-libs = %{version}-%{release}
+%description pmda-denki
+This package contains the PCP Performance Metrics Domain Agent (PMDA) for
+collecting metrics related to the electrical power consumed by and inside
+the system.
+# end pcp-pmda-denki
 
 #
 # pcp-pmda-docker
@@ -2118,7 +2130,6 @@ Performance Metric API (PMAPI) monitor tools and Performance
 Metric Domain Agent (PMDA) collector tools written in Python3.
 %endif
 
-%if !%{disable_python2} || !%{disable_python3}
 #
 # pcp-system-tools
 #
@@ -2126,23 +2137,24 @@ Metric Domain Agent (PMDA) collector tools written in Python3.
 License: GPLv2+
 Summary: Performance Co-Pilot (PCP) System and Monitoring Tools
 URL: https://pcp.io
+Requires: pcp = %{version}-%{release} pcp-libs = %{version}-%{release}
+%if !%{disable_python2} || !%{disable_python3}
 %if !%{disable_python3}
 Requires: python3-pcp = %{version}-%{release}
 %else
 Requires: %{__python2}-pcp = %{version}-%{release}
 %endif
-Requires: pcp = %{version}-%{release} pcp-libs = %{version}-%{release}
 %if !%{disable_dstat}
 # https://fedoraproject.org/wiki/Packaging:Guidelines "Renaming/Replacing Existing Packages"
 Provides: dstat = %{version}-%{release}
 Provides: /usr/bin/dstat
 Obsoletes: dstat <= 0.8
 %endif
+%endif
 
 %description system-tools
 This PCP module contains additional system monitoring tools written
 in the Python language.
-%endif
 
 %if !%{disable_qt}
 #
@@ -2359,11 +2371,11 @@ total_manifest | keep 'testsuite|etc/systemd/system' >pcp-testsuite-files
 basic_manifest | keep "$PCP_GUI|pcp-gui|applications|pixmaps|hicolor" | cull 'pmtime.h' >pcp-gui-files
 basic_manifest | keep 'selinux' | cull 'tmp|GNUselinuxdefs' >pcp-selinux-files
 basic_manifest | keep 'zeroconf|daily[-_]report|/sa$' >pcp-zeroconf-files
-basic_manifest | grep -E -e 'pmiostat|pmrep|dstat|pcp2csv' \
+basic_manifest | grep -E -e 'pmiostat|pmrep|dstat|htop|pcp2csv' \
    -e 'pcp-atop|pcp-dmcache|pcp-dstat|pcp-free|pcp-htop' \
    -e 'pcp-ipcs|pcp-iostat|pcp-lvmcache|pcp-mpstat' \
    -e 'pcp-numastat|pcp-pidstat|pcp-shping|pcp-tapestat' \
-   -e 'pcp-uptime|pcp-verify' | \
+   -e 'pcp-uptime|pcp-verify|pcp-ss' | \
    cull 'selinux|pmlogconf|pmieconf|pmrepconf' >pcp-system-tools-files
 
 basic_manifest | keep 'sar2pcp' >pcp-import-sar2pcp-files
@@ -2392,6 +2404,7 @@ basic_manifest | keep '(etc/pcp|pmdas)/cifs(/|$)' >pcp-pmda-cifs-files
 basic_manifest | keep '(etc/pcp|pmdas)/cisco(/|$)' >pcp-pmda-cisco-files
 basic_manifest | keep '(etc/pcp|pmdas)/dbping(/|$)' >pcp-pmda-dbping-files
 basic_manifest | keep '(etc/pcp|pmdas|pmieconf)/dm(/|$)' >pcp-pmda-dm-files
+basic_manifest | keep '(etc/pcp|pmdas)/denki(/|$)' >pcp-pmda-denki-files
 basic_manifest | keep '(etc/pcp|pmdas)/docker(/|$)' >pcp-pmda-docker-files
 basic_manifest | keep '(etc/pcp|pmdas)/ds389log(/|$)' >pcp-pmda-ds389log-files
 basic_manifest | keep '(etc/pcp|pmdas)/ds389(/|$)' >pcp-pmda-ds389-files
@@ -2459,7 +2472,7 @@ for pmda_package in \
     activemq apache \
     bash bcc bind2 bonding bpftrace \
     cifs cisco \
-    dbping docker dm ds389 ds389log \
+    dbping denki docker dm ds389 ds389log \
     elasticsearch \
     gfs2 gluster gpfs gpsd \
     hacluster haproxy \
@@ -2700,6 +2713,9 @@ exit 0
 
 %preun pmda-dbping
 %{pmda_remove "$1" "dbping"}
+
+%preun pmda-denki
+%{pmda_remove "$1" "denki"}
 
 %preun pmda-docker
 %{pmda_remove "$1" "docker"}
@@ -3092,6 +3108,8 @@ PCP_LOG_DIR=%{_logsdir}
 %files pmda-zimbra -f pcp-pmda-zimbra-files.rpm
 %endif
 
+%files pmda-denki -f pcp-pmda-denki-files.rpm
+
 %files pmda-docker -f pcp-pmda-docker-files.rpm
 
 %files pmda-lustrecomm -f pcp-pmda-lustrecomm-files.rpm
@@ -3263,29 +3281,17 @@ PCP_LOG_DIR=%{_logsdir}
 %files -n python3-pcp -f python3-pcp.list.rpm
 %endif
 
-%if !%{disable_python2} || !%{disable_python3}
 %files system-tools -f pcp-system-tools-files.rpm
-%endif
 
 %files zeroconf -f pcp-zeroconf-files.rpm
 
 %changelog
-* Thu Jul 22 2021 Fedora Release Engineering <releng@fedoraproject.org> - 5.3.1-3
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_35_Mass_Rebuild
-
-* Fri Jun 04 2021 Python Maint <python-maint@redhat.com> - 5.3.1-2
-- Rebuilt for Python 3.10
-
-* Fri Jun 04 2021 Nathan Scott <nathans@redhat.com> - 5.3.1-1
-- Really fix selinux AVCs for pmdakvm on debugfs (BZ 1929259)
+* Fri Jul 30 2021 Mark Goodwin <mgoodwin@redhat.com> - 5.3.2-1
 - Update to latest PCP sources.
 
-* Fri May 21 2021 Jitka Plesnikova <jplesnik@redhat.com> - 5.3.0-4
-- Perl 5.34 rebuild
-
-* Thu Apr 22 2021 Nathan Scott <nathans@redhat.com> - 5.3.0-3
-- Correct pcp-testsuite file permissions and ownership.
-- Update location of upstream sources.
+* Fri Jun 04 2021 Nathan Scott <nathans@redhat.com> - 5.3.1-1
+- Fix selinux violations for pmdakvm on debugfs (BZ 1929259)
+- Update to latest PCP sources.
 
 * Fri Apr 16 2021 Nathan Scott <nathans@redhat.com> - 5.3.0-1
 - Added conditional lockdown policy access by pmdakvm (BZ 1929259)
