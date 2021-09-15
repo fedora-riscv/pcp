@@ -1,6 +1,6 @@
 Name:    pcp
-Version: 5.3.2
-Release: 2%{?dist}
+Version: 5.3.3
+Release: 1%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
@@ -88,6 +88,17 @@ Source0: %{artifactory}/pcp-source-release/pcp-%{version}.src.tar.gz
 %endif
 %else
 %global disable_bcc 1
+%endif
+
+# support for pmdabpf, check bpf.spec for supported architectures of bpf
+%if 0%{?fedora} >= 33 || 0%{?rhel} > 8
+%ifarch x86_64 %{power64} aarch64 s390x
+%global disable_bpf 0
+%else
+%global disable_bpf 1
+%endif
+%else
+%global disable_bpf 1
 %endif
 
 # support for pmdabpftrace, check bpftrace.spec for supported architectures of bpftrace
@@ -355,6 +366,12 @@ Requires: pcp-selinux = %{version}-%{release}
 %global _with_bcc --with-pmdabcc=yes
 %endif
 
+%if %{disable_bpf}
+%global _with_bpf --with-pmdabpf=no
+%else
+%global _with_bpf --with-pmdabpf=yes
+%endif
+
 %if %{disable_bpftrace}
 %global _with_bpftrace --with-pmdabpftrace=no
 %else
@@ -514,6 +531,9 @@ Requires: pcp-pmda-nutcracker
 %endif
 %if !%{disable_bcc}
 Requires: pcp-pmda-bcc
+%endif
+%if !%{disable_bpf}
+Requires: pcp-pmda-bpf
 %endif
 %if !%{disable_bpftrace}
 Requires: pcp-pmda-bpftrace
@@ -1441,6 +1461,23 @@ extracting performance metrics from eBPF/BCC Python modules.
 # end pcp-pmda-bcc
 %endif
 
+%if !%{disable_bpf}
+#
+# pcp-pmda-bpf
+#
+%package pmda-bpf
+License: ASL 2.0 and GPLv2+
+Summary: Performance Co-Pilot (PCP) metrics from eBPF ELF modules
+URL: https://pcp.io
+Requires: pcp = %{version}-%{release} pcp-libs = %{version}-%{release}
+Requires: libbpf
+BuildRequires: libbpf-devel clang llvm
+%description pmda-bpf
+This package contains the PCP Performance Metrics Domain Agent (PMDA) for
+extracting performance metrics from eBPF ELF modules.
+# end pcp-pmda-bpf
+%endif
+
 %if !%{disable_bpftrace}
 #
 # pcp-pmda-bpftrace
@@ -2223,10 +2260,14 @@ interface rules, type enforcement and file context adjustments for an
 updated policy package.
 %endif
 
+
 %prep
 %setup -q
 
 %build
+# the buildsubdir macro gets defined in %setup and is apparently only available in the next step (i.e. the %build step)
+%global __strip %{_builddir}/%{?buildsubdir}/build/rpm/custom-strip
+
 # fix up build version
 _build=`echo %{release} | sed -e 's/\..*$//'`
 sed -i "/PACKAGE_BUILD/s/=[0-9]*/=$_build/" VERSION.pcp
@@ -2234,7 +2275,7 @@ sed -i "/PACKAGE_BUILD/s/=[0-9]*/=$_build/" VERSION.pcp
 %if !%{disable_python2} && 0%{?default_python} != 3
 export PYTHON=python%{?default_python}
 %endif
-%configure %{?_with_initd} %{?_with_doc} %{?_with_dstat} %{?_with_ib} %{?_with_podman} %{?_with_statsd} %{?_with_perfevent} %{?_with_bcc} %{?_with_bpftrace} %{?_with_json} %{?_with_snmp} %{?_with_nutcracker} %{?_with_python2}
+%configure %{?_with_initd} %{?_with_doc} %{?_with_dstat} %{?_with_ib} %{?_with_podman} %{?_with_statsd} %{?_with_perfevent} %{?_with_bcc} %{?_with_bpf} %{?_with_bpftrace} %{?_with_json} %{?_with_snmp} %{?_with_nutcracker} %{?_with_python2}
 make %{?_smp_mflags} default_pcp
 
 %install
@@ -2399,6 +2440,7 @@ basic_manifest | keep '(etc/pcp|pmdas)/bash(/|$)' >pcp-pmda-bash-files
 basic_manifest | keep '(etc/pcp|pmdas)/bcc(/|$)' >pcp-pmda-bcc-files
 basic_manifest | keep '(etc/pcp|pmdas)/bind2(/|$)' >pcp-pmda-bind2-files
 basic_manifest | keep '(etc/pcp|pmdas)/bonding(/|$)' >pcp-pmda-bonding-files
+basic_manifest | keep '(etc/pcp|pmdas)/bpf(/|$)' >pcp-pmda-bpf-files
 basic_manifest | keep '(etc/pcp|pmdas)/bpftrace(/|$)' >pcp-pmda-bpftrace-files
 basic_manifest | keep '(etc/pcp|pmdas)/cifs(/|$)' >pcp-pmda-cifs-files
 basic_manifest | keep '(etc/pcp|pmdas)/cisco(/|$)' >pcp-pmda-cisco-files
@@ -2470,7 +2512,7 @@ basic_manifest | keep '(etc/pcp|pmdas)/zswap(/|$)' >pcp-pmda-zswap-files
 rm -f packages.list
 for pmda_package in \
     activemq apache \
-    bash bcc bind2 bonding bpftrace \
+    bash bcc bind2 bonding bpf bpftrace \
     cifs cisco \
     dbping denki docker dm ds389 ds389log \
     elasticsearch \
@@ -2790,6 +2832,11 @@ exit 0
 %{pmda_remove "$1" "bcc"}
 %endif
 
+%if !%{disable_bpf}
+%preun pmda-bpf
+%{pmda_remove "$1" "bpf"}
+%endif
+
 %if !%{disable_bpftrace}
 %preun pmda-bpftrace
 %{pmda_remove "$1" "bpftrace"}
@@ -2887,8 +2934,6 @@ if [ "$1" -eq 0 ]
 then
     %systemd_preun pmlogger_daily_report.timer
     %systemd_preun pmlogger_daily_report.service
-    %systemd_preun pmlogger_daily_report-poll.timer
-    %systemd_preun pmlogger_daily_report-poll.service
 fi
 %endif
 
@@ -2903,7 +2948,6 @@ then
        %systemd_preun pmcd.service
        %systemd_preun pmie_daily.timer
        %systemd_preun pmlogger_daily.timer
-       %systemd_preun pmlogger_daily-poll.timer
        %systemd_preun pmlogger_check.timer
 
        systemctl stop pmlogger.service >/dev/null 2>&1
@@ -2977,6 +3021,8 @@ PCP_LOG_DIR=%{_logsdir}
 %{install_file "$PCP_PMNS_DIR" .NeedRebuild}
 %{install_file "$PCP_LOG_DIR/pmlogger" .NeedRewrite}
 %if !%{disable_systemd}
+    # clean up any stale symlinks for deprecated pm*-poll services
+    rm -f %{_sysconfdir}/systemd/system/pm*.requires/pm*-poll.* >/dev/null 2>&1 || true
     %systemd_postun_with_restart pmcd.service
     %systemd_post pmcd.service
     %systemd_postun_with_restart pmlogger.service
@@ -3142,6 +3188,10 @@ PCP_LOG_DIR=%{_logsdir}
 %files pmda-bcc -f pcp-pmda-bcc-files.rpm
 %endif
 
+%if !%{disable_bpf}
+%files pmda-bpf -f pcp-pmda-bpf-files.rpm
+%endif
+
 %if !%{disable_bpftrace}
 %files pmda-bpftrace -f pcp-pmda-bpftrace-files.rpm
 %endif
@@ -3286,6 +3336,9 @@ PCP_LOG_DIR=%{_logsdir}
 %files zeroconf -f pcp-zeroconf-files.rpm
 
 %changelog
+* Wed Sep 15 2021 Nathan Scott <nathans@redhat.com> - 5.3.3-1
+- Update to latest PCP sources.
+
 * Tue Sep 14 2021 Sahana Prasad <sahana@redhat.com> - 5.3.2-2
 - Rebuilt with OpenSSL 3.0.0
 
