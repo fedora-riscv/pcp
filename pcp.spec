@@ -1,5 +1,5 @@
 Name:    pcp
-Version: 5.3.3
+Version: 5.3.4
 Release: 1%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
@@ -2407,7 +2407,7 @@ basic_manifest() {
 # Likewise, for the pcp-pmda and pcp-testsuite subpackages.
 #
 total_manifest | keep 'tutorials|/html/|pcp-doc|man.*\.[1-9].*' | cull 'out' >pcp-doc-files
-total_manifest | keep 'testsuite|etc/systemd/system' >pcp-testsuite-files
+total_manifest | keep 'testsuite|etc/systemd/system|libpcp_fault|pcp/fault.h' >pcp-testsuite-files
 
 basic_manifest | keep "$PCP_GUI|pcp-gui|applications|pixmaps|hicolor" | cull 'pmtime.h' >pcp-gui-files
 basic_manifest | keep 'selinux' | cull 'tmp|GNUselinuxdefs' >pcp-selinux-files
@@ -2982,8 +2982,11 @@ for PMDA in dm nfsclient openmetrics ; do
         %{install_file "$PCP_PMDAS_DIR/$PMDA" .NeedInstall}
     fi
 done
-# increase default pmlogger recording frequency
-sed -i 's/^\#\ PMLOGGER_INTERVAL.*/PMLOGGER_INTERVAL=10/g' "$PCP_SYSCONFIG_DIR/pmlogger"
+# Increase default pmlogger recording frequency
+# Note on systemd platforms, we ship pmlogger.service.d/zeroconf.conf instead
+%if %{disable_systemd}
+    sed -i 's/^\#\ PMLOGGER_INTERVAL.*/PMLOGGER_INTERVAL=10/g' "$PCP_SYSCONFIG_DIR/pmlogger"
+%endif
 # auto-enable these usually optional pmie rules
 pmieconf -c enable dmthin
 %if 0%{?rhel}
@@ -3336,6 +3339,9 @@ PCP_LOG_DIR=%{_logsdir}
 %files zeroconf -f pcp-zeroconf-files.rpm
 
 %changelog
+* Fri Oct 08 2021 Nathan Scott <nathans@redhat.com> - 5.3.4-1
+- Update to latest PCP sources.
+
 * Wed Sep 15 2021 Nathan Scott <nathans@redhat.com> - 5.3.3-1
 - Update to latest PCP sources.
 
