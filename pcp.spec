@@ -1,14 +1,12 @@
 Name:    pcp
-Version: 5.3.4
-Release: 2%{?dist}
+Version: 5.3.5
+Release: 1%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
 
 %global  artifactory https://performancecopilot.jfrog.io/artifactory
 Source0: %{artifactory}/pcp-source-release/pcp-%{version}.src.tar.gz
-
-Patch0:	remove-run-level-check.patch
 
 %if 0%{?fedora} >= 26 || 0%{?rhel} > 7
 %global __python2 python2
@@ -516,7 +514,7 @@ Requires: pcp-pmda-activemq pcp-pmda-bonding pcp-pmda-dbping pcp-pmda-ds389 pcp-
 Requires: pcp-pmda-elasticsearch pcp-pmda-gpfs pcp-pmda-gpsd pcp-pmda-lustre
 Requires: pcp-pmda-memcache pcp-pmda-mysql pcp-pmda-named pcp-pmda-netfilter pcp-pmda-news
 Requires: pcp-pmda-nginx pcp-pmda-nfsclient pcp-pmda-pdns pcp-pmda-postfix pcp-pmda-postgresql pcp-pmda-oracle
-Requires: pcp-pmda-samba pcp-pmda-slurm pcp-pmda-vmware pcp-pmda-zimbra
+Requires: pcp-pmda-samba pcp-pmda-slurm pcp-pmda-zimbra
 Requires: pcp-pmda-dm pcp-pmda-apache
 Requires: pcp-pmda-bash pcp-pmda-cisco pcp-pmda-gfs2 pcp-pmda-mailq pcp-pmda-mounts
 Requires: pcp-pmda-nvidia-gpu pcp-pmda-roomtemp pcp-pmda-sendmail pcp-pmda-shping pcp-pmda-smart
@@ -544,7 +542,7 @@ Requires: pcp-pmda-bpftrace
 Requires: pcp-pmda-gluster pcp-pmda-zswap pcp-pmda-unbound pcp-pmda-mic
 Requires: pcp-pmda-libvirt pcp-pmda-lio pcp-pmda-openmetrics pcp-pmda-haproxy
 Requires: pcp-pmda-lmsensors pcp-pmda-netcheck pcp-pmda-rabbitmq
-Requires: pcp-pmda-openvswitch
+Requires: pcp-pmda-openvswitch pcp-pmda-mongodb
 %endif
 %if !%{disable_mssql}
 Requires: pcp-pmda-mssql 
@@ -1402,21 +1400,6 @@ collecting metrics about SNMP.
 %endif
 
 #
-# pcp-pmda-vmware
-#
-%package pmda-vmware
-License: GPLv2+
-Summary: Performance Co-Pilot (PCP) metrics for VMware
-URL: https://pcp.io
-Requires: pcp = %{version}-%{release} pcp-libs = %{version}-%{release}
-Requires: perl-PCP-PMDA = %{version}-%{release}
-
-%description pmda-vmware
-This package contains the PCP Performance Metrics Domain Agent (PMDA) for
-collecting metrics for VMware.
-#end pcp-pmda-vmware
-
-#
 # pcp-pmda-zimbra
 #
 %package pmda-zimbra
@@ -1473,7 +1456,7 @@ Summary: Performance Co-Pilot (PCP) metrics from eBPF ELF modules
 URL: https://pcp.io
 Requires: pcp = %{version}-%{release} pcp-libs = %{version}-%{release}
 Requires: libbpf
-BuildRequires: libbpf-devel clang llvm
+BuildRequires: libbpf-devel clang llvm bpftool
 %description pmda-bpf
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
 extracting performance metrics from eBPF ELF modules.
@@ -1757,6 +1740,7 @@ BuildRequires: %{__python2}-requests
 %endif
 Obsoletes: pcp-pmda-prometheus < 5.0.0
 Provides: pcp-pmda-prometheus < 5.0.0
+Obsoletes: pcp-pmda-vmware < 5.3.5
 
 %description pmda-openmetrics
 This package contains the PCP Performance Metrics Domain Agent (PMDA) for
@@ -1802,6 +1786,29 @@ This package contains the PCP Performance Metrics Domain Agent (PMDA) for
 collecting metrics from simple network checks.
 # end pcp-pmda-netcheck
 
+#
+# pcp-pmda-mongodb
+#
+%package pmda-mongodb
+License: GPLv2+
+Summary: Performance Co-Pilot (PCP) metrics for MongoDB
+URL: https://pcp.io
+Requires: pcp = %{version}-%{release} pcp-libs = %{version}-%{release}
+%if !%{disable_python3}
+Requires: python3-pcp
+%if 0%{?rhel} == 0
+Requires: python3-pymongo
+%endif
+%else
+Requires: %{__python2}-pcp
+%if 0%{?rhel} == 0
+Requires: %{__python2}-pymongo
+%endif
+%endif
+%description pmda-mongodb
+This package contains the PCP Performance Metrics Domain Agent (PMDA) for
+collecting metrics from MongoDB.
+# end pcp-pmda-mongodb
 %endif
 
 %if !%{disable_mssql}
@@ -2265,7 +2272,6 @@ updated policy package.
 
 %prep
 %setup -q
-%patch0 -p1
 
 %build
 # the buildsubdir macro gets defined in %setup and is apparently only available in the next step (i.e. the %build step)
@@ -2472,6 +2478,7 @@ basic_manifest | keep '(etc/pcp|pmdas)/memcache(/|$)' >pcp-pmda-memcache-files
 basic_manifest | keep '(etc/pcp|pmdas)/mailq(/|$)' >pcp-pmda-mailq-files
 basic_manifest | keep '(etc/pcp|pmdas)/mic(/|$)' >pcp-pmda-mic-files
 basic_manifest | keep '(etc/pcp|pmdas)/mounts(/|$)' >pcp-pmda-mounts-files
+basic_manifest | keep '(etc/pcp|pmdas)/mongodb(/|$)' >pcp-pmda-mongodb-files
 basic_manifest | keep '(etc/pcp|pmdas|pmieconf)/mssql(/|$)' >pcp-pmda-mssql-files
 basic_manifest | keep '(etc/pcp|pmdas)/mysql(/|$)' >pcp-pmda-mysql-files
 basic_manifest | keep '(etc/pcp|pmdas)/named(/|$)' >pcp-pmda-named-files
@@ -2508,7 +2515,6 @@ basic_manifest | keep '(etc/pcp|pmdas)/systemd(/|$)' >pcp-pmda-systemd-files
 basic_manifest | keep '(etc/pcp|pmdas)/trace(/|$)' >pcp-pmda-trace-files
 basic_manifest | keep '(etc/pcp|pmdas)/unbound(/|$)' >pcp-pmda-unbound-files
 basic_manifest | keep '(etc/pcp|pmdas)/weblog(/|$)' >pcp-pmda-weblog-files
-basic_manifest | keep '(etc/pcp|pmdas)/vmware(/|$)' >pcp-pmda-vmware-files
 basic_manifest | keep '(etc/pcp|pmdas)/zimbra(/|$)' >pcp-pmda-zimbra-files
 basic_manifest | keep '(etc/pcp|pmdas)/zswap(/|$)' >pcp-pmda-zswap-files
 
@@ -2524,7 +2530,7 @@ for pmda_package in \
     infiniband \
     json \
     libvirt lio lmsensors logger lustre lustrecomm \
-    mailq memcache mic mounts mssql mysql \
+    mailq memcache mic mounts mongodb mssql mysql \
     named netcheck netfilter news nfsclient nginx \
     nutcracker nvidia \
     openmetrics openvswitch oracle \
@@ -2534,7 +2540,6 @@ for pmda_package in \
     sockets statsd summary systemd \
     unbound \
     trace \
-    vmware \
     weblog \
     zimbra zswap ; \
 do \
@@ -2821,9 +2826,6 @@ exit 0
 %preun pmda-samba
 %{pmda_remove "$1" "samba"}
 
-%preun pmda-vmware
-%{pmda_remove "$1" "vmware"}
-
 %preun pmda-zimbra
 %{pmda_remove "$1" "zimbra"}
 
@@ -2866,6 +2868,9 @@ exit 0
 
 %preun pmda-lmsensors
 %{pmda_remove "$1" "lmsensors"}
+
+%preun pmda-mongodb
+%{pmda_remove "$1" "mongodb"}
 
 %if !%{disable_mssql}
 %preun pmda-mssql
@@ -2946,27 +2951,37 @@ then
     # stop daemons before erasing the package
     %if !%{disable_systemd}
        %systemd_preun pmlogger.service
+       %systemd_preun pmlogger_farm.service
        %systemd_preun pmie.service
+       %systemd_preun pmie_farm.service
        %systemd_preun pmproxy.service
        %systemd_preun pmcd.service
        %systemd_preun pmie_daily.timer
        %systemd_preun pmlogger_daily.timer
        %systemd_preun pmlogger_check.timer
+       %systemd_preun pmlogger_farm_check.timer
+       %systemd_preun pmie_farm_check.timer
 
        systemctl stop pmlogger.service >/dev/null 2>&1
+       systemctl stop pmlogger_farm.service >/dev/null 2>&1
        systemctl stop pmie.service >/dev/null 2>&1
+       systemctl stop pmie_farm.service >/dev/null 2>&1
        systemctl stop pmproxy.service >/dev/null 2>&1
        systemctl stop pmcd.service >/dev/null 2>&1
     %else
        /sbin/service pmlogger stop >/dev/null 2>&1
+       /sbin/service pmlogger_farm stop >/dev/null 2>&1
        /sbin/service pmie stop >/dev/null 2>&1
+       /sbin/service pmie_farm stop >/dev/null 2>&1
        /sbin/service pmproxy stop >/dev/null 2>&1
        /sbin/service pmcd stop >/dev/null 2>&1
 
        /sbin/chkconfig --del pcp >/dev/null 2>&1
        /sbin/chkconfig --del pmcd >/dev/null 2>&1
        /sbin/chkconfig --del pmlogger >/dev/null 2>&1
+       /sbin/chkconfig --del pmlogger_farm >/dev/null 2>&1
        /sbin/chkconfig --del pmie >/dev/null 2>&1
+       /sbin/chkconfig --del pmie_farm >/dev/null 2>&1
        /sbin/chkconfig --del pmproxy >/dev/null 2>&1
     %endif
     # cleanup namespace state/flag, may still exist
@@ -2985,28 +3000,31 @@ for PMDA in dm nfsclient openmetrics ; do
         %{install_file "$PCP_PMDAS_DIR/$PMDA" .NeedInstall}
     fi
 done
-# Increase default pmlogger recording frequency
-# Note on systemd platforms, we ship pmlogger.service.d/zeroconf.conf instead
-%if %{disable_systemd}
-    sed -i 's/^\#\ PMLOGGER_INTERVAL.*/PMLOGGER_INTERVAL=10/g' "$PCP_SYSCONFIG_DIR/pmlogger"
-%endif
 # auto-enable these usually optional pmie rules
 pmieconf -c enable dmthin
 %if 0%{?rhel}
 %if !%{disable_systemd}
     systemctl restart pmcd >/dev/null 2>&1
     systemctl restart pmlogger >/dev/null 2>&1
+    systemctl restart pmlogger_farm >/dev/null 2>&1
     systemctl restart pmie >/dev/null 2>&1
+    systemctl restart pmie_farm >/dev/null 2>&1
     systemctl enable pmcd >/dev/null 2>&1
     systemctl enable pmlogger >/dev/null 2>&1
+    systemctl enable pmlogger_farm >/dev/null 2>&1
     systemctl enable pmie >/dev/null 2>&1
+    systemctl enable pmie_farm >/dev/null 2>&1
 %else
     /sbin/chkconfig --add pmcd >/dev/null 2>&1
     /sbin/chkconfig --add pmlogger >/dev/null 2>&1
+    /sbin/chkconfig --add pmlogger_farm >/dev/null 2>&1
     /sbin/chkconfig --add pmie >/dev/null 2>&1
+    /sbin/chkconfig --add pmie_farm >/dev/null 2>&1
     /sbin/service pmcd condrestart
     /sbin/service pmlogger condrestart
+    /sbin/service pmlogger_farm condrestart
     /sbin/service pmie condrestart
+    /sbin/service pmie_farm condrestart
 %endif
 %endif
 
@@ -3029,20 +3047,42 @@ PCP_LOG_DIR=%{_logsdir}
 %if !%{disable_systemd}
     # clean up any stale symlinks for deprecated pm*-poll services
     rm -f %{_sysconfdir}/systemd/system/pm*.requires/pm*-poll.* >/dev/null 2>&1 || true
+
+    # pmlogger_farm service inherits the same initial state as pmlogger service
+    if systemctl is-enabled pmlogger.service >/dev/null; then
+	systemctl enable pmlogger_farm.service pmlogger_farm_check.service
+	systemctl start pmlogger_farm.service pmlogger_farm_check.service
+    fi
+    # pmie_farm service inherits the same initial state as pmie service
+    if systemctl is-enabled pmie.service >/dev/null; then
+	systemctl enable pmie_farm.service pmie_farm_check.service
+	systemctl start pmie_farm.service pmie_farm_check.service
+    fi
+
     %systemd_postun_with_restart pmcd.service
     %systemd_post pmcd.service
     %systemd_postun_with_restart pmlogger.service
     %systemd_post pmlogger.service
+    %systemd_postun_with_restart pmlogger_farm.service
+    %systemd_post pmlogger_farm.service
+    %systemd_post pmlogger_farm_check.service
     %systemd_postun_with_restart pmie.service
     %systemd_post pmie.service
+    %systemd_postun_with_restart pmie_farm.service
+    %systemd_post pmie_farm.service
+    %systemd_post pmie_farm_check.service
     systemctl condrestart pmproxy.service >/dev/null 2>&1
 %else
     /sbin/chkconfig --add pmcd >/dev/null 2>&1
     /sbin/service pmcd condrestart
     /sbin/chkconfig --add pmlogger >/dev/null 2>&1
     /sbin/service pmlogger condrestart
+    /sbin/chkconfig --add pmlogger_farm >/dev/null 2>&1
+    /sbin/service pmlogger_farm condrestart
     /sbin/chkconfig --add pmie >/dev/null 2>&1
     /sbin/service pmie condrestart
+    /sbin/chkconfig --add pmie_farm >/dev/null 2>&1
+    /sbin/service pmie_farm condrestart
     /sbin/chkconfig --add pmproxy >/dev/null 2>&1
     /sbin/service pmproxy condrestart
 %endif
@@ -3155,8 +3195,6 @@ PCP_LOG_DIR=%{_logsdir}
 
 %files pmda-slurm -f pcp-pmda-slurm-files.rpm
 
-%files pmda-vmware -f pcp-pmda-vmware-files.rpm
-
 %files pmda-zimbra -f pcp-pmda-zimbra-files.rpm
 %endif
 
@@ -3214,6 +3252,8 @@ PCP_LOG_DIR=%{_logsdir}
 %files pmda-haproxy -f pcp-pmda-haproxy-files.rpm
 
 %files pmda-lmsensors -f pcp-pmda-lmsensors-files.rpm
+
+%files pmda-mongodb -f pcp-pmda-mongodb-files.rpm
 
 %if !%{disable_mssql}
 %files pmda-mssql -f pcp-pmda-mssql-files.rpm
@@ -3342,8 +3382,13 @@ PCP_LOG_DIR=%{_logsdir}
 %files zeroconf -f pcp-zeroconf-files.rpm
 
 %changelog
+* Wed Nov 10 2021 Nathan Scott <nathans@redhat.com> - 5.3.5-1
+- Fix pmlogger services systemd killmode warning (BZ 1897945)
+- Fix python PMDA interface for python 3.10 (BZ 2020038)
+- Update to latest PCP sources.
+
 * Fri Oct 15 2021 Mark Goodwin <mgoodwin@redhat.com> - 5.3.4-2
-- fix pmlogger manual start failure when service is disabled
+- Fix pmlogger manual start failure when service is disabled
 
 * Fri Oct 08 2021 Nathan Scott <nathans@redhat.com> - 5.3.4-1
 - Update to latest PCP sources.
