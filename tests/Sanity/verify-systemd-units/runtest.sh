@@ -31,6 +31,7 @@
 PACKAGE="pcp"
 PKGS="pcp pcp-zeroconf"
 UNITS=""
+UNITFILESDIR="/usr/lib/systemd/system/"
 
 rlJournalStart
     rlPhaseStartSetup
@@ -42,20 +43,24 @@ rlJournalStart
             rlAssertRpm "${P}"
         done
         # Generate list of unit files
-        UNITS="$(rpm -ql ${PKGS} | grep /usr/lib/systemd/system/)"
+        UNITS=$(rpm -ql ${PKGS} | grep "${UNITFILESDIR}")
         rlLog "Available unit files: ${UNITS}"
     rlPhaseEnd
 
     rlPhaseStartTest
         FAILEDU=""
         for U in ${UNITS}; do
-            if ! rlRun -s "systemd-analyze --no-pager verify ${U}"; then 
-                rlFail "Error in ${U}: $(cat ${rlRun_LOG})"
-                FAILEDU="${FAILEDU} $(basename ${U})"
-            fi
-            if grep -q 'is deprecated' ${rlRun_LOG}; then
-                rlFail "Error in ${U}: $(cat ${rlRun_LOG})"
-                FAILEDU="${FAILEDU} $(basename ${U})"
+            if [[ -f ${U} ]] && [[ "$(dirname ${U})" == "${UNITFILESDIR%/}" ]]; then
+                if ! rlRun -s "systemd-analyze --no-pager verify ${U}"; then 
+                    rlFail "Error in ${U}: $(cat ${rlRun_LOG})"
+                    FAILEDU="${FAILEDU} $(basename ${U})"
+                fi
+                if grep -q 'is deprecated' ${rlRun_LOG}; then
+                    rlFail "Error in ${U}: $(cat ${rlRun_LOG})"
+                    FAILEDU="${FAILEDU} $(basename ${U})"
+                fi
+            else
+                rlLog "${U} is not a regular unit file ... skipping"
             fi
         done
         [[ -n "${FAILEDU}" ]] && rlLog "List of failed units: ${FAILEDU}"
