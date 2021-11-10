@@ -32,7 +32,8 @@ PACKAGE="pcp"
 METRICUSER="pcpmetricuser"
 METRICUSERPW="pcpmetricuserpw"
 
-HASHES="scram-sha-256 digest-md5"
+#HASHES="scram-sha-256 digest-md5"
+HASHES="scram-sha-256" # digest-md5 is now obsolete
 
 rlJournalStart
     rlPhaseStartSetup
