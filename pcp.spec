@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 5.3.5
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
@@ -3382,6 +3382,9 @@ PCP_LOG_DIR=%{_logsdir}
 %files zeroconf -f pcp-zeroconf-files.rpm
 
 %changelog
+* Thu Jan 20 2022 Fedora Release Engineering <releng@fedoraproject.org> - 5.3.5-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_36_Mass_Rebuild
+
 * Wed Nov 10 2021 Nathan Scott <nathans@redhat.com> - 5.3.5-1
 - Fix pmlogger services systemd killmode warning (BZ 1897945)
 - Fix python PMDA interface for python 3.10 (BZ 2020038)
