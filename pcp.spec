@@ -1,12 +1,16 @@
 Name:    pcp
 Version: 5.3.6
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
 
 %global  artifactory https://performancecopilot.jfrog.io/artifactory
 Source0: %{artifactory}/pcp-source-release/pcp-%{version}.src.tar.gz
+
+# The additional linker flags break out-of-tree PMDAs.
+# https://bugzilla.redhat.com/show_bug.cgi?id=2043092
+%undefine _package_note_flags 
 
 %if 0%{?fedora} >= 26 || 0%{?rhel} > 7
 %global __python2 python2
@@ -3329,6 +3333,9 @@ PCP_LOG_DIR=%{_logsdir}
 %files zeroconf -f pcp-zeroconf-files.rpm
 
 %changelog
+* Thu Feb 03 2022 Nathan Scott <nathans@redhat.com> - 5.3.6-2
+- Disable package notes to prevent 3rd PMDA build breakage.
+
 * Wed Feb 02 2022 Nathan Scott <nathans@redhat.com> - 5.3.6-1
 - Update to latest PCP sources.
 
