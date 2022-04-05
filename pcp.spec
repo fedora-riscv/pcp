@@ -1,6 +1,6 @@
 Name:    pcp
-Version: 5.3.6
-Release: 2%{?dist}
+Version: 5.3.7
+Release: 1%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
@@ -290,7 +290,16 @@ BuildRequires: qt5-qtsvg-devel
 Requires: bash xz gawk sed grep findutils which %{_hostname_executable}
 Requires: pcp-libs = %{version}-%{release}
 %if !%{disable_selinux}
+
+# rpm boolean dependencies are supported since RHEL 8
+%if 0%{?fedora} >= 35 || 0%{?rhel} >= 8
+# This ensures that the pcp-selinux package and all it's dependencies are not pulled
+# into containers and other systems that do not use SELinux
+Requires: (pcp-selinux = %{version}-%{release} if selinux-policy-targeted)
+%else
 Requires: pcp-selinux = %{version}-%{release}
+%endif
+
 %endif
 
 %global _confdir        %{_sysconfdir}/pcp
@@ -3333,6 +3342,10 @@ PCP_LOG_DIR=%{_logsdir}
 %files zeroconf -f pcp-zeroconf-files.rpm
 
 %changelog
+* Tue Apr 05 2022 Nathan Scott <nathans@redhat.com> - 5.3.7-1
+- Add disk.wwid aggregated multipath metrics (BZ 1293444)
+- Update to latest PCP sources.
+
 * Thu Feb 03 2022 Nathan Scott <nathans@redhat.com> - 5.3.6-2
 - Disable package notes to prevent 3rd PMDA build breakage.
 
