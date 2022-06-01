@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 5.3.7
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
@@ -3342,6 +3342,9 @@ PCP_LOG_DIR=%{_logsdir}
 %files zeroconf -f pcp-zeroconf-files.rpm
 
 %changelog
+* Wed Jun 01 2022 Jitka Plesnikova <jplesnik@redhat.com> - 5.3.7-2
+- Perl 5.36 rebuild
+
 * Tue Apr 05 2022 Nathan Scott <nathans@redhat.com> - 5.3.7-1
 - Add disk.wwid aggregated multipath metrics (BZ 1293444)
 - Update to latest PCP sources.
