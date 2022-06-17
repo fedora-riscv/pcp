@@ -1,12 +1,14 @@
 Name:    pcp
 Version: 5.3.7
-Release: 3%{?dist}
+Release: 4%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
 
 %global  artifactory https://performancecopilot.jfrog.io/artifactory
 Source0: %{artifactory}/pcp-source-release/pcp-%{version}.src.tar.gz
+
+Patch0:  redhat-bugzilla-2079793.patch
 
 # The additional linker flags break out-of-tree PMDAs.
 # https://bugzilla.redhat.com/show_bug.cgi?id=2043092
@@ -2285,6 +2287,7 @@ updated policy package.
 
 %prep
 %setup -q
+%patch0 -p1
 
 %build
 # the buildsubdir macro gets defined in %setup and is apparently only available in the next step (i.e. the %build step)
@@ -3342,6 +3345,9 @@ PCP_LOG_DIR=%{_logsdir}
 %files zeroconf -f pcp-zeroconf-files.rpm
 
 %changelog
+* Fri Jun 17 2022 Nathan Scott <nathans@redhat.com> - 5.3.7-4
+- Fix invalid path in pmie.service unit file (BZ 2079793)
+
 * Wed Jun 15 2022 Python Maint <python-maint@redhat.com> - 5.3.7-3
 - Rebuilt for Python 3.11
 
