@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 5.3.7
-Release: 4%{?dist}
+Release: 5%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
@@ -3345,6 +3345,9 @@ PCP_LOG_DIR=%{_logsdir}
 %files zeroconf -f pcp-zeroconf-files.rpm
 
 %changelog
+* Mon Jun 20 2022 Python Maint <python-maint@redhat.com> - 5.3.7-5
+- Rebuilt for Python 3.11
+
 * Fri Jun 17 2022 Nathan Scott <nathans@redhat.com> - 5.3.7-4
 - Fix invalid path in pmie.service unit file (BZ 2079793)
 
