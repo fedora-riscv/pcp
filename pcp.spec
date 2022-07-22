@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 5.3.7
-Release: 5%{?dist}
+Release: 6%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
@@ -3345,6 +3345,9 @@ PCP_LOG_DIR=%{_logsdir}
 %files zeroconf -f pcp-zeroconf-files.rpm
 
 %changelog
+* Fri Jul 22 2022 Fedora Release Engineering <releng@fedoraproject.org> - 5.3.7-6
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_37_Mass_Rebuild
+
 * Mon Jun 20 2022 Python Maint <python-maint@redhat.com> - 5.3.7-5
 - Rebuilt for Python 3.11
 
