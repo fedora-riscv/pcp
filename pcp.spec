@@ -1,18 +1,19 @@
 Name:    pcp
-Version: 5.3.7
-Release: 6%{?dist}
+Version: 6.0.0
+Release: 1%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
 
 %global  artifactory https://performancecopilot.jfrog.io/artifactory
+%global  pcp_git_url https://github.com/performancecopilot/pcp/blob
 Source0: %{artifactory}/pcp-source-release/pcp-%{version}.src.tar.gz
-
-Patch0:  redhat-bugzilla-2079793.patch
+Source1: %{pcp_git_url}/main/debian/pcp-testsuite.sysusers
+Source2: %{pcp_git_url}/main/debian/pcp.sysusers
 
 # The additional linker flags break out-of-tree PMDAs.
 # https://bugzilla.redhat.com/show_bug.cgi?id=2043092
-%undefine _package_note_flags 
+%undefine _package_note_flags
 
 %if 0%{?fedora} >= 26 || 0%{?rhel} > 7
 %global __python2 python2
@@ -96,9 +97,9 @@ Patch0:  redhat-bugzilla-2079793.patch
 %global disable_bcc 1
 %endif
 
-# support for pmdabpf, check bpf.spec for supported architectures of bpf
+# support for pmdabpf, check bcc.spec for supported architectures of libbpf-tools
 %if 0%{?fedora} >= 33 || 0%{?rhel} > 8
-%ifarch x86_64 %{power64} aarch64 s390x
+%ifarch x86_64 ppc64 ppc64le aarch64
 %global disable_bpf 0
 %else
 %global disable_bpf 1
@@ -231,7 +232,6 @@ Obsoletes: pcp-pmda-nvidia < 3.10.5
 BuildRequires: make
 BuildRequires: gcc gcc-c++
 BuildRequires: procps autoconf bison flex
-BuildRequires: nss-devel
 BuildRequires: avahi-devel
 BuildRequires: xz-devel
 BuildRequires: zlib-devel
@@ -314,7 +314,7 @@ Requires: pcp-selinux = %{version}-%{release}
 %global _testsdir       %{_localstatedir}/lib/pcp/testsuite
 %global _selinuxdir     %{_localstatedir}/lib/pcp/selinux
 %global _selinuxexecdir %{_libexecdir}/pcp/selinux
-%global _logconfdir     %{_localstatedir}/lib/pcp/config/pmlogconf
+%global _ieconfigdir    %{_localstatedir}/lib/pcp/config/pmie
 %global _ieconfdir      %{_localstatedir}/lib/pcp/config/pmieconf
 %global _tapsetdir      %{_datadir}/systemtap/tapset
 %global _bashcompdir    %{_datadir}/bash-completion/completions
@@ -441,6 +441,15 @@ else
 fi
 }
 
+%global run_pmieconf() %{expand:
+if [ -w "%1" ]
+then
+    pmieconf -c enable "%2"
+else
+    echo "WARNING: Cannot write to %1, skipping pmieconf enable of %2." >&2
+fi
+}
+
 %global selinux_handle_policy() %{expand:
 if [ %1 -ge 1 ]
 then
@@ -482,6 +491,9 @@ Summary: Performance Co-Pilot run-time libraries
 URL: https://pcp.io
 Requires: pcp-conf = %{version}-%{release}
 
+# prevent conflicting library (libpcp.so.N) installation
+Conflicts: postgresql-pgpool-II
+
 %description libs
 Performance Co-Pilot (PCP) run-time libraries
 
@@ -493,6 +505,9 @@ License: GPLv2+ and LGPLv2+
 Summary: Performance Co-Pilot (PCP) development headers
 URL: https://pcp.io
 Requires: pcp = %{version}-%{release} pcp-libs = %{version}-%{release}
+
+# prevent conflicting library (libpcp.so) installation
+Conflicts: postgresql-pgpool-II-devel
 
 %description libs-devel
 Performance Co-Pilot (PCP) headers for development.
@@ -1813,11 +1828,13 @@ Requires: pcp = %{version}-%{release} pcp-libs = %{version}-%{release}
 Requires: python3-pcp
 %if 0%{?rhel} == 0
 Requires: python3-pymongo
+BuildRequires: python3-pymongo
 %endif
 %else
 Requires: %{__python2}-pcp
 %if 0%{?rhel} == 0
 Requires: %{__python2}-pymongo
+BuildRequires: %{__python2}-pymongo
 %endif
 %endif
 %description pmda-mongodb
@@ -2287,10 +2304,9 @@ updated policy package.
 
 %prep
 %setup -q
-%patch0 -p1
 
 %build
-# the buildsubdir macro gets defined in %setup and is apparently only available in the next step (i.e. the %build step)
+# the buildsubdir macro gets defined in %%setup and is apparently only available in the next step (i.e. the %%build step)
 %global __strip %{_builddir}/%{?buildsubdir}/build/rpm/custom-strip
 
 # fix up build version
@@ -2423,7 +2439,7 @@ total_manifest() {
     awk '{print $NF}' $DIST_MANIFEST
 }
 basic_manifest() {
-    total_manifest | cull '/pcp-doc/|/testsuite/|/man/|/examples/'
+    total_manifest | cull '/pcp-doc/|/testsuite/|/man/|pcp/examples/'
 }
 
 #
@@ -2432,7 +2448,7 @@ basic_manifest() {
 # Likewise, for the pcp-pmda and pcp-testsuite subpackages.
 #
 total_manifest | keep 'tutorials|/html/|pcp-doc|man.*\.[1-9].*' | cull 'out' >pcp-doc-files
-total_manifest | keep 'testsuite|etc/systemd/system|libpcp_fault|pcp/fault.h' >pcp-testsuite-files
+total_manifest | keep 'testsuite|pcpqa|etc/systemd/system|libpcp_fault|pcp/fault.h' >pcp-testsuite-files
 
 basic_manifest | keep "$PCP_GUI|pcp-gui|applications|pixmaps|hicolor" | cull 'pmtime.h' >pcp-gui-files
 basic_manifest | keep 'selinux' | cull 'tmp|GNUselinuxdefs' >pcp-selinux-files
@@ -2506,7 +2522,7 @@ basic_manifest | keep '(etc/pcp|pmdas)/nginx(/|$)' >pcp-pmda-nginx-files
 basic_manifest | keep '(etc/pcp|pmdas)/nutcracker(/|$)' >pcp-pmda-nutcracker-files
 basic_manifest | keep '(etc/pcp|pmdas)/nvidia(/|$)' >pcp-pmda-nvidia-files
 basic_manifest | keep '(etc/pcp|pmdas)/openmetrics(/|$)' >pcp-pmda-openmetrics-files
-basic_manifest | keep '(etc/pcp|pmdas)/openvswitch(/|$)' >pcp-pmda-openvswitch-files
+basic_manifest | keep '(etc/pcp|pmdas|pmieconf)/openvswitch(/|$)' >pcp-pmda-openvswitch-files
 basic_manifest | keep '(etc/pcp|pmdas)/oracle(/|$)' >pcp-pmda-oracle-files
 basic_manifest | keep '(etc/pcp|pmdas)/pdns(/|$)' >pcp-pmda-pdns-files
 basic_manifest | keep '(etc/pcp|pmdas)/perfevent(/|$)' >pcp-pmda-perfevent-files
@@ -2679,10 +2695,14 @@ done
 %endif
 
 %pre testsuite
-test -d %{_testsdir} || mkdir -p -m 755 %{_testsdir}
+%if 0%{?fedora} >= 32 || 0%{?rhel} >= 9
+%sysusers_create_compat %{SOURCE1}
+%else
 getent group pcpqa >/dev/null || groupadd -r pcpqa
 getent passwd pcpqa >/dev/null || \
   useradd -c "PCP Quality Assurance" -g pcpqa -d %{_testsdir} -M -r -s /bin/bash pcpqa 2>/dev/null
+%endif
+test -d %{_testsdir} || mkdir -p -m 755 %{_testsdir}
 chown -R pcpqa:pcpqa %{_testsdir} 2>/dev/null
 exit 0
 
@@ -2692,6 +2712,7 @@ chown -R pcpqa:pcpqa %{_testsdir} 2>/dev/null
 %if !%{disable_systemd}
     systemctl restart pmcd pmlogger >/dev/null 2>&1
     systemctl enable pmcd pmlogger >/dev/null 2>&1
+    systemctl enable pmlogger_daily_report.timer >/dev/null 2>&1
 %else
     /sbin/chkconfig --add pmcd >/dev/null 2>&1
     /sbin/chkconfig --add pmlogger >/dev/null 2>&1
@@ -2702,9 +2723,13 @@ chown -R pcpqa:pcpqa %{_testsdir} 2>/dev/null
 exit 0
 
 %pre
+%if 0%{?fedora} >= 32 || 0%{?rhel} >= 9
+%sysusers_create_compat %{SOURCE2}
+%else
 getent group pcp >/dev/null || groupadd -r pcp
 getent passwd pcp >/dev/null || \
   useradd -c "Performance Co-Pilot" -g pcp -d %{_localstatedir}/lib/pcp -M -r -s /sbin/nologin pcp
+%endif
 exit 0
 
 %if !%{disable_systemd}
@@ -2987,6 +3012,7 @@ fi
 PCP_PMDAS_DIR=%{_pmdasdir}
 PCP_SYSCONFIG_DIR=%{_sysconfdir}/sysconfig
 PCP_PMCDCONF_PATH=%{_confdir}/pmcd/pmcd.conf
+PCP_PMIECONFIG_DIR=%{_ieconfigdir}
 # auto-install important PMDAs for RH Support (if not present already)
 for PMDA in dm nfsclient openmetrics ; do
     if ! grep -q "$PMDA/pmda$PMDA" "$PCP_PMCDCONF_PATH"
@@ -2995,7 +3021,7 @@ for PMDA in dm nfsclient openmetrics ; do
     fi
 done
 # auto-enable these usually optional pmie rules
-pmieconf -c enable dmthin
+${run_pmieconf "$PCP_PMIECONFIG_DIR" dmthin}
 %if 0%{?rhel}
 %if !%{disable_systemd}
     systemctl restart pmcd pmlogger pmie >/dev/null 2>&1
@@ -3345,6 +3371,11 @@ PCP_LOG_DIR=%{_logsdir}
 %files zeroconf -f pcp-zeroconf-files.rpm
 
 %changelog
+* Wed Aug 31 2022 Nathan Scott <nathans@redhat.com> - 6.0.0-1
+- Add libpcp/postgresql-pgpool-II-devel conflict (BZ 2100185)
+- Remove an invalid path from pmie unit file (BZ 2079793)
+- Update to latest PCP sources.
+
 * Fri Jul 22 2022 Fedora Release Engineering <releng@fedoraproject.org> - 5.3.7-6
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_37_Mass_Rebuild
 

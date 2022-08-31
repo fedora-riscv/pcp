@@ -1,10 +1,4 @@
 pcp-*.src.rpm
 pcp-*.tar.gz
-pcp-webapp-*.tar.gz
-pcp-webjs-*
-vector-*
-/pcp-revert-pmlogger_daily-daystart.patch
-/pmcd-pmlogger-local-context.patch
-/selinux-policy-updates.patch
-/fix-pmdastatsd-build-error.patch
-/pcp-selinux-drop-name_connect-udp.patch
+pcp-testsuite.sysusers
+pcp.sysusers
