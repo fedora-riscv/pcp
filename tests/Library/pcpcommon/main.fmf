@@ -9,5 +9,8 @@ recommend:
 - pcp
 - pcp-testsuite
 duration: 15m
+adjust:
+  - enabled: false
+    continue: false
 extra-summary: /CoreOS/pcp/Library/pcpcommon
 extra-task: /CoreOS/pcp/Library/pcpcommon
