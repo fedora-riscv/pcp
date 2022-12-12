@@ -1,0 +1,68 @@
+Avoid calling the undeclared exit function.  Include <string.h> for
+strcmp.  Improves compatibility with future compilers which are likely
+to reject implicit function declarations by default.
+
+Submitted upstream:
+
+  <https://github.com/performancecopilot/pcp/pull/1727>
+
+diff --git a/configure b/configure
+index d8726f045b264191..f285191756825493 100755
+--- a/configure
++++ b/configure
+@@ -14409,7 +14409,7 @@ main ()
+ {
+ 
+     double x = 123.456;
+-    if (fpclassify(x) == FP_NAN) exit(1);
++    if (fpclassify(x) == FP_NAN) return 1;
+ 
+   ;
+   return 0;
+@@ -14438,7 +14438,7 @@ main ()
+ {
+ 
+     double x = 123.456;
+-    if (fpclassify(x) == FP_NAN) exit(1);
++    if (fpclassify(x) == FP_NAN) return 1;
+ 
+   ;
+   return 0;
+@@ -16433,6 +16433,7 @@ else
+ /* end confdefs.h.  */
+ 
+ #include <time.h>
++#include <string.h>
+ int main () {
+     char b[32]="";
+     time_t t = time(NULL);
+diff --git a/configure.ac b/configure.ac
+index f12e652dd5e6f20e..4f737c78ff63e670 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -3097,7 +3097,7 @@ AC_TRY_LINK(
+ ],
+ [
+     double x = 123.456;
+-    if (fpclassify(x) == FP_NAN) exit(1);
++    if (fpclassify(x) == FP_NAN) return 1;
+ ], ac_cv_func_fpclassify=yes)
+ AC_MSG_RESULT($ac_cv_func_fpclassify)
+ if test $ac_cv_func_fpclassify = no
+@@ -3112,7 +3112,7 @@ then
+ ],
+ [
+     double x = 123.456;
+-    if (fpclassify(x) == FP_NAN) exit(1);
++    if (fpclassify(x) == FP_NAN) return 1;
+ ], ac_cv_func_fpclassify=yes)
+     AC_MSG_RESULT($ac_cv_func_fpclassify)
+     if test $ac_cv_func_fpclassify = yes
+@@ -3737,6 +3737,7 @@ AC_MSG_CHECKING([if strftime knows about %z])
+ AC_TRY_RUN(
+ [
+ #include <time.h>
++#include <string.h>
+ int main () {
+     char b[32]="";
+     time_t t = time(NULL);
