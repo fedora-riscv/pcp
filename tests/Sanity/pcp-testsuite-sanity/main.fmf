@@ -27,5 +27,3 @@ recommend:
 - /usr/bin/netstat
 - pcp-testsuite
 duration: 4h
-extra-summary: /tools/pcp/Sanity/pcp-testsuite-sanity
-extra-task: /tools/pcp/Sanity/pcp-testsuite-sanity

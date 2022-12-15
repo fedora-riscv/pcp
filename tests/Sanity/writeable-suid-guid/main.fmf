@@ -1,4 +1,4 @@
-summary: Test for BZ#1025583 (pcp creates a world writeable directory)
+summary: Test if PCP packages do not create world writeable or suid or guid files
 description: |
     Bug summary: pcp creates a world writeable directory /var/lib/pcp/tmp
     Bugzilla link: https://bugzilla.redhat.com/show_bug.cgi?id=1025583

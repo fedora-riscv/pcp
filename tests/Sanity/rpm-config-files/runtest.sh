@@ -41,7 +41,8 @@ rlJournalStart
         SOURCEPKG=$(rpm -q --qf '%{name}-%{version}-%{release}.src.rpm' ${PACKAGE})
         rlAssertExists "${T}/${SOURCEPKG}"
         rlRun "rpm -D '_topdir ${T}' -i ${T}/${SOURCEPKG}"
-        rlRun "RPMS=\$(rpm -q --qf '%{name}\n' --specfile ${T}/SPECS/${PACKAGE}.spec | \
+        rlRun "RPMS=\$(rpm -q --qf '%{name}\n' \
+            --specfile ${T}/SPECS/${PACKAGE}.spec | \
             grep -v -e '-debuginfo' -e '-debugsource' | tr '\n' ' ')"
     rlPhaseEnd
 

@@ -8,7 +8,7 @@
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-#   Copyright (c) 2018 Red Hat, Inc.
+#   Copyright (c) 2018-2022 Red Hat, Inc.
 #
 #   This program is free software: you can redistribute it and/or
 #   modify it under the terms of the GNU General Public License as
@@ -45,7 +45,7 @@ function apply_bl() {
     fi
     rlLog "Applying BL $(basename ${bl})"
     while read tc; do
-        rlRun "sed -i '/^${tc} /d' /var/lib/pcp/testsuite/group"
+        rlRun "sed -i '/^${tc} /d' ${pcpcommon_TESTSUITE_DIR}/group"
     done < "${bl}"
 
     return
@@ -55,50 +55,11 @@ rlJournalStart
   rlPhaseStartSetup
     rlShowRunningKernel
     rlAssertRpm "${PACKAGE}"
-    rlFileBackup --clean --missing-ok /etc/pcp /etc/pcp.conf /etc/pcp.env \
-        /etc/sysconfig/pmcd /etc/sysconfig/pmie_timers /etc/sysconfig/pmlogger \
-        /etc/sysconfig/pmlogger_timers /etc/sysconfig/pmproxy /var/lib/pcp/config 
-    rlRun "TmpDir=\$(mktemp -d)"
     rlRun "pcpcommonLibraryLoaded"
-  rlPhaseEnd
-
-  rlPhaseStartSetup "PCP restart"
+    rlRun "pcpcommon_testsuite_bl"
     rlRun "rlServiceStart pmcd pmlogger" 0-255
     rlRun "rlServiceEnable pmcd pmlogger" 0-255
     rlRun "sleep 30" 0 "Give services some time to fully start"
-  rlPhaseEnd
-
-  rlPhaseStartSetup "BL listing"
-    # Get all the variables we need
-    read ID VERSION_ID < <(
-        . /etc/os-release && \
-            echo ${ID} ${VERSION_ID} || \
-            echo rhel 6.10
-    )
-    IFS='.,-_ ' read MAJOR MINOR MICRO <<< "${VERSION_ID}"
-    ARCH=$(arch)
-
-    _BLSEQ="${ID} ${ID}-${MAJOR}"
-    [[ -n "${MINOR}" ]] && _BLSEQ="${BLSEQ} ${ID}-${MAJOR}.${MINOR}"
-    [[ -n "${MICRO}" ]] && _BLSEQ="${BLSEQ} ${ID}-${MAJOR}.${MINOR}.${MICRO}"
-
-    IFS='.,-_ ' read MAJOR MINOR MICRO < <(rpm -q --qf '%{version}' ${PACKAGE})
-    _BLSEQ="${BLSEQ} ${PACKAGE}"
-    [[ -n "${MAJOR}" ]] && _BLSEQ="${BLSEQ} ${PACKAGE}-${MAJOR}"
-    [[ -n "${MINOR}" ]] && _BLSEQ="${BLSEQ} ${PACKAGE}-${MAJOR}.${MINOR}"
-    [[ -n "${MICRO}" ]] && _BLSEQ="${BLSEQ} ${PACKAGE}-${MAJOR}.${MINOR}.${MICRO}"
-
-    BLSEQ=
-    for bl in ${_BLSEQ}; do
-        BLSEQ="${BLSEQ} ${bl} ${bl}.${ARCH}"
-    done
-
-    for bl in ${BLSEQ}; do
-        rlLog "Looking for BL list ${bl}"
-        if [[ -r "${TCWD}/bl/${bl}" ]]; then
-            apply_bl "${TCWD}/bl/${bl}"
-        fi
-    done
   rlPhaseEnd
 
   rlPhaseStartTest "run testsuite"
@@ -108,8 +69,6 @@ rlJournalStart
   rlPhaseStartCleanup
     rlRun "pcpcommon_cleanup"
     rlRun "rlServiceRestore" 0-255
-    rlRun "rm -r $TmpDir"
-    rlFileRestore
   rlPhaseEnd
 rlJournalPrintText
 rlJournalEnd

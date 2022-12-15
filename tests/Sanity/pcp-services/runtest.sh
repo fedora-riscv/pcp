@@ -29,7 +29,7 @@
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 PACKAGE="pcp"
-PCPSERVICES="pmlogger pmie pmproxy pmcd"
+PCPSERVICES="pmcd pmlogger pmproxy pmie"
 TOUT="90" # Timeout to wait for a service to start / stop
 
 function service_action() {
@@ -59,20 +59,31 @@ function service_action() {
 rlJournalStart
     rlPhaseStartSetup
         rlAssertRpm $PACKAGE
+        rlServiceStart redis
         rlRun "systemctl --no-pager stop ${PCPSERVICES}" 0-255
+
+        # First stop all the services in reverse order
+        for s in $(echo ${PCPSERVICES} | tr ' ' '\n' | tac | tr '\n' ' '); do
+            # All services should be stopped
+            service_action ${s} inactive
+            rlRun "killall --signal SIGTERM ${s}" 0-255
+        done
+        for s in $(echo ${PCPSERVICES} | tr ' ' '\n' | tac | tr '\n' ' '); do
+            rlRun "killall --signal SIGKILL ${s}" 0-255
+        done
+
     rlPhaseEnd
 
     rlPhaseStartTest
-        for s in ${PCPSERVICES}; do
-            # All services should be stopped
-            service_action ${s} inactive
-        done
-
+        # Start all the services
         for s in ${PCPSERVICES}; do
             # Start a service and check it runs
             rlRun "systemctl start --no-pager ${s}"
             service_action ${s} active
+        done
 
+        # Stop all the services in reverse order
+        for s in $(echo ${PCPSERVICES} | tr ' ' '\n' | tac | tr '\n' ' '); do
             # Stop a service and check it is stopped
             rlRun "systemctl stop --no-pager ${s}"
             service_action ${s} inactive
@@ -80,6 +91,7 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartCleanup
+        rlServiceRestore
     rlPhaseEnd
 rlJournalPrintText
 rlJournalEnd

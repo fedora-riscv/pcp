@@ -1,12 +1,11 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-#   lib.sh of /CoreOS/pcp/Library/pcpcommon
 #   Description: Common functions for PCP tests
-#   Author: Milos Prchlik <mprchlik@redhat.com>
+#   Author: Jan Kuřík <jkurik@redhat.com>
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-#   Copyright (c) 2013 Red Hat, Inc. All rights reserved.
+#   Copyright (c) 2013-2022 Red Hat, Inc. All rights reserved.
 #
 #   This copyrighted material is made available to anyone wishing
 #   to use, modify, copy, or redistribute it subject to the terms
@@ -28,7 +27,7 @@
 
 . /usr/share/beakerlib/beakerlib.sh
 
-PACKAGES="pcp"
+PACKAGE="pcp"
 
 pcpcommon_TESTDIR="$(pwd)"
 
@@ -40,12 +39,13 @@ done
 
 pcpcommon_PCP_VAR_DIR=${pcpcommon_PCP_VAR_DIR:-/var/lib/pcp}
 pcpcommon_PCP_PMDAS_DIR=${pcpcommon_PCP_PMDAS_DIR:-${pcpcommon_PCP_VAR_DIR}/pmdas}
-pcpcommon_PCP_PMCDCONF_PATH=${pcpcommon_PCP_PMCDCONF_PATH:-/etc/pcp/pmcd/pmcd.conf}
+pcpcommon_PCP_ETC_DIR=${pcpcommon_PCP_ETC_DIR:-/etc}
+pcpcommon_PCP_PMCDCONF_PATH=${pcpcommon_PCP_PMCDCONF_PATH:-/${pcpcommon_PCP_ETC_DIR}/pcp/pmcd/pmcd.conf}
 pcpcommon_PCP_LOG_DIR=${pcpcommon_PCP_LOG_DIR:-/var/log/pcp}
 pcpcommon_TESTSUITE_DIR=${pcpcommon_TESTSUITE_DIR:-${pcpcommon_PCP_VAR_DIR}/testsuite}
 pcpcommon_TESTSUITE_USER="${pcpcommon_TESTSUITE_USER:-pcpqa}"
-pcpcommon_TESTSUITE_USER_HOME=$(getent passwd ${pcpcommon_TESTSUITE_USER} \
-            | awk -F : '{print $6}')
+IFS=: read __x __x __x __x __x pcpcommon_TESTSUITE_USER_HOME __x \
+    < <(getent passwd ${pcpcommon_TESTSUITE_USER})
 pcpcommon_TESTSUITE_USER_HOME="${pcpcommon_TESTSUITE_USER_HOME:-/home/${pcpcommon_TESTSUITE_USER}}"
 pcpcommon_REAL_TESTSUITE_USER="${pcpcommon_TESTSUITE_USER}"
 
@@ -63,8 +63,9 @@ function map_metric() {
 }
 
 function _pcpcommon_pmda_bpftrace_setup() {
-    rlFileBackup --namespace pcpcommon_pcpqa "${pcpcommon_PCP_PMDAS_DIR}/bpftrace"
-    if rlIsRHEL '>8.2'; then
+    rlFileBackup --clean --missing-ok --namespace pcpcommon_pcpqa \
+        "${pcpcommon_PCP_PMDAS_DIR}/bpftrace"
+    if rlIsRHEL '>8.2' || rlIsFedora || rlIsCentOS; then
         rlRun "sed -i \
             -e 's/^enabled =.*\$/enabled = true/g' \
             -e 's/^auth_enabled =.*\$/auth_enabled = false/g' \
@@ -76,6 +77,98 @@ function _pcpcommon_pmda_bpftrace_setup() {
     fi
 }
 
+function _pcpcommon_apply_bl() {
+    local bl="${1}"
+    local tc
+
+    if [[ ! -r "${bl}" ]] ; then
+        rlLogDebug "No BL ${bl} found"
+        return 1
+    fi
+    rlLog "Applying BL $(basename ${bl})"
+    while read tc; do
+        rlRun "sed -i '/^${tc} /d' ${pcpcommon_TESTSUITE_DIR}/group"
+    done < "${bl}"
+
+    return 0
+}
+
+_pcpcommon_bl_applied=
+function pcpcommon_testsuite_bl() {
+    local blfile="${1}"
+    local arch="$(arch)"
+    local id
+    local version_id
+    local major
+    local minor
+    local micro
+    local bl
+    local _blseq
+    local blseq
+    local libdir
+
+    if [[ -n "${blfile}" ]]; then
+        if [[ -d "${blfile}" ]]; then
+            # The BL is a directory with BL files
+            libdir="${blfile}"
+        elif [[ -r "${blfile}" ]]; then
+            # The BL is a file with already listed TC numbers to be removed
+            libdir=
+        else
+            # Unknown BL
+            rlLogWarn "Unknown ${blfile} when applying BL"
+            return 1
+        fi
+    else
+        libdir="$(readlink -f $(dirname ${BASH_SOURCE}))"
+    fi
+
+    rlRun "rlFileBackup --namespace bl '${pcpcommon_TESTSUITE_DIR}/group'"
+    _pcpcommon_bl_applied="Yes"
+
+    if [[ -n "${libdir}" ]]; then
+        # Get all the variables we need
+        read id version_id < <( \
+            . /etc/os-release && \
+                echo ${ID} ${VERSION_ID} || \
+                echo rhel 6.10 \
+        )
+        IFS='.,-_ ' read major minor micro <<< "${version_id}"
+
+        _blseq="${id} ${id}-${major}"
+        [[ -n "${minor}" ]] && _blseq="${_blseq} ${id}-${major}.${minor}"
+        [[ -n "${micro}" ]] && _blseq="${_blseq} ${id}-${major}.${minor}.${micro}"
+
+        IFS='.,-_ ' read major minor micro < <(rpm -q --qf '%{version}' ${PACKAGE})
+        _blseq="${_blseq} ${PACKAGE}"
+        [[ -n "${major}" ]] && _blseq="${_blseq} ${PACKAGE}-${major}"
+        [[ -n "${minor}" ]] && _blseq="${_blseq} ${PACKAGE}-${major}.${minor}"
+        [[ -n "${micro}" ]] && _blseq="${_blseq} ${PACKAGE}-${major}.${minor}.${micro}"
+
+        for bl in ${_blseq}; do
+            blseq="${blseq} ${bl} ${bl}.${arch}"
+        done
+
+        for bl in ${arch} ${blseq}; do
+            rlLogInfo "Looking for BL list ${bl}"
+            rlLogInfo "   ... ${libdir}/bl/${bl}"
+            if [[ -r "${libdir}/bl/${bl}" ]]; then
+                apply_bl "${libdir}/bl/${bl}"
+            fi
+        done
+    else
+        rlLogInfo "Applying BL list ${blfile}"
+        apply_bl "${blfile}" || return 1
+    fi
+
+    return 0
+}
+
+pcpcommon_testsuite_bl_restore() {
+    [[ -n "${_pcpcommon_bl_applied}" ]] && rlFileRestore --namespace bl
+    _pcpcommon_bl_applied=
+}
+
 pcpcommon_PCPQA_CREATED=
 pcpcommon_PCPQA_SETUP=
 function pcpcommon_testsuite_user() {
@@ -83,8 +176,8 @@ function pcpcommon_testsuite_user() {
     [[ -n "${pcpcommon_PCPQA_SETUP}" ]] && return 0
     pcpcommon_PCPQA_SETUP="done"
 
-    rlFileBackup --clean --namespace pcpcommon_pcpqa --missing-ok \
-        "${pcpcommon_TESTSUITE_USER_HOME}"
+    #rlFileBackup --clean --namespace pcpcommon_pcpqa --missing-ok \
+    #    "${pcpcommon_TESTSUITE_USER_HOME}"
     if ! rlRun "id ${pcpcommon_TESTSUITE_USER}" 0,1; then
         rlRun "useradd -d ${pcpcommon_TESTSUITE_USER_HOME} -m \
             -s /bin/bash -U ${pcpcommon_TESTSUITE_USER}"
@@ -200,9 +293,10 @@ function pcpcommon_log_system_info() {
     which nft &> /dev/null && \
         nft list ruleset &> ${pcpcommon_TMP}/nftables
     
-    # Upload everything
-    tar czf ${pcpcommon_TAR} -C ${pcpcommon_TMP} $(cd ${pcpcommon_TMP} && ls -1)
-    rlFileSubmit "${pcpcommon_TAR}" "system.info.tar.gz"
+    if rlIsRHEL; then # Upload everything
+        tar czf ${pcpcommon_TAR} -C ${pcpcommon_TMP} $(cd ${pcpcommon_TMP} && ls -1)
+        rlFileSubmit "${pcpcommon_TAR}" "system.info.tar.gz"
+    fi
 
     # Cleanup
     rm -rf ${pcpcommon_TMP} ${pcpcommon_TAR}
@@ -219,30 +313,36 @@ function pcpcommon_test () {
     if rlRun "pushd ${pcpcommon_TESTSUITE_DIR}"; then
         rlRun -s "su -l -s /bin/bash -c 'cd ${pcpcommon_TESTSUITE_DIR} && \
             ./check ${params}' ${pcpcommon_REAL_TESTSUITE_USER}"
-        rlFileSubmit "${rlRun_LOG}" "check.log"
+        rlIsRHEL && rlFileSubmit "${rlRun_LOG}" "check.log"
         local _test_results="${rlRun_LOG}"
 
-        if ! rlRun "egrep 'Passed all [[:digit:]]+ tests' ${_test_results}" 0 \
+        if ! rlRun "grep -E 'Passed (all)* *[[:digit:]]+ tests' ${_test_results}" 0 \
             "Assert all testcases passed"; then
             local _tmp_dir=$(mktemp -d)
             local _tmp_tar=$(mktemp /tmp/XXXXXXXX.tar.gz)
             local failid
-            local failids="$(egrep 'Failures: ' ${_test_results} | cut -d' ' -f2-)"
+            local failids="$(grep -E 'Failures: ' ${_test_results} | cut -d' ' -f2-)"
 
             if [[ -n "${failids}" ]]; then
-                for failid in ${failids}; do
-                    rlFail "TC $failid failed"
-                    rlRun "cp ${failid}.out ${_tmp_dir}/"
-                    rlRun "cp ${failid}.out.bad ${_tmp_dir}/"
-                done
-                tar czf ${_tmp_tar} -C ${_tmp_dir} $(cd ${_tmp_dir} && ls -1)
-                rlFileSubmit "${_tmp_tar}" "failed.tests.tar.gz"
+                if rlIsRHEL; then
+                    for failid in ${failids}; do
+                        rlFail "TC $failid failed"
+                        rlRun "cp ${failid}.out ${_tmp_dir}/"
+                        rlRun "cp ${failid}.out.bad ${_tmp_dir}/"
+                    done
+                    tar czf ${_tmp_tar} -C ${_tmp_dir} $(cd ${_tmp_dir} && ls -1)
+                    rlFileSubmit "${_tmp_tar}" "failed.tests.tar.gz"
+                else
+                    for failid in ${failids}; do
+                        rlFail "TC $failid failed"
+                    done
+                fi
             fi
             rm -rf ${_tmp_tar} ${_tmp_dir}
             ret=1
         fi
 
-        if rlRun -s "egrep 'Not run: [[:digit:]]+' ${_test_results}" 0,1; then
+        if rlRun -s "grep -E 'Not run: [[:digit:]]+' ${_test_results}" 0,1; then
             rlLogWarning "$(cat ${rlRun_LOG})"
         fi
 
@@ -255,6 +355,7 @@ function pcpcommon_test () {
 function pcpcommon_cleanup () {
     # Cleanup everything related to pcpqa
     pcpcommon_testsuite_user_cleanup
+    pcpcommon_testsuite_bl_restore
     rlFileRestore --namespace pcpcommon_init 
 
     return $?
@@ -301,7 +402,7 @@ function pcpcommon_pmda_install () {
 		    "${metrics}" || ret=1
                 rlAssertNotGrep "Try again. Information not currently available" \
 		    "${metrics}" || ret=1
-                rlFileSubmit "${metrics}" "pmda.${pmda}.metrics.log"
+                rlIsRHEL && rlFileSubmit "${metrics}" "pmda.${pmda}.metrics.log"
             fi
             rlRun "popd"
         else
@@ -346,7 +447,7 @@ function pcpcommon_pmda_check_log () {
     fi
 
     rlAssertNotGrep "${errstr}" ${logf} -Ei || result=1
-    rlFileSubmit "${logf}"
+    rlIsRHEL && rlFileSubmit "${logf}"
 
     return ${result}
 }
@@ -356,7 +457,7 @@ function pcpcommon_pmda_tests () {
     local addparam="$2"
     local testgroup="pmda.${pmda}"
 
-    if rlRun "grep -q ${testgroup} ${pcpcommon_PCP_VAR_DIR}/testsuite/group" 0,1; then
+    if rlRun "grep -q ${testgroup} ${pcpcommon_TESTSUITE_DIR}/group" 0,1; then
         pcpcommon_test "000 -g ${testgroup} ${addparam}"
         pcpcommon_pmda_check_log ${pmda}
     else

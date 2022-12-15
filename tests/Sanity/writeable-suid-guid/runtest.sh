@@ -28,10 +28,17 @@
 
 # Include Beaker environment
 . /usr/share/beakerlib/beakerlib.sh || exit 1
+. ../../Library/pcpcommon/lib.sh || exit 1
 
 PACKAGE="pcp"
 DIRS="/var/lib/pcp /usr/include/pcp /etc/pcp /usr/libexec/pcp /var/log/pcp \
       /usr/share/pcp /usr/share/doc/pcp"
+DIRS="${pcpcommon_PCP_VAR_DIR} ${pcpcommon_PCP_INC_DIR} ${pcpcommon_PCP_SYSCONF_DIR} \
+    /usr/libexec/pcp ${pcpcommon_PCP_BINADM_DIR} ${pcpcommon_PCP_LIBADM_DIR} \
+    ${pcpcommon_PCP_PMDASADM_DIR} ${pcpcommon_PCP_RC_DIR} ${pcpcommon_PCP_LOG_DIR} \
+    ${pcpcommon_PCP_SHARE_DIR} ${pcpcommon_PCP_DOC_DIR} ${pcpcommon_PCP_DEMOS_DIR} \
+    ${pcpcommon_PCP_HTML_DIR} ${pcpcommon_PCP_HTML_DIR} /usr/share/doc/pcp-doc \
+    "
 
 rlJournalStart
     rlPhaseStartSetup

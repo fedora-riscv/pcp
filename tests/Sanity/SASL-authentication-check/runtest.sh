@@ -62,11 +62,13 @@ for HASH in ${HASHES}; do
         rlServiceStart "pmcd"
         rlRun "sleep 3" 0 "Give pmcd some time to start"
 
-        rlRun -s "pminfo -f -h 'pcp://127.0.0.1?username=${METRICUSER}&password=${METRICUSERPW}' disk.dev.read"
-        rlFileSubmit "${rlRun_LOG}" "pminfo.output"
+        rlRun -s "pminfo -f -h \
+            'pcp://127.0.0.1?username=${METRICUSER}&password=${METRICUSERPW}' \
+            disk.dev.read"
+        rlIsRHEL && rlFileSubmit "${rlRun_LOG}" "pminfo.output"
         rlAssertNotGrep "user not found" "${rlRun_LOG}"
         rlAssertGrep ".*inst .*value .*" "${rlRun_LOG}" -E
-        rlFileSubmit "/var/log/pcp/pmcd/pmcd.log"
+        rlIsRHEL && rlFileSubmit "/var/log/pcp/pmcd/pmcd.log"
     rlPhaseEnd
 
 done
