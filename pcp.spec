@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 6.0.1
-Release: 2%{?dist}
+Release: 2.rv64%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPLv2+ and LGPLv2+ and CC-BY
 URL:     https://pcp.io
@@ -2382,7 +2382,7 @@ sed -i '/.a$/d' pcp-devel-files
 sed -i '/\/man\//d' pcp-devel-files
 sed -i '/\/include\//d' pcp-devel-files
 
-%ifarch x86_64 ppc64 ppc64le aarch64 s390x
+%ifarch x86_64 ppc64 ppc64le aarch64 s390x riscv64
 sed -i -e 's/usr\/lib\//usr\/lib64\//' pcp-libs-files
 sed -i -e 's/usr\/lib\//usr\/lib64\//' pcp-devel-files
 sed -i -e 's/usr\/lib\//usr\/lib64\//' pcp-libs-devel-files
@@ -3371,6 +3371,9 @@ fi
 %files zeroconf -f pcp-zeroconf-files.rpm
 
 %changelog
+* Fri Jan 13 2023 Liu Yang <Yang.Liu.sn@gmail.com> - 6.0.1-2.rv64
+- riscv64 also need fix.
+
 * Fri Nov 11 2022 Nathan Scott <nathans@redhat.com> - 6.0.1-2
 - Resolve an issue with installing sysusers entries
 - Fix RPM spec file scriptlet relating to pmieconf (BZ 2139720)
