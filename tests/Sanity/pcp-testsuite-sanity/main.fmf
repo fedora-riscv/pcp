@@ -27,3 +27,5 @@ recommend:
 - /usr/bin/netstat
 - pcp-testsuite
 duration: 4h
+tag:
+  - gating

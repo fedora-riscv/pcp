@@ -11,5 +11,5 @@ recommend:
 - cyrus-sasl-scram
 - cyrus-sasl-lib
 duration: 15m
-extra-summary: /tools/pcp/Sanity/SASL-authentication-check
-extra-task: /tools/pcp/Sanity/SASL-authentication-check
+tag:
+  - gating

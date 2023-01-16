@@ -12,5 +12,5 @@ recommend:
 - pcp-zeroconf
 - redis
 duration: 15m
-extra-summary: /tools/pcp/Sanity/pcp-services
-extra-task: /tools/pcp/Sanity/pcp-services
+tag:
+  - gating

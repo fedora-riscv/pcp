@@ -9,5 +9,5 @@ recommend:
 - python3-pcp
 - python-pcp
 duration: 15m
-extra-summary: /tools/pcp/Sanity/pcp-python-compliance
-extra-task: /tools/pcp/Sanity/pcp-python-compliance
+tag:
+  - gating

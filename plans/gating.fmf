@@ -1,5 +1,6 @@
 summary: CI Gating Plan
 discover:
     how: fmf
+    filter: tag:gating
 execute:
     how: tmt

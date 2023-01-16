@@ -11,5 +11,5 @@ recommend:
 - pcp
 - pcp-testsuite
 duration: 15m
-extra-summary: /tools/pcp/Sanity/writeable-suid-guid
-extra-task: /tools/pcp/Sanity/writeable-suid-guid
+tag:
+  - gating

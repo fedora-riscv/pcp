@@ -1,4 +1,4 @@
-summary: Verification of rpm's config files
+summary: Verification of rpms config files
 description: 'Verification of rpms config files'
 contact: Jan Kuřík <jkurik@redhat.com>
 component:
@@ -9,5 +9,5 @@ recommend:
 - pcp
 - rpm-build
 duration: 15m
-extra-summary: /tools/pcp/Sanity/rpm-config-files
-extra-task: /tools/pcp/Sanity/rpm-config-files
+tag:
+  - gating

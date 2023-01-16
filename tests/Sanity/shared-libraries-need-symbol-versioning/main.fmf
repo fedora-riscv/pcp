@@ -12,5 +12,5 @@ recommend:
 - pcp-libs
 - binutils
 duration: 15m
-extra-summary: /tools/pcp/Sanity/shared-libraries-need-symbol-versioning
-extra-task: /tools/pcp/Sanity/shared-libraries-need-symbol-versioning
+tag:
+  - gating

@@ -1,0 +1,33 @@
+summary: upgrade
+description: ''
+contact: Jan Kurik <jkurik@redhat.com>
+component:
+  - pcp
+test: ./runtest.sh
+framework: beakerlib
+require:
+  - library(ControlFlow/mcase)
+recommend:
+  - pcp
+  - beakerlib
+  - time
+  - sudo
+  - procps-ng
+  - avahi
+  - bzip2
+  - pcp-pmda-cisco
+  - coreutils
+  - pcp-pmda-news
+  - perl-PCP-LogImport
+  - perl-PCP-LogSummary
+  - python-pcp
+  - gcc
+  - redhat-rpm-config
+  - perl-PCP-LogSummary
+  - libuv
+  - libuv-devel
+  - /usr/bin/netstat
+  - pcp-testsuite
+duration: 1h
+tag:
+  - upgrade
