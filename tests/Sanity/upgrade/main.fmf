@@ -28,6 +28,8 @@ recommend:
   - libuv-devel
   - /usr/bin/netstat
   - pcp-testsuite
+  - nmap
+  - valgrind
 duration: 1h
 tag:
   - upgrade

@@ -36,6 +36,7 @@ PACKAGE=pcp
 distribution_mcase__test() {
     rlLogInfo 'Verify scenario upgrade works'
 
+    rlRun "yum install -y pcp-testsuite" 0-255 'Ensure pcp-testsuite is installed'
     rlRun "pcpcommonLibraryLoaded"
     rlRun "rlServiceStart pmcd pmlogger" 0,1
     rlRun "rlServiceEnable pmcd pmlogger" 0-255
