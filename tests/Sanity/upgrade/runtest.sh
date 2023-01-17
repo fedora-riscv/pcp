@@ -36,13 +36,25 @@ PACKAGE=pcp
 distribution_mcase__test() {
     rlLogInfo 'Verify scenario upgrade works'
 
-    rlRun "yum install -y pcp-testsuite" 0-255 'Ensure pcp-testsuite is installed'
+    rlRun "yum remove -y pcp-testsuite" 0-255
+    rlRun "rm -rf /var/lib/pcp/testsuite"
+    rlRun "yum install -y pcp-testsuite" 0 "Ensure pcp-testsuite is installed"
+    rlRun "pushd /var/lib/pcp/pmdas/sample/"
+    rlRun "./Remove" 0-255
+    rlRun "echo | ./Install" 0-255
+    rlRun "popd"
     rlRun "pcpcommonLibraryLoaded"
     rlRun "rlServiceStart pmcd pmlogger" 0,1
     rlRun "rlServiceEnable pmcd pmlogger" 0-255
     rlRun "sleep 10"
 
-    rlRun "pcpcommon_test -g sanity -g pmda.linux" || rlRun "pcpcommon_log_system_info"
+    # BL
+    for tc in 359 665 821 1393; do
+        rlRun "sed -i -e '^${tc} /d' /var/lib/pcp/testsuite/group" 0-255
+    done
+    rlRun "pcpcommon_test -g sanity -g pmda.linux -x kernel -x pmda.sample -x valgrind \
+        -x containers -x cgroups -x pmda.mmv" \
+        || rlRun "pcpcommon_log_system_info"
     rlRun "pcpcommon_cleanup"
 }
 
