@@ -50,7 +50,7 @@ distribution_mcase__test() {
 
     # BL
     for tc in 359 665 821 1393; do
-        rlRun "sed -i -e '^${tc} /d' /var/lib/pcp/testsuite/group" 0-255
+        rlRun "sed -i -e '/^${tc} /d' /var/lib/pcp/testsuite/group" 0-255
     done
     rlRun "pcpcommon_test -g sanity -g pmda.linux -x kernel -x pmda.sample -x valgrind \
         -x containers -x cgroups -x pmda.mmv" \
