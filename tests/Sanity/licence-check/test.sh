@@ -7,7 +7,7 @@ TCWD="$(pwd)"
 
 rlJournalStart
     rlPhaseStartSetup
-        rlRun "tmp=\$(mktemp -d)" 0 "Create tmp directory"
+        rlRun "tmp=\$(mktemp -d /var/tmp/XXXXXXXXXXXXX)" 0 "Create tmp directory"
         rlRun "pushd $tmp"
         rlRun "set -o pipefail"
 
@@ -60,7 +60,7 @@ done < <(sort -u <<< "${LICENSES}")
 
     rlPhaseStartCleanup
         rlRun "popd"
-        # rlRun "rm -r $tmp" 0 "Remove tmp directory"
+        rlRun "rm -r $tmp" 0 "Remove tmp directory"
         rlRun "yum clean metadata"
         [[ -n "${EPELREPO}" ]] && rlRun "rm -f ${EPELREPO}"
     rlPhaseEnd
