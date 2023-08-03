@@ -1,0 +1,69 @@
+commit e97d64cfab956e3542a0f25442086ee2fd74d9a5
+Author: Nathan Scott <nathans@redhat.com>
+Date:   Tue Jul 18 16:22:30 2023 +1000
+
+    pmieconf: move test_action from primary into a separate group
+    
+    Problem with using primary is that it is automatically enabled
+    as part of the primary pmie startup and thats not whats needed
+    for this diagnostic rule.
+    
+    Resolves Red Hat BZ #2223348
+
+diff --git a/src/pmieconf/.gitignore b/src/pmieconf/.gitignore
+index 3c0b7b51ef..0670d80057 100644
+--- a/src/pmieconf/.gitignore
++++ b/src/pmieconf/.gitignore
+@@ -9,6 +9,7 @@ perdisk/GNUmakefile
+ pernetif/GNUmakefile
+ power/GNUmakefile
+ primary/GNUmakefile
++testing/GNUmakefile
+ zeroconf/GNUmakefile
+ pmieconf
+ pmieconf.static
+diff --git a/src/pmieconf/GNUmakefile b/src/pmieconf/GNUmakefile
+index 567d94dce1..7a82e45a28 100644
+--- a/src/pmieconf/GNUmakefile
++++ b/src/pmieconf/GNUmakefile
+@@ -18,7 +18,7 @@ include	$(TOPDIR)/src/include/builddefs
+ include $(TOPDIR)/src/libpcp/src/GNUlibrarydefs
+ 
+ MKFILE_SUBDIRS = cpu entropy filesys memory network percpu perdisk pernetif \
+-		 power global primary zeroconf
++		 power global primary testing zeroconf
+ SUBDIRS	= $(MKFILE_SUBDIRS)
+ 
+ CMDTARGET = pmieconf$(EXECSUFFIX)
+diff --git a/src/pmieconf/primary/localdefs b/src/pmieconf/primary/localdefs
+index 3d51dd69d9..ca21fca8b5 100644
+--- a/src/pmieconf/primary/localdefs
++++ b/src/pmieconf/primary/localdefs
+@@ -1,2 +1,2 @@
+-ALL_RULES = pmda_status test_actions
++ALL_RULES = pmda_status
+ LOCAL_RULES = $(ALL_RULES)
+diff --git a/src/pmieconf/testing/localdefs b/src/pmieconf/testing/localdefs
+new file mode 100644
+index 0000000000..a2af94f1c0
+--- /dev/null
++++ b/src/pmieconf/testing/localdefs
+@@ -0,0 +1,2 @@
++ALL_RULES = test_actions
++LOCAL_RULES = $(ALL_RULES)
+diff --git a/src/pmieconf/primary/test_actions b/src/pmieconf/testing/test_actions
+similarity index 97%
+rename from src/pmieconf/primary/test_actions
+rename to src/pmieconf/testing/test_actions
+index cc0ee1f7cb..56c89787a0 100644
+--- a/src/pmieconf/primary/test_actions
++++ b/src/pmieconf/testing/test_actions
+@@ -2,7 +2,7 @@
+ # --- DO NOT MODIFY THIS FILE --- see pmieconf(5)
+ #
+ 
+-rule	primary.test_actions
++rule	testing.test_actions
+ 	default	= "$rule$"
+ 	predicate = "hinv.ncpu > 0"
+ 	enabled	= no
