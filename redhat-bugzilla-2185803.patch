@@ -1,0 +1,94 @@
+commit b4869520fd98f8b2ad09d39fb4466100d508b926
+Author: Nathan Scott <nathans@redhat.com>
+Date:   Mon Aug 7 13:04:38 2023 +1000
+
+    pmieconf: update webhook action for better EDA integration
+    
+    The pmieconf webhook action was initially created for Event
+    Driven Ansible (EDA); two issues have been resolved related
+    - using the JSON key "values" conflicts with something deep
+    down in EDA that also interprets this JSON.  Use "message",
+    which is more descriptive of the content anyway.
+    - there is no easily accessible hostname JSON key - add one
+    via the usual %h pmie action string expansion.
+    
+    Related to Red Hat BZ #2185803
+
+diff --git a/qa/1567 b/qa/1567
+index ba90aa9cc8..10c1756ca4 100755
+--- a/qa/1567
++++ b/qa/1567
+@@ -53,7 +53,7 @@ sleep 2 # let nc start up
+ ( sleep 2; $signal $pid1 ) >>$seq.full 2>&1 &
+ 
+ echo "pmie webhook invocation" | tee -a $here/$seq.full
+-pmie_webhook "http://localhost:$port/webhook|Busy CPU|100%hosta|100%@hostb" 2> $tmp.webhook.err
++pmie_webhook "http://localhost:$port/webhook|Busy CPU|www.abc.com|100%@www.abc.com" 2> $tmp.webhook.err
+ cat $tmp.webhook.err >> $here/$seq.full
+ echo
+ 
+diff --git a/qa/1567.out b/qa/1567.out
+index e3fce64bb3..153aec9581 100644
+--- a/qa/1567.out
++++ b/qa/1567.out
+@@ -9,5 +9,5 @@ Content-Type: application/json
+ Host: localhost:PORT
+ POST /webhook HTTP/1.1
+ User-Agent: curl VERSION
+-{"pcp":{"pmie":{"rule":"Busy CPU","values":"100%hosta 100%@hostb"}}}
++{"pcp":{"pmie":{"rule":"Busy CPU","hostname":"www.abc.com","message":"100%@www.abc.com"}}}
+ 
+diff --git a/src/pmieconf/global/pcp_actions b/src/pmieconf/global/pcp_actions
+index 476bef0553..61e787f21e 100644
+--- a/src/pmieconf/global/pcp_actions
++++ b/src/pmieconf/global/pcp_actions
+@@ -95,7 +95,7 @@ the rule condition is true.";
+ 
+ shell	global.webhook_action
+ 	enabled	= no
+-	default	= "pmie_webhook '$webhook_endpoint$|$rule$^|$action_expand$^'"
++	default	= "pmie_webhook '$webhook_endpoint$|$rule$^|%h|$action_expand$^'"
+ 	help	=
+ "HTTP POST message will be sent to \"webhook_endpoint\" when a
+ rule condition is true.  The message will be in JSON format.";
+diff --git a/src/pmieconf/pmie_webhook b/src/pmieconf/pmie_webhook
+index 87193fca60..8d386f1ae6 100755
+--- a/src/pmieconf/pmie_webhook
++++ b/src/pmieconf/pmie_webhook
+@@ -19,7 +19,8 @@
+ #
+ # "line" 1	- HTTP/HTTPS endpoint, as passed to a http client
+ # "line" 2	- pmie rule name
+-# "line" 3,4,..	- values from predicate evaluation [optional]
++# "line" 3	- rule evaluated for hostname
++# "line" 4,5,..	- values from predicate evaluation [optional]
+ 
+ # source the PCP configuration environment variables
+ . /etc/pcp.env
+@@ -28,7 +29,7 @@ prog=`basename $0`
+ 
+ if [ $# -ne 1 ]
+ then
+-    echo "Usage: $prog url|rule|message"
++    echo "Usage: $prog url|rule|hostname|message"
+     exit 1
+ fi
+ 
+@@ -46,14 +47,14 @@ if [ -z "$CURL" ] ; then
+ fi
+ 
+ cat <<End-of-File | ${PCP_AWK_PROG} -F\| '
+-NF < 2	{ print "echo '"'$prog"': needs \"endpoint|rule|values\" argument'"'"'"
++NF < 3	{ print "echo '"'$prog"': needs \"endpoint|rule|hostname|message\" argument'"'"'"
+ 	  exit 1
+ 	}
+ 	{ printf "%s ", "'$CURL'"
+ 	  printf "-s -X POST -H \"Content-Type: application/json\" -d@- "
+ 	  printf "%s <<End-of-File\n", $1
+-	  printf "{\"pcp\":{\"pmie\":{\"rule\":\"%s\",\"values\":\"%s", $2, $3
+-	  for (i = 4; i <= NF; i++)
++	  printf "{\"pcp\":{\"pmie\":{\"rule\":\"%s\",\"hostname\":\"%s\",\"message\":\"%s", $2, $3, $4
++	  for (i = 5; i <= NF; i++)
+ 		printf " %s", $i
+ 	  printf "\"}}}\nEnd-of-File\n"
+ 	}' | /bin/sh
