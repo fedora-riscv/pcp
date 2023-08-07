@@ -14,3 +14,8 @@ recommend:
 duration: 15m
 tag:
   - gating
+enabled: true
+adjust:
+  - enabled: false
+    continue: false
+    when: distro < rhel-10
