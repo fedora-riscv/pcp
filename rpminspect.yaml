@@ -3,3 +3,7 @@ debuginfo:
     # Debug symbols are present in BPF modules as it is inherited
     # from the BPF it self
     - /usr/libexec/pcp/pmdas/bpf/modules/*.so
+annocheck:
+  ignore:
+    # Ignore hardening of pcp testsuite files
+    - /usr/lib*/libpcp_fault.so*
