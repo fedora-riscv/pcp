@@ -1,0 +1,5 @@
+debuginfo:
+  ignore:
+    # Debug symbols are present in BPF modules as it is inherited
+    # from the BPF it self
+    - /usr/libexec/pcp/pmdas/bpf/modules/*.so
