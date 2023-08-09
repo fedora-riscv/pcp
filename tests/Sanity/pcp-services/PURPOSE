@@ -1,5 +1,0 @@
-PURPOSE of /tools/pcp/Sanity/pcp-services
-Description: Test of pcp services (start / stop)
-Author: Jan Kuřík <jkurik@redhat.com>
-Bug summary: Job for pmlogger.service failed because the service did not take the steps required by its unit configuration.
-Bugzilla link: https://bugzilla.redhat.com/show_bug.cgi?id=1944150

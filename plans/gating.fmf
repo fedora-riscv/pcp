@@ -2,5 +2,6 @@ summary: CI Gating Plan
 discover:
     how: fmf
     filter: tag:gating
+    url: https://src.fedoraproject.org/tests/pcp
 execute:
     how: tmt
