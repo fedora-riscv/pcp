@@ -203,8 +203,13 @@ ExcludeArch: %{ix86}
 %global disable_noarch 1
 %endif
 
+# build pcp2arrow whenever possible (no RHEL or 32 bit x86 Fedora python3-arrow)
 %if 0%{?fedora} >= 36
+%ifarch %{ix86}
+%global disable_arrow 1
+%else
 %global disable_arrow 0
+%endif
 %else
 %global disable_arrow 1
 %endif
