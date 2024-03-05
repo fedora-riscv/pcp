@@ -1,6 +1,6 @@
 Name:    pcp
 Version: 6.2.0
-Release: 1%{?dist}
+Release: 1.rv64%{?dist}
 Summary: System-level performance monitoring and performance management
 License: GPL-2.0-or-later AND LGPL-2.1-or-later AND CC-BY-3.0
 URL:     https://pcp.io
@@ -2481,7 +2481,7 @@ sed -i '/.a$/d' pcp-devel-files
 sed -i '/\/man\//d' pcp-devel-files
 sed -i '/\/include\//d' pcp-devel-files
 
-%ifarch x86_64 ppc64 ppc64le aarch64 s390x
+%ifarch x86_64 ppc64 ppc64le aarch64 s390x riscv64
 sed -i -e 's/usr\/lib\//usr\/lib64\//' pcp-libs-files
 sed -i -e 's/usr\/lib\//usr\/lib64\//' pcp-devel-files
 sed -i -e 's/usr\/lib\//usr\/lib64\//' pcp-libs-devel-files
@@ -3485,6 +3485,9 @@ fi
 %files zeroconf -f pcp-zeroconf-files.rpm
 
 %changelog
+* Fri Apr 28 2023 David Abdurachmanov <davidlt@rivosinc.com> - 6.0.3-1.0.riscv64
+- Fix paths on riscv64
+
 * Mon Feb 12 2024 Nathan Scott <nathans@redhat.com> - 6.2.0-1
 - Update to latest PCP sources.
 
